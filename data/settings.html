@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>OranjeRadio Settings</title>
+
+    <link href="style.css" rel="stylesheet">
+
+<script>
+
+var ESPurl = "/";
+var Startlevel = "30" ;
+var Plevel = "11";
+
+
+
+function get_jstring(){
+	  
+	  var thttp 	 = new XMLHttpRequest();
+	
+	  thttp.open("GET", ESPurl + "settings?json=1", true);
+	  
+	  thttp.responseType = 'text';
+		
+	  thttp.onreadystatechange = function() {
+			if (thttp.readyState == 4 && thttp.status == 200 ) {
+				jstring = JSON.parse(thttp.responseText);
+				show_keyvalues( jstring );		
+			}
+		}; 	
+	  thttp.send();
+	  
+	 
+}
+
+
+
+function show_keyvalues( settingsObj ){
+ var s;
+ 
+
+ s = '<form action="/settings" method="post" enctype="multipart/form-data"><table><tr><td class="settings shaded">Setting</td><td class="settings shaded">Value</td></tr>';
+
+ for (key in settingsObj) {
+    if ( settingsObj.hasOwnProperty(key)) {
+        s += '<tr><td class="settings">' + key + '</td><td class="settings"><input class="settingsinput"  name="'+key+'"  id="' + key + '" value="'+ settingsObj[key]  + '"></td></tr>';
+		
+	}
+ }   
+ s += '</table> <input class="settingsinput" style="margin: 50px; margin-left: 15%;" type="submit" value="Save"></form>';
+ 
+  
+document.getElementById("contents").innerHTML = s;
+
+
+
+return(true); 
+}
+
+</script>
+	
+</head>
+<body onload="get_jstring()" >
+
+
+<div id="contents"></div>
+
+
+<ul class="knopjes">
+ <li><a href="/">Home</a></li>
+ <li><a href="/upload">Bestanden uploaden</a></li>
+ </ul> 
+ 
+</body>
+</html>

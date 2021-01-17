@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+ body {
+  font-family: Arial, Helvetica, sans-serif;	
+  /* The image used 
+  background-image: url("OranjeRadioBig.svg");
+  height: 100%; 
+  color: white;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  */
+  background: lightgrey;  
+}
+
+h1 {
+	color: orange;
+	font-size: 5vw;
+}
+</style>
+<script>
+function changeaction()
+{
+f  = document.getElementById("f");
+ft = document.getElementById("ft");
+a  = f.action;
+if ( ft.value != "" ) {
+	f.action = a + "?filename=" + ft.value;
+}
+//alert( "f.action = " + f.action);
+return( true );
+}
+
+function changetext()
+{
+pt = document.getElementById("pt");
+ft = document.getElementById("ft");
+//alert( "pt.value = " + pt.value);
+//ft.value = pt.value;
+ft.value = "/" + pt.value.replace(/^.*[\\\/]/, '');
+}
+</script>
+</head>
+<html>
+<h1>Oranje radio</h1>
+<h2>Upload file</h2>
+
+<form method="POST" action="/upload" enctype="multipart/form-data" id="f" ">
+<table>
+<tr><td>Local file to upload </td><td><input type="file" name="blob" style="width: 300px;" id="pt" onchange="changetext(event)"></td></tr>
+<tr><td>Filename:</td><td><input type="text" name="filename" style="width: 300px;" id="ft"></td></tr> 
+<tr><td colspan=2> <input type="submit" value="Upload"></td></tr> 
+</table>
+</form>
+
+ <ul class="knopjes">
+ <li><a href="/">Home</a></li>
+ <li><a href="/settings">Instellingen</a></li>
+ </ul> 
+
+ </html>
