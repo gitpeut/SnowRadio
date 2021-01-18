@@ -287,6 +287,9 @@ void handleWebServer( void *param ){
   server.on("/", []() {
     handleFileRead( "/index.html" );
   });
+  server.on("/stations.json", []() {
+    handleFileRead( "/stations.json" );
+  });
 
   server.on("/set", handleSet );
   server.on("/add", handleAdd );
@@ -332,7 +335,7 @@ void handleWebServer( void *param ){
        tft_ShowUpload( "firmware" );
         
       Serial.printf("Update: %s\n", upload.filename.c_str());
-      syslog("Installing new firmware through webupload" );
+      syslog((char *)"Installing new firmware through webupload" );
       
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         Update.printError(Serial);

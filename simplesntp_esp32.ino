@@ -103,9 +103,9 @@ void ntp_setup(bool waitforsync){
   sntp_stop(); 
   sntp_setoperatingmode(SNTP_OPMODE_POLL); 
 
-  sntp_setservername(0, ntpServers[0]); 
-  sntp_setservername(1, ntpServers[1]); 
-  sntp_setservername(2, ntpServers[2]); 
+  sntp_setservername(0, (char *)ntpServers[0]); 
+  sntp_setservername(1, (char *)ntpServers[1]); 
+  sntp_setservername(2, (char *)ntpServers[2]); 
 
   sntp_init(); 
   

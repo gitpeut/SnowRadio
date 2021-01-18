@@ -1,7 +1,8 @@
 
 
 void play ( void *param ){
-uint8_t playBuffer[32];
+uint8_t   playBuffer[32];
+uint32_t  VSlow=0;
 
  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 //
@@ -36,10 +37,17 @@ uint8_t playBuffer[32];
           if ( digitalRead( VS1053_DREQ ) ){
             xSemaphoreTake( tftSemaphore, portMAX_DELAY);
             player.playChunk(playBuffer, 32  );
-            xSemaphoreGive( tftSemaphore);            
+            xSemaphoreGive( tftSemaphore);         
+            VSlow = 0;   
           }else{
-            --i;           
-            //Serial.printf ( "Waiting for VS1053, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
+            --i;  
+            VSlow++;
+            if ( VSlow > 60 ){         
+              if ( VSlow %10 == 0 ){
+                Serial.printf ( "Waiting for VS1053, VSlow %d , %d messages in playQueue\n", VSlow, uxQueueMessagesWaiting( playQueue ) );
+                syslog( (char *)"VSlow for a long time.");
+              }
+            }
             delay(2);
           }
       }

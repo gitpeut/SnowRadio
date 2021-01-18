@@ -16,6 +16,7 @@ void reset_chunkstate(){
  
 }
 
+
 //---------------------------------------------------------------------------
 
 void filter_buffer ( uint8_t *rBuffer, int bytecount ){
@@ -120,6 +121,8 @@ while(1){
 
       if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
       unavailablecount = 0;   
+      
+      
       int bytesread = 0;
 
 //      bytesread = radioclient->read( &radioBuffer[0], 32 );  
@@ -130,7 +133,8 @@ while(1){
             stations[ playingStation].position += bytesread;
          }
          
-        
+         totalbytes += bytesread;
+         
          if ( bytesread <= 0 ){
           noreads++; 
           delay(2); //server may be slow. Wait a bit to please wd.
@@ -154,17 +158,26 @@ while(1){
     }else{ //no bytes available
       if (  millis() > connectmillis )unavailablecount++;
       
-        //Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
+        Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
         delay(1);
       
        if(!radioclient->connected() ){
                         
-            Serial.printf("Connect (again?) to %s\n",stations[ getStation() ].name );
+            //Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
 
             if ( unavailablecount > MAXUNAVAILABLE ){
               unavailablecount = 0;
             }
-          
+            
+            if ( totalbytes < 100 ){
+               if ( totalbytes > 0 ){
+                 tellPixels( PIX_BLINKYELLOW );
+                 tft_notAvailable( getStation() );                        
+                 delay(2000 );
+               }
+            }
+            totalbytes=0;
+            
             if( 0 == (rc = stationsConnect( getStation()) ) ){
               playingStation = getStation();
               save_last_volstat( 0 );
@@ -172,8 +185,10 @@ while(1){
               connectmillis = millis() + 5000;
                //reset chunked encoding counters
               reset_chunkstate();
+               tellPixels( PIX_DECO );
             }else{
               if ( rc == 400 ){
+                  tellPixels( PIX_BLINKYELLOW );
                   tft_notAvailable( getStation() );                        
                   delay(2000 );
                   //setStation( 0,-1);
@@ -182,7 +197,8 @@ while(1){
                   delay(100);
                   if ( failed_connects > 3 ) {
                    
-                    syslog( "Reboot after 3 failed connects");
+                    tellPixels( PIX_BLINKRED );
+                    syslog( (char *)"Reboot after 3 failed connects");
                     ESP.restart();
                   }
               }
@@ -200,11 +216,13 @@ while(1){
         //radioclient->flush();
         radioclient->stop();  
         
+        tellPixels( PIX_YELLOW );
+ 
         xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );
-            syslog( "reconnect after data has been unavailable.");           
+            syslog( (char *)"reconnect after data has been unavailable.");           
             disconnectcount++;
         }else{
             Serial.println("switch station...");

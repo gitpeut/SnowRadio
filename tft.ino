@@ -5,11 +5,10 @@
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
 TFT_eSprite img  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite bats  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite vols  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite clocks  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite bmp  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-
+TFT_eSprite bats  = TFT_eSprite(&tft); 
+TFT_eSprite vols  = TFT_eSprite(&tft);  
+TFT_eSprite clocks  = TFT_eSprite(&tft);  
+TFT_eSprite bmp  = TFT_eSprite(&tft);  
 
 
 #define BATVREF     1.1f
@@ -18,7 +17,13 @@ TFT_eSprite bmp  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointe
 
 
 #define SCROLLPIN 0
-#define STATIONSCROLLH 55
+int STATIONSCROLLH=55;
+int tftrotation = 4;
+
+int verysmallfont= 1;
+int smallfont= 2;
+int bigfont=4;
+
 
 //----------------------------------------------------------
 void IRAM_ATTR grabTft(){
@@ -30,7 +35,7 @@ void IRAM_ATTR grabTft(){
 //----------------------------------------------------------
 void IRAM_ATTR releaseTft(){
   
-tft.fillRect( 4,12 , 1, 1, TFT_ORANGE ); //flicker kludge
+//tft.fillRect( 4,12 , 1, 1, TFT_ORANGE ); //flicker kludge, not necessary when using rmt_write_items in sk.h
 xSemaphoreGive( tftSemaphore); 
 //printf("released TFT\n");
 }
@@ -65,13 +70,17 @@ int read_battery(){
 }
 //-------------------------------------------------------------------------------
 void showBattery(){
-int   w=23,h=12;
+int   w=tft.width()/6,h=tft.height()/14;
 int   xpos,ypos;
 int   percentage = read_battery();
+int   multiplier=1;
 
-bats.createSprite(23+2,h);
+if ( tft.width() > 200 ) multiplier = 2;
+
+//bats.createSprite(23+2,h);
+bats.createSprite(w+2,h);
 bats.setTextColor( TFT_WHITE, TFT_ORANGE); 
-bats.setTextSize(1);
+bats.setTextSize( multiplier );
 bats.fillSprite(TFT_BLACK);
 
 
@@ -97,7 +106,10 @@ if ( percentage > 80 ){
   
 grabTft();
 xpos = tft.width()/2 - (w+2)/2;
-ypos = 2;
+
+ypos =  bats.fontHeight( smallfont ) * multiplier/ 3;
+
+//ypos = 2;
 bats.pushSprite( xpos, ypos);
 releaseTft();
 
@@ -108,14 +120,21 @@ bats.deleteSprite();
 //----------------------------------------------------------
 
 void showVolume( int percentage){
-int   w=30,h=10;
+//int   w=30,h=10;
+int   w,h,percw,multiplier=1;
 int   xpos=2, ypos=1;
 char  pstring[8];
 
+if ( tft.width() > 200 ) multiplier = 2;
 
-vols.createSprite(w + 21,h + 1);
+w = (tft.width() * 3)/16;
+h =  tft.fontHeight( smallfont ) + 2;
+
+percw = vols.textWidth( "999",smallfont) * multiplier; 
+
+vols.createSprite(w + percw+1,h + 2);
 vols.setTextColor( TFT_WHITE, TFT_ORANGE ); 
-vols.setTextSize(1);
+vols.setTextSize( multiplier );
 vols.fillSprite(TFT_BLACK);
 
 
@@ -130,8 +149,10 @@ vols.fillTriangle( 0,     h,   //lower left
                   TFT_ORANGE );//rectangle
 
 vols.setTextColor(TFT_ORANGE);
-vols.fillRect( w +1, 1, 20 , h,TFT_BLACK );//rectangle
-vols.drawString( pstring,w + 2, 2,1); 
+vols.fillRect( w +1, 1, percw , h,TFT_BLACK );//rectangle
+
+ypos =  h/4;
+vols.drawString( pstring,w + 2, ypos, verysmallfont); 
 
 grabTft();
 xpos = 2;
@@ -146,17 +167,23 @@ vols.deleteSprite();
 //--------------------------------------------------------------------------------------------------------
 
 void showClock ( int hour, int min){
-int clockx=110, clocky=1,w;
+int clockx=tft.width(), clocky=2,w;
+int multiplier=1;
 char   tijd[8];
 
-sprintf(tijd,"%d : %02d", hour, min);   
-w = tft.textWidth( tijd, 2 );
+if ( tft.width() > 200 ) multiplier = 2;
 
-clocks.createSprite(w+20, 16);
+sprintf(tijd,"%d : %02d", hour, min);   
+w = tft.textWidth( tijd, smallfont ) * multiplier; //smallfont
+
+clockx = clockx - w - 5;
+
+clocks.createSprite(w+20, tft.fontHeight( smallfont)*multiplier +2 );
 clocks.setTextColor( TFT_GREEN, TFT_BLACK ); 
 clocks.fillSprite(TFT_BLACK);
+clocks.setTextSize( multiplier );
 
-clocks.drawString( tijd,0, 0, 2); 
+clocks.drawString( tijd,0, 1, smallfont); 
 
 grabTft();
 clocks.pushSprite( clockx, clocky );
@@ -187,49 +214,61 @@ int started=0;
 
 void tft_showstations( int stationIdx, int  spritex){
 
-int   xpos, w = 0,f=4, halve;
+int   xpos, w = 0,f=4,f1=2, halve;
 char  sname[80];
 char  *s, *word[2]={NULL,NULL}; 
 
 
+  //Serial.printf("--------Scrollheight %d ( bigfontheight = %d)\n", STATIONSCROLLH, tft.fontHeight( bigfont)  );
   strcpy( sname , stations[stationIdx].name); 
 
   halve = (img.width()/2);
   
-  if ( (w = img.textWidth(sname,4)) <= img.width() ){
+  if ( (w = img.textWidth(sname, bigfont)) <= img.width() ){
+
+    //Serial.printf( "----- text width %d  < %d, using font %d\n", img.textWidth(sname, bigfont), img.width(), bigfont);
       
-    w = img.textWidth( sname,4 );
-    xpos = halve - w/2; 
-    img.drawString(sname, spritex+xpos, 22, 4);    
+    w = img.textWidth( sname, bigfont ); 
+    xpos = halve - w/2;               //22//STATIONSCROLLH/2 
+    img.drawString(sname, spritex+xpos, STATIONSCROLLH/2 - img.fontHeight( bigfont)/2 , bigfont);    
+
+    //Serial.printf( "----- drawstring %s at x %d y %d\n", sname, spritex+xpos, STATIONSCROLLH/2);
 
   }else{
+        //Serial.printf( "----- text width %d  > %d\n", img.textWidth(sname, bigfont), img.width());
+        
         word[0] = sname;
         for( s = sname; *s && *s != ' '; ++s );
         if ( *s ) word[1] = s + 1;
         *s = 0; 
       
          if ( word[1] == NULL ){
-                 w = img.textWidth( word[0], 2 );
-                 xpos = halve - w/2; 
-                 img.drawString(word[0], spritex+xpos, img.height()/2 -4, 2 );                 
+                 w = img.textWidth( word[0], smallfont );
+                 xpos = halve - w/2;                  //img.height()/2 -4 //tft.fontHeight( smallfont)
+                 img.drawString(word[0], spritex+xpos, img.height()/2 - img.fontHeight( smallfont)/2, smallfont );                 
+                 //Serial.printf( "----- Oneword text width %d at x %d y %d\n", img.textWidth(sname, smallfont),spritex+xpos, img.height()/2 - img.fontHeight( smallfont)/2 );
+
          }else{
-                 f = 4;
-                 w = img.textWidth( word[0], f );
-                 if ( w > 162 ) {
-                   f = 2;
-                   w = img.textWidth( word[0], f );                    
+                 f1 = bigfont;
+                 w = img.textWidth( word[0], f1 );
+                 if ( w > tft.width() + 2 ) {
+                   f1 = smallfont;
+                   w = img.textWidth( word[0], f1 );                    
                  }
                  xpos = halve - w/2;
-                 img.drawString(word[0], spritex+xpos, 3, f );
-
-                 f = 4; 
+                 img.drawString(word[0], spritex+xpos, 3, f1 );
+                 //Serial.printf( "----- Word 0 text width %d at x %d y %d\n", img.textWidth(sname, f1),spritex+xpos, 3 );
+ 
+                 f = bigfont; 
                  w = img.textWidth( word[1], f );
-                 if ( w > 162 ) {
-                   f = 2;
+                 if ( w > (img.width() + 2) ) {
+                   f = smallfont;
                    w = img.textWidth( word[1], f );                    
                  }
-                 xpos = 80 - w/2;
-                   img.drawString(word[1], spritex+xpos, 29, f );
+                 xpos = halve - w/2;
+                 img.drawString(word[1], spritex+xpos, img.fontHeight(f1) + 1, f );
+                 //Serial.printf( "----- Word rest text width %d at x %d y %d\n", img.textWidth(sname, f),spritex+xpos, img.fontHeight( smallfont) + 2 );
+ 
          }
   }
 }
@@ -239,13 +278,20 @@ void tft_showstation( int stationIdx){
 
 img.createSprite(tft.width(), STATIONSCROLLH);
 img.setTextColor( TFT_WHITE, TFT_BLACK ); 
-img.setTextSize(1);
+if ( tft.width() > 200 ){
+  img.setTextSize( 2 );
+}else{
+  img.setTextSize( 1 );
+}
 img.fillSprite(TFT_BLACK);
 
 tft_showstations( stationIdx, 0);
 
 grabTft();
-img.pushSprite( 0, tft.height()-STATIONSCROLLH);
+img.pushSprite( 0, tft.height() - STATIONSCROLLH);
+
+//Serial.printf( "----- img push at x %d y %d\n", 0, tft.height() - STATIONSCROLLH );
+
 releaseTft();
 
 img.deleteSprite();
@@ -470,8 +516,8 @@ grabTft();
    tft.setTextColor( TFT_RED );
  }
 
- tft.drawString( "upload", 10, 52, 4 );
- tft.drawString( uploadstatus, 10, 78, 4 );
+ tft.drawString( "upload", 10, 52, bigfont );
+ tft.drawString( uploadstatus, 10, 78, bigfont );
 releaseTft();
  
  if ( ! uploadstatus.startsWith("s") ){
@@ -482,18 +528,24 @@ releaseTft();
 //------------------------------------------------------
 
 void tft_NoConnect( WiFiManager *wm) {
- tft.setRotation(1);  
+ tft.setRotation( tftrotation );  
 
- tft.fillScreen(TFT_BLACK);
- tft.setTextColor( TFT_WHITE );
+// tft.fillScreen(TFT_BLACK);
+// tft.setTextColor( TFT_WHITE );
 
- tft.drawString( "Connect to network ", 10, 20, 2 );
- tft.drawString( wm->getConfigPortalSSID(), 10, 34,4 );
- tft.drawString( "WiFi password ", 10, 52, 2 );
+ tft.fillScreen(TFT_WHITE);
+ tft.setTextColor( TFT_BLACK );
 
- tft.drawString( APPAS, 10, 66,4 );
- tft.drawString( "Browse to", 10, 86,2 );
- tft.drawString( "192.168.4.1", 10, 102,4 );
+
+ tft.drawString( "Connect to network ", 10, 20, smallfont );
+ tft.drawString( wm->getConfigPortalSSID(), 10, 34,bigfont );
+ tft.drawString( "WiFi password ", 10, 52, smallfont );
+
+ tft.drawString( APPAS, 10, 66, bigfont );
+ tft.drawString( "Browse to", 10, 86,smallfont );
+ tft.drawString( "192.168.4.1", 10, 102, bigfont );
+
+ tellPixels( PIX_RED );
 
 }
 
@@ -590,6 +642,17 @@ uint32_t read32(fs::File &f) {
 }
 //------------------------------------------------------
 
+void tft_backlight( int onoff ){ 
+
+  if ( onoff ){
+    digitalWrite( TFT_LED , HIGH);
+  }else{
+    digitalWrite( TFT_LED , LOW);
+  }
+}
+
+//------------------------------------------------------
+
 void tft_init(){
 
    
@@ -598,18 +661,40 @@ void tft_init(){
   delay( 10);
   digitalWrite( TFT_RST , HIGH);
 
+  pinMode( TFT_LED , OUTPUT);
+  tft_backlight( 0 );
+
+
 // read battery
 //  pinMode(BATPIN, INPUT);
 //  analogSetAttenuation(ADC_6db);
 
 
   tft.init();
-  tft.setRotation(1);
+  //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 
+  if( tft.width() > tft.height() ) tftrotation = 1;
+  tft.setRotation( tftrotation );
   tft.fillScreen(TFT_BLACK);
 
-  drawBmp("/OranjeRadio24.bmp", 55, 15 );
-  delay(100);
+  //drawBmp("/OranjeRadio24.bmp", 55, 15 );
+
+  int halfwidth = tft.width() / 2;
+  int bmpx      = halfwidth - 25;
+  int bmpy      = tft.height() * 10 / 50;
   
+  drawBmp("/OranjeRadio24.bmp", bmpx, bmpy );
+
+
+  if ( tft.width() > 200 ){
+     STATIONSCROLLH = tft.fontHeight( bigfont) * 4 + 4;
+  }else{
+     STATIONSCROLLH = tft.fontHeight( bigfont) * 2 + 4;
+  }
+  
+  delay(100);
+ 
+  tft_backlight(1);
+
   setVolume( get_last_volstat(1) );
   delay(10);
  // showBattery();

@@ -1600,10 +1600,10 @@ int read_VS1053_patches(){
 FILE  *atabfile=NULL, *dtabfile=NULL;
 int   rv=0;
 
-atab = (unsigned char *)ps_malloc( PATCH_CODE_SIZE * sizeof ( unsigned char ) );
+atab = (unsigned char *)malloc( PATCH_CODE_SIZE * sizeof ( unsigned char ) );
 if ( atab == NULL ) return(1);
  
-dtab = (unsigned short *)ps_malloc( PATCH_CODE_SIZE * sizeof ( unsigned short ) );
+dtab = (unsigned short *)malloc( PATCH_CODE_SIZE * sizeof ( unsigned short ) );
 if ( dtab == NULL ){
   free( atab );
   return(1);

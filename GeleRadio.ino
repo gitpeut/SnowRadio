@@ -5,14 +5,14 @@
 
 #undef USESSDP
 #undef USEOTA
-#undef USETLS
+#define USETLS 1
 
 
 //tft
-#define TFT_CS     4
+#define TFT_CS      4
 #define TFT_RST    14  // you can also connect this to the Arduino reset
 #define TFT_DC     13
-
+#define TFT_LED    27
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -72,9 +72,9 @@ int   disconnectcount=0;
 int   topunavailable=0;
 
 //OTA password
-#define APNAME    "GeleRadio"
-#define APVERSION "V1.0"
-#define APPAS     "betergeel"
+#define APNAME   "OranjeRadiootje"
+#define APVERSION "V3.0"
+#define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
 SemaphoreHandle_t volSemaphore;
@@ -103,6 +103,9 @@ TaskHandle_t      scrollTask;
 #define WEBSERVERTASKPRIO 7
 #define SCROLLTASKPRIO    4
 
+
+
+
 QueueHandle_t playQueue;
 #define PLAYQUEUESIZE 512
 
@@ -120,7 +123,7 @@ unsigned int   position;
 
 
 #define STATIONSSIZE 100
-Station *stations; //= (Station *) ps_malloc( STATIONSSIZE * sizeof(Station *) );
+Station *stations; //= (Station *) malloc( STATIONSSIZE * sizeof(Station *) );
 
 static volatile int     currentStation;
 static volatile int     stationCount;
@@ -132,7 +135,31 @@ int                     scrollDirection;
 
 // neopixel 
 #define NEOPIN      2
-#define NEONUMBER  10
+#define NEONUMBER   10
+
+#define PIX_BLACKC    0
+#define PIX_WAKEUP    1
+#define PIX_RIGHT     2
+#define PIX_LEFT      3
+#define PIX_CONFIRM   4
+#define PIX_SCROLLUP  8
+#define PIX_STOP      10
+#define PIX_MUTE      11
+#define PIX_UNMUTE    12
+#define PIX_SCROLLDOWN 16
+#define PIX_BLACK     911
+
+#define PIX_BLINKRED    21
+#define PIX_BLINKGREEN  22
+#define PIX_BLINKBLUE   23
+#define PIX_BLINKYELLOW 24
+
+#define PIX_RED         41
+#define PIX_GREEN       42
+#define PIX_BLUE        43
+#define PIX_YELLOW      44
+
+#define PIX_DECO        51
 
 sk gstrip;
 
@@ -143,7 +170,7 @@ sk gstrip;
 #define GINTPIN 25
 
 
-int gmode;
+int gmode=1;
 //tft
 #define SCROLLUP 0
 #define SCROLLDOWN 1
@@ -155,7 +182,7 @@ float   batvolt = 0.0;
 #define BATPIN     36
 
 //vs1053
-#define VS1053_CS     5
+#define VS1053_CS      5
 #define VS1053_DCS    15
 #define VS1053_DREQ   22
 #define VS1053_RST    21
@@ -199,7 +226,7 @@ void initOTA( char *apname, char *appass){
     
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "Firmware";
-      syslog("Installing new firmware over ArduinoOTA");
+      syslog((char *)"Installing new firmware over ArduinoOTA");
     } else { // U_SPIFFS
       type = "filesystem";
       SPIFFS.end();
@@ -280,6 +307,8 @@ void getWiFi( char *apname, char *appass){
     res = wm.autoConnect( apname, appass ); // anonymous ap
 
     if(!res) {
+        tellPixels( PIX_RED );
+
         Serial.println("Failed to connect");
         ESP.restart();
     } 
@@ -288,6 +317,8 @@ void getWiFi( char *apname, char *appass){
         Serial.println("Wifi CONNECTED");
 
          ntp_setup( true );
+         tellPixels( PIX_BLINKBLUE );
+
     }
   
   Serial.print("IP address = ");
@@ -317,6 +348,7 @@ void setup () {
  
      Serial.println("SPI begin...");
      SPI.begin(); 
+
      
     //unreset the VS1053
     pinMode( VS1053_RST , OUTPUT);
@@ -358,8 +390,14 @@ void setup () {
        
      Serial.println("Gesture init");
      
+     Serial.println("Start pixeltask...");    
+     initPixels();
+   
+     Serial.println("pixels started...");    
      //if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
      //delay(200);
+     
+     tellPixels( PIX_BLINKYELLOW );
      
      Serial.println("point radioclient to insecure WiFiclient");
      radioclient = &iclient;
@@ -367,13 +405,12 @@ void setup () {
      Serial.println("Getstations...");
      stationsInit();
 
-    Serial.println("Start WiFi en web...");
+     Serial.println("Start WiFi en web...");
           
-     getWiFi(APNAME,APPAS);
-  
-        
+     getWiFi(APNAME,APPAS);    
+      
      Serial.println("log boot");    
-     syslog("Boot"); 
+     syslog( (char *)"Boot"); 
      
     // Wait for VS1053 and PAM8403 to power up
     // otherwise the system might not start up correctly
@@ -409,8 +446,8 @@ Serial.println("player begin...");
     
     Serial.println("Set volume and station...");
 
-  Serial.println("TFT init...");
- tft_init();
+    Serial.println("TFT init...");
+    tft_init();
  
  delay(50); 
  Serial.println("Start WebServer...");
@@ -421,10 +458,6 @@ Serial.println("player begin...");
  Serial.println("Start radio task...");    
     radio_init();
  Serial.println("setup done...");    
-
- Serial.println("Start pixeltask...");    
- initPixels();
- Serial.println("pixels started...");    
 
 }
 
