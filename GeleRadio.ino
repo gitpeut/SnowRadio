@@ -73,7 +73,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "OranjeRadiootje"
-#define APVERSION "V3.0"
+#define APVERSION "V8.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -103,11 +103,8 @@ TaskHandle_t      scrollTask;
 #define WEBSERVERTASKPRIO 7
 #define SCROLLTASKPRIO    4
 
-
-
-
 QueueHandle_t playQueue;
-#define PLAYQUEUESIZE 512
+#define PLAYQUEUESIZE 256
 
 // stations
 
@@ -123,7 +120,7 @@ unsigned int   position;
 
 
 #define STATIONSSIZE 100
-Station *stations; //= (Station *) malloc( STATIONSSIZE * sizeof(Station *) );
+Station *stations; //= (Station *) ps_malloc( STATIONSSIZE * sizeof(Station *) );
 
 static volatile int     currentStation;
 static volatile int     stationCount;
@@ -226,7 +223,7 @@ void initOTA( char *apname, char *appass){
     
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "Firmware";
-      syslog((char *)"Installing new firmware over ArduinoOTA");
+      syslog("Installing new firmware over ArduinoOTA");
     } else { // U_SPIFFS
       type = "filesystem";
       SPIFFS.end();
@@ -410,7 +407,7 @@ void setup () {
      getWiFi(APNAME,APPAS);    
       
      Serial.println("log boot");    
-     syslog( (char *)"Boot"); 
+     syslog("Boot"); 
      
     // Wait for VS1053 and PAM8403 to power up
     // otherwise the system might not start up correctly
@@ -442,7 +439,8 @@ Serial.println("player begin...");
 
     delay(100);
     //Serial.println("Apply patches to VS1053...");
-    patchVS1053();
+    //patchVS1053();
+    installSpectrum();
     
     Serial.println("Set volume and station...");
 

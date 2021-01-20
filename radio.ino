@@ -113,7 +113,7 @@ uint8_t radioBuffer[256];
   Serial.printf("Radiotask starting loop\n", xPortGetCoreID()); 
 
 while(1){
-
+     //Serial.println("radioloop"); 
      xSemaphoreTake( updateSemaphore, portMAX_DELAY);
      xSemaphoreGive( updateSemaphore);
 
@@ -121,12 +121,11 @@ while(1){
 
       if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
       unavailablecount = 0;   
-      
-      
+            
       int bytesread = 0;
 
-//      bytesread = radioclient->read( &radioBuffer[0], 32 );  
-        bytesread = radioclient->read( &radioBuffer[0], 128 );  
+      bytesread = radioclient->read( &radioBuffer[0], 128 );  
+//        bytesread = radioclient->read( &radioBuffer[0], 32 );  
         
         
          if ( contentsize != 0 ){
@@ -139,7 +138,11 @@ while(1){
           noreads++; 
           delay(2); //server may be slow. Wait a bit to please wd.
           Serial.printf("noreads : %d (read rc %d)\n", noreads, bytesread);
-          if ( bytesread < 0 ) bytesread = 0;
+          if ( bytesread < 0 ) {
+            bytesread = 0;
+            unavailablecount = MAXUNAVAILABLE + 1;
+            radioclient->stop();
+          }
          }else{
             noreads = 0;
             filter_buffer( &radioBuffer[0], bytesread );
@@ -158,12 +161,12 @@ while(1){
     }else{ //no bytes available
       if (  millis() > connectmillis )unavailablecount++;
       
-        Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
+        //Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
         delay(1);
       
        if(!radioclient->connected() ){
                         
-            //Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
+            Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
 
             if ( unavailablecount > MAXUNAVAILABLE ){
               unavailablecount = 0;
@@ -198,7 +201,7 @@ while(1){
                   if ( failed_connects > 3 ) {
                    
                     tellPixels( PIX_BLINKRED );
-                    syslog( (char *)"Reboot after 3 failed connects");
+                    syslog( "Reboot after 3 failed connects");
                     ESP.restart();
                   }
               }
@@ -207,7 +210,7 @@ while(1){
      
     }
 
-//        Serial.printf("player playptr %d getptr %d endptr %d \n", mp3Playptr, mp3Getptr, mp3Endptr);  
+        //Serial.printf("player playptr %d getptr %d endptr %d \n", mp3Playptr, mp3Getptr, mp3Endptr);  
   
       
 //    if ( getStation() != playingStation && radioclient->connected() || unavailablecount > MAXUNAVAILABLE ){
@@ -217,12 +220,13 @@ while(1){
         radioclient->stop();  
         
         tellPixels( PIX_YELLOW );
- 
-        xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
-        
+
+        Serial.println( "send change station message");
+         xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );
-            syslog( (char *)"reconnect after data has been unavailable.");           
+            syslog( "reconnect after data has been unavailable.");           
             disconnectcount++;
         }else{
             Serial.println("switch station...");

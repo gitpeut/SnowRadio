@@ -4,7 +4,7 @@
 char * ps_strndup (const char *s, size_t n)
 {
   size_t len = strnlen (s, n);
-  char *newstring = (char *) malloc (len + 1);
+  char *newstring = (char *) ps_malloc (len + 1);
   if (newstring == NULL)return NULL;
   
   newstring[len] = '\0';
@@ -17,7 +17,7 @@ char * ps_strndup (const char *s, size_t n)
 char * ps_strdup (const char *s)
 {
   size_t len = strlen (s) + 1;
-  void *newstring = malloc (len);
+  void *newstring = ps_malloc (len);
   if (newstring == NULL)return NULL;
   return (char *) memcpy (newstring, s, len);
 }
@@ -103,7 +103,7 @@ return(0);
 
 void stationsInit(){
 
-stations = (Station *) calloc( STATIONSSIZE,sizeof(Station) );
+stations = (Station *) ps_calloc( STATIONSSIZE,sizeof(Station) );
 
 /*
   add_station("NPO Radio 1","icecast.omroep.nl","/radio1-bb-mp3",80);
@@ -312,7 +312,6 @@ int justConnect( int stationIdx ){
 int stationsConnect(int stationIdx){
 int i,j,rc;
 
-    Serial.printf("Connect to station idx %d\n", stationIdx );
     if ( stations[stationIdx].status == 0 ) stationIdx = 0;
     contentsize = 0;
     
@@ -600,15 +599,14 @@ if( stat("/spiffs/stations.json",&sStat) < 0){
 
 Serial.printf("Size of /spiffs/stations.json\t%d bytes\n",sStat.st_size);
 
-readBuffer = (char *)calloc( 1, sStat.st_size+4 );
+readBuffer = (char *)ps_calloc( 1, sStat.st_size+4 );
 if ( readBuffer == NULL ){
-    Serial.printf("Error allocating memory for stations\n"); 
     return(-2);
 }
 
 in  = fopen( "/spiffs/stations.json", "r" );
 if ( in == NULL ) {
-        Serial.printf("Error opening stations.json\n");         
+        
         return(-1);
 }
 

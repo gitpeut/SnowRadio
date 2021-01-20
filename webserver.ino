@@ -335,7 +335,7 @@ void handleWebServer( void *param ){
        tft_ShowUpload( "firmware" );
         
       Serial.printf("Update: %s\n", upload.filename.c_str());
-      syslog((char *)"Installing new firmware through webupload" );
+      syslog("Installing new firmware through webupload" );
       
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         Update.printError(Serial);
