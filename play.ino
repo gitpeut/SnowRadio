@@ -1,6 +1,9 @@
+
+#define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
+
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint32_t  VSlow=0;
+uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
 
  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 //
@@ -35,9 +38,18 @@ uint32_t  VSlow=0;
       
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( vs_dreq_pin ) ){
-            xSemaphoreTake( tftSemaphore, portMAX_DELAY);
+            //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
             vs1053player->playChunk(playBuffer, 32  );
-            xSemaphoreGive( tftSemaphore);         
+            //xSemaphoreGive( tftSemaphore);
+            --bandcounter;
+            if ( ! bandcounter ){
+             
+              vs1053player->getBands();
+               delay(10); // please the task watchdog
+              if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL )vs1053player->displaySpectrum();
+               delay(10); // please the task watchdog
+              bandcounter = GETBANDFREQ;         
+            }
             VSlow = 0;   
           }else{
             --i;  

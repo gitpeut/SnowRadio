@@ -113,10 +113,11 @@ uint8_t radioBuffer[256];
   Serial.printf("Radiotask starting loop\n", xPortGetCoreID()); 
 
 while(1){
-
-     xSemaphoreTake( updateSemaphore, portMAX_DELAY);
-     xSemaphoreGive( updateSemaphore);
-
+      if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){
+        xSemaphoreTake( updateSemaphore, portMAX_DELAY);
+        xSemaphoreGive( updateSemaphore);
+      }
+      
     if(radioclient->available() > 0 ){
 
       if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
@@ -159,7 +160,7 @@ while(1){
     }else{ //no bytes available
       if (  millis() > connectmillis )unavailablecount++;
       
-        Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
+        if( unavailablecount > 10 )Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
         delay(1);
       
        if(!radioclient->connected() ){

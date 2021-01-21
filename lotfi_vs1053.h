@@ -49,13 +49,14 @@ class VS1053
     SPISettings   VS1053_SPI ;                    // SPI settings for this slave
     uint8_t       endFillByte ;                   // Byte to send when stopping song
     bool          okay              = true ;      // VS1053 is working
+    
   protected:
     inline void await_data_request() const
     {
       while ( ( dreq_pin >= 0 ) &&
               ( !digitalRead ( dreq_pin ) ) )
       {
-        NOP() ;                                   // Very short delay
+        yield();//NOP() ;                                   // Very short delay
       }
     }
 
@@ -103,13 +104,17 @@ class VS1053
     // Constructor.  Only sets pin values.  Doesn't touch the chip.  Be sure to call begin()!
     VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
              int8_t _shutdown_pin, int8_t _shutdownx_pin ) ;
+    
+    
     void     begin() ;                                   // Begin operation.  Sets pins correctly,
                                                          // and prepares SPI bus.
     void     startSong() ;                               // Prepare to start playing. Call this each
                                                          // time a new song starts.
     inline bool playChunk ( uint8_t* data, size_t len )  // Play a chunk of data.  Copies the data to
     {
+      
       return okay && sdi_send_buffer ( data, len ) ;     // True if more data can be added to fifo
+      
     }                                                    // the chip.  Blocks until complete.
                                                          // Returns true if more data can be added
                                                          // to fifo

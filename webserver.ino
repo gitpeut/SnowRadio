@@ -383,7 +383,7 @@ if ( param == NULL ){
   
   dossdp= 0;
   
-  int timecount=0, oldmin=987, spectrumcount=0;
+  int timecount=0, oldmin=987;
   time_t  rawt;
   struct tm tinfo;
   
@@ -416,13 +416,9 @@ if ( param == NULL ){
       timecount = millis() + (10*1000);
    }
 
-   if ( millis() > spectrumcount ){ 
-    vs1053player->getBands() ;
-    vs1053player->displaySpectrum();
-    spectrumcount = millis() + 100 ;
-   }
    
-   delay(20);
+   
+   delay(50);
   }
 
 } 

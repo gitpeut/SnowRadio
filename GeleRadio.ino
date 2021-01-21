@@ -101,22 +101,9 @@ int   topunavailable=0;
 //  int8_t         vs_shutdown_pin ;                    // GPIO to shut down the amplifier
 //  int8_t         vs_shutdownx_pin ;                   // GPIO to shut down the amplifier (inversed logic)
 
-#define BATVREF     1.1f
-#define BATPINCOEF  1.95f // tune -6 db
-#define BATDIV      5.54f // (1M + 220k )/220k
-
-
-#define SCROLLPIN 0
-int STATIONSCROLLH=55;
-int tftrotation = 0;
-
-int verysmallfont= 1;
-int smallfont= 2;
-int bigfont=4;
-
 //OTA password
-#define APNAME   "OranjeRadiootje"
-#define APVERSION "V3.0"
+#define APNAME   "GeleRadio"
+#define APVERSION "V2.2"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -152,7 +139,7 @@ TaskHandle_t      scrollTask;
 
 
 QueueHandle_t playQueue;
-#define PLAYQUEUESIZE 512
+#define PLAYQUEUESIZE (512 + 256) 
 
 // stations
 
@@ -246,9 +233,6 @@ float   batvolt = 0.0;
 
 // Default volume
 int currentVolume=65; 
-
-// VS1053 player(VS1053_CS, VS1053_DCS, VS1053_DREQ);
-
 
 bool stationChunked = false;
 bool stationClose   = false;

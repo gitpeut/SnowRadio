@@ -1,3 +1,18 @@
+
+#define BATVREF     1.1f
+#define BATPINCOEF  1.95f // tune -6 db
+#define BATDIV      5.54f // (1M + 220k )/220k
+
+
+#define SCROLLPIN 0
+int STATIONSCROLLH=55;
+int tftrotation = 0;
+
+int verysmallfont= 1;
+int smallfont= 2;
+int bigfont=4;
+
+
 //----------------------------------------------------------
 void IRAM_ATTR grabTft(){
   //printf("grab TFT\n");

@@ -53,7 +53,11 @@ VS1053::VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
     spectrum[i][1] = 0; // dato precedente
     spectrum[i][2] = 0; // picco grafico (non da Vs1053)
   }
+
+  
 }
+
+
 
 uint16_t VS1053::read_register ( uint8_t _reg ) const
 {
@@ -237,7 +241,9 @@ void VS1053::begin()
     dbgprint ( "endFillByte is %X", endFillByte ) ;
     //printDetails ( "After last clocksetting" ) ;
     delay ( 100 ) ;
-    //LoadUserCode(plugin, PLUGIN_SIZE);
+    #ifdef LOAD_VSPATCH
+      LoadUserCode(plugin, PLUGIN_SIZE);
+    #endif
     LoadUserCode(analizer, ANALIZER_SIZE);
   }
 }
@@ -270,6 +276,7 @@ void  VS1053::LoadUserCode( const unsigned short* iplugin, uint16_t sizea) {
 #define BASE 0x1810
 void VS1053::getBands()
 {
+ 
   write_register(SCI_WRAMADDR, BASE + 2);
   bands = read_register(SCI_WRAM);
   write_register(SCI_WRAMADDR, BASE + 4);
@@ -283,6 +290,7 @@ void VS1053::getBands()
     else if ( cur > (Spectrum_hy - 4) ) cur = Spectrum_hy - 4;
     spectrum[i][0] = cur;
   }
+
 }
 
 //**************************************************************************************************
@@ -319,7 +327,6 @@ void VS1053::displaySpectrum( ) {
     posi += larg + 2;
   }
 
-//spa.deleteSprite();
 }
 
 
@@ -366,6 +373,7 @@ void VS1053::stopSong()
   uint16_t modereg ;                                    // Read from mode register
   int      i ;                                          // Loop control
 
+  
   sdi_send_fillers ( 2052 ) ;
   output_enable ( false ) ;                             // Disable amplifier through shutdown pin(s)
   delay ( 10 ) ;
