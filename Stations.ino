@@ -312,6 +312,7 @@ int justConnect( int stationIdx ){
 int stationsConnect(int stationIdx){
 int i,j,rc;
 
+    Serial.printf("Connect to station idx %d\n", stationIdx );
     if ( stations[stationIdx].status == 0 ) stationIdx = 0;
     contentsize = 0;
     
@@ -601,12 +602,13 @@ Serial.printf("Size of /spiffs/stations.json\t%d bytes\n",sStat.st_size);
 
 readBuffer = (char *)ps_calloc( 1, sStat.st_size+4 );
 if ( readBuffer == NULL ){
+    Serial.printf("Error allocating memory for stations\n"); 
     return(-2);
 }
 
 in  = fopen( "/spiffs/stations.json", "r" );
 if ( in == NULL ) {
-        
+        Serial.printf("Error opening stations.json\n");         
         return(-1);
 }
 

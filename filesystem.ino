@@ -2,16 +2,18 @@
 // You only need to format the filesystem once
 #define FORMAT_FILESYSTEM false
 
-
+/*
 #if FILESYSTEM == FFat
 #include <FFat.h>
 #endif
 #if FILESYSTEM == SPIFFS
 #include <SPIFFS.h>
 #endif
-
+*/
+#include <FS.h>
+#include <SPIFFS.h>
 //holds the current upload
-File fsUploadFile;
+fs::File fsUploadFile;
 
 //----------------------------------------------
 
@@ -105,7 +107,7 @@ void handleFileUpload(){
     //reading_file++;
     fsUploadFile = SPIFFS.open(filename, "w");
 
-    if ( fsUploadFile == NULL ){
+    if ( !fsUploadFile  ){
       Serial.print("Couldn't open ");Serial.println( filename );
     }
     

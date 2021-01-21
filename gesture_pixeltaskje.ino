@@ -279,7 +279,7 @@ int setVolume( int v){
 
   xSemaphoreTake(volSemaphore, portMAX_DELAY);
   currentVolume = v;
-  player.setVolume( v );
+  vs1053player->setVolume( v );
   xSemaphoreGive(volSemaphore);
 
  

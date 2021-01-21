@@ -9,10 +9,24 @@
 
 
 //tft
+
 #define TFT_CS      4
 #define TFT_RST    14  // you can also connect this to the Arduino reset
 #define TFT_DC     13
 #define TFT_LED    27
+
+//LED
+//
+//SDO(MISO)     19
+//SCK           18
+//SDI(MOSI)     23
+//DC            13
+//RESET         14
+//CS            4
+
+
+
+
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -22,11 +36,13 @@
 #include <freertos/semphr.h> 
 
 #include <SPI.h>
-#include <VS1053.h>
-#include <WiFi.h>
-#include <WiFiManager.h>
 #include "FS.h"
 #include "SPIFFS.h"
+#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
+#include <WiFi.h>
+#include <WiFiManager.h>
+#include "lotfi_VS1053.h"
+
 #include <WiFiClient.h>
 #ifdef USETLS
 #include <WiFiClientSecure.h>
@@ -50,6 +66,7 @@
 #include <Update.h>
 #include <Wire.h>
 #include "paj7620.h"
+#include "patches.h"
 
 #include "sk.h"
 #include <wificredentials.h>
@@ -63,6 +80,16 @@ WiFiClientSecure  sclient;
 #endif
 int               contentsize=0;
 
+
+TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
+
+TFT_eSprite img  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
+TFT_eSprite bats  = TFT_eSprite(&tft); 
+TFT_eSprite vols  = TFT_eSprite(&tft);  
+TFT_eSprite clocks  = TFT_eSprite(&tft);  
+TFT_eSprite bmp  = TFT_eSprite(&tft);  
+//TFT_eSprite spa  = TFT_eSprite(&tft);
+
 //hangdetection
 #define MAXUNAVAILABLE 50000
 
@@ -71,9 +98,25 @@ int   failed_connects=0;
 int   disconnectcount=0;
 int   topunavailable=0;
 
+//  int8_t         vs_shutdown_pin ;                    // GPIO to shut down the amplifier
+//  int8_t         vs_shutdownx_pin ;                   // GPIO to shut down the amplifier (inversed logic)
+
+#define BATVREF     1.1f
+#define BATPINCOEF  1.95f // tune -6 db
+#define BATDIV      5.54f // (1M + 220k )/220k
+
+
+#define SCROLLPIN 0
+int STATIONSCROLLH=55;
+int tftrotation = 0;
+
+int verysmallfont= 1;
+int smallfont= 2;
+int bigfont=4;
+
 //OTA password
 #define APNAME   "OranjeRadiootje"
-#define APVERSION "V8.0"
+#define APVERSION "V3.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -90,6 +133,8 @@ TaskHandle_t      radioTask;
 TaskHandle_t      playTask;
 TaskHandle_t      scrollTask;
 
+
+
 #define WEBCORE     0
 #define RADIOCORE   1
 #define GESTURECORE 1
@@ -103,8 +148,11 @@ TaskHandle_t      scrollTask;
 #define WEBSERVERTASKPRIO 7
 #define SCROLLTASKPRIO    4
 
+
+
+
 QueueHandle_t playQueue;
-#define PLAYQUEUESIZE 256
+#define PLAYQUEUESIZE 512
 
 // stations
 
@@ -120,7 +168,7 @@ unsigned int   position;
 
 
 #define STATIONSSIZE 100
-Station *stations; //= (Station *) ps_malloc( STATIONSSIZE * sizeof(Station *) );
+Station *stations; //= (Station *) ps_calloc( STATIONSSIZE * sizeof(Station *) );
 
 static volatile int     currentStation;
 static volatile int     stationCount;
@@ -128,6 +176,9 @@ int                     playingStation = -1;
 int                     chosenStation = 0;
 int                     scrollStation = -1;
 int                     scrollDirection;
+int                     DEBUG = 1 ;                            // Debug on/off
+
+
 
 
 // neopixel 
@@ -167,6 +218,18 @@ sk gstrip;
 #define GINTPIN 25
 
 
+
+//vs1053
+#define VS_CS_PIN     5
+#define VS_DCS_PIN   15
+#define VS_DREQ_PIN  22
+
+
+// The object for the MP3 player
+VS1053* vs1053player ;
+
+
+
 int gmode=1;
 //tft
 #define SCROLLUP 0
@@ -178,16 +241,13 @@ WebServer server(80);
 float   batvolt = 0.0;
 #define BATPIN     36
 
-//vs1053
-#define VS1053_CS      5
-#define VS1053_DCS    15
-#define VS1053_DREQ   22
+
 #define VS1053_RST    21
 
 // Default volume
 int currentVolume=65; 
 
-VS1053 player(VS1053_CS, VS1053_DCS, VS1053_DREQ);
+// VS1053 player(VS1053_CS, VS1053_DCS, VS1053_DREQ);
 
 
 bool stationChunked = false;
@@ -223,7 +283,7 @@ void initOTA( char *apname, char *appass){
     
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "Firmware";
-      syslog("Installing new firmware over ArduinoOTA");
+      syslog((char *)"Installing new firmware over ArduinoOTA");
     } else { // U_SPIFFS
       type = "filesystem";
       SPIFFS.end();
@@ -273,7 +333,7 @@ void initOTA( char *apname, char *appass){
 
 /*-----------------------------------------------------------*/
 
-void getWiFi( char *apname, char *appass){
+void getWiFi( const char *apname, const char *appass){
   
     //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wm;
@@ -287,7 +347,6 @@ void getWiFi( char *apname, char *appass){
     WiFi.setHostname( apname );
     
     wm.setHostname( apname );// This only partially works in setting the mDNS hostname 
-    
     
     wm.setAPCallback( tft_NoConnect );
     wm.setConnectTimeout(20);
@@ -354,6 +413,20 @@ void setup () {
     delay( 200);
     digitalWrite( VS1053_RST , HIGH);
 
+    vs_cs_pin = VS_CS_PIN;
+    vs_dcs_pin = VS_DCS_PIN;
+    vs_dreq_pin = VS_DREQ_PIN;
+    
+  vs1053player = new VS1053 ( vs_cs_pin,       // Make instance of player
+                              vs_dcs_pin,
+                              vs_dreq_pin,
+                              -1 ,
+                              -1 ) ;
+                              
+Serial.println("player begin...");
+
+    vs1053player->begin();
+    
      Serial.println("Creating semaphores...");
     
      staSemaphore = xSemaphoreCreateMutex();
@@ -404,10 +477,10 @@ void setup () {
 
      Serial.println("Start WiFi en web...");
           
-     getWiFi(APNAME,APPAS);    
+     getWiFi( APNAME,APPAS);    
       
      Serial.println("log boot");    
-     syslog("Boot"); 
+     syslog( (char *)"Boot"); 
      
     // Wait for VS1053 and PAM8403 to power up
     // otherwise the system might not start up correctly
@@ -418,16 +491,11 @@ void setup () {
     // system_update_cpu_freq(160);
     
 
-
-
-Serial.println("player begin...");
-
-    player.begin();
     delay(300);
     
     Serial.println("Test VS1053 chip...");
     while(1){ 
-      bool   isconnected = player.isChipConnected();
+      bool   isconnected = vs1053player->isChipConnected();
       Serial.printf( " Chip connected ? %s \n", isconnected?"true":"false: wait a bit");
       if ( isconnected ) break;
       //player.begin();
@@ -435,13 +503,13 @@ Serial.println("player begin...");
     }
       
     Serial.println("Switch to MP3...");
-    player.switchToMp3Mode();
+//    vs1053player->switchToMp3Mode();
 
     delay(100);
     //Serial.println("Apply patches to VS1053...");
-    //patchVS1053();
-    installSpectrum();
-    
+//    patchVS1053();
+
+   
     Serial.println("Set volume and station...");
 
     Serial.println("TFT init...");
@@ -457,8 +525,9 @@ Serial.println("player begin...");
     radio_init();
  Serial.println("setup done...");    
 
-}
 
+
+}
 
 void loop(void){
 

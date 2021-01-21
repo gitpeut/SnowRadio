@@ -335,7 +335,7 @@ void handleWebServer( void *param ){
        tft_ShowUpload( "firmware" );
         
       Serial.printf("Update: %s\n", upload.filename.c_str());
-      syslog("Installing new firmware through webupload" );
+      syslog((char *)"Installing new firmware through webupload" );
       
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         Update.printError(Serial);
@@ -383,7 +383,7 @@ if ( param == NULL ){
   
   dossdp= 0;
   
-  int timecount=0, oldmin=987;
+  int timecount=0, oldmin=987, spectrumcount=0;
   time_t  rawt;
   struct tm tinfo;
   
@@ -414,6 +414,12 @@ if ( param == NULL ){
       }
    
       timecount = millis() + (10*1000);
+   }
+
+   if ( millis() > spectrumcount ){ 
+    vs1053player->getBands() ;
+    vs1053player->displaySpectrum();
+    spectrumcount = millis() + 100 ;
    }
    
    delay(20);
