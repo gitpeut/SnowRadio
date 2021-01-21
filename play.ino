@@ -60,7 +60,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
                 syslog( (char *)"VSlow for a long time.");
               }
             }
-            delay(2);
+            delay(30);
           }
       }
      

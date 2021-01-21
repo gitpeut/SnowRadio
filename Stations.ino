@@ -4,7 +4,7 @@
 char * ps_strndup (const char *s, size_t n)
 {
   size_t len = strnlen (s, n);
-  char *newstring = (char *) ps_malloc (len + 1);
+  char *newstring = (char *) gr_malloc (len + 1);
   if (newstring == NULL)return NULL;
   
   newstring[len] = '\0';
@@ -17,7 +17,7 @@ char * ps_strndup (const char *s, size_t n)
 char * ps_strdup (const char *s)
 {
   size_t len = strlen (s) + 1;
-  void *newstring = ps_malloc (len);
+  void *newstring = gr_malloc (len);
   if (newstring == NULL)return NULL;
   return (char *) memcpy (newstring, s, len);
 }
@@ -103,7 +103,7 @@ return(0);
 
 void stationsInit(){
 
-stations = (Station *) ps_calloc( STATIONSSIZE,sizeof(Station) );
+stations = (Station *) gr_calloc( STATIONSSIZE,sizeof(Station) );
 
 /*
   add_station("NPO Radio 1","icecast.omroep.nl","/radio1-bb-mp3",80);
@@ -600,7 +600,7 @@ if( stat("/spiffs/stations.json",&sStat) < 0){
 
 Serial.printf("Size of /spiffs/stations.json\t%d bytes\n",sStat.st_size);
 
-readBuffer = (char *)ps_calloc( 1, sStat.st_size+4 );
+readBuffer = (char *)gr_calloc( 1, sStat.st_size+4 );
 if ( readBuffer == NULL ){
     Serial.printf("Error allocating memory for stations\n"); 
     return(-2);

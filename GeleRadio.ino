@@ -73,6 +73,13 @@
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
+// pointers to memory allocation functions to be set 
+// to alloc and malloc or if PSRAM is available to
+// ps_calloc and ps_malloc
+
+void *(*gr_calloc)(size_t num, size_t size);
+void *(*gr_malloc)( size_t size);
+
 WiFiClient        *radioclient;
 WiFiClient        iclient;
 #ifdef USETLS
@@ -122,7 +129,7 @@ TaskHandle_t      scrollTask;
 
 
 
-#define WEBCORE     0
+#define WEBCORE     1
 #define RADIOCORE   1
 #define GESTURECORE 1
 #define PLAYCORE    1
@@ -132,7 +139,7 @@ TaskHandle_t      scrollTask;
 #define GESTURETASKPRIO   7
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5
-#define WEBSERVERTASKPRIO 7
+#define WEBSERVERTASKPRIO 5
 #define SCROLLTASKPRIO    4
 
 
@@ -155,7 +162,7 @@ unsigned int   position;
 
 
 #define STATIONSSIZE 100
-Station *stations; //= (Station *) ps_calloc( STATIONSSIZE * sizeof(Station *) );
+Station *stations; //= (Station *) gr_calloc( STATIONSSIZE * sizeof(Station *) );
 
 static volatile int     currentStation;
 static volatile int     stationCount;
@@ -376,11 +383,35 @@ void setup () {
 
     Serial.begin(115200);
     Serial.printf("\n%s %s  %s %s\n", APNAME, APVERSION, __DATE__, __TIME__);   
+
+    if ( psramFound() ){
+         Serial.println ( "PSRAM found");
+         gr_calloc  = ps_calloc;
+         gr_malloc = ps_malloc;
+    }else{
+        Serial.println ( "No PSRAM found");
+        gr_calloc  = calloc;
+        gr_malloc  = malloc;
+    }
+
+    Serial.println("Testing gr functions");
+    char *z;
+    z = ( char *)gr_calloc( 1,3000);    
+    if ( z ){
+        
+        for ( int i =0; i < 3000 ; ++i ) z[i] = 'a';
+        for ( int i =0; i < 3000 ; ++i ) { Serial.print( z[i] ) ; if ( i%80 == 0 ) Serial.println(""); }
+        
+        free(z);
+    }else{
+      Serial.println("z is NULL" );
+    }
+    
     
     // Enable WDT
    
     enableCore0WDT(); 
-    enableCore1WDT();
+    //enableCore1WDT();
 
      TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
      TIMERG0.wdt_feed=1;

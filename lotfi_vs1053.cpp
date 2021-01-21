@@ -298,6 +298,7 @@ void VS1053::getBands()
 //**************************************************************************************************
 // *
 //**************************************************************************************************
+
 void VS1053::displaySpectrum( ) {
 
 //  Serial.print ("bands:   "); Serial.println (bands);
@@ -314,7 +315,7 @@ void VS1053::displaySpectrum( ) {
   {
     if (visual) {
       if (spectrum[i][0] > spectrum[i][1]) {
-        tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][0], larg, spectrum[i][0], TFT_CYAN);
+        tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][0], larg, spectrum[i][0], TFT_GREEN );
         tft.fillRect (posi, Spectrum_y0, larg, Spectrum_hy - spectrum[i][0], TFT_BLACK);
       } else
         tft.fillRect (posi, Spectrum_y0, larg, Spectrum_hy - spectrum[i][0], TFT_BLACK);
@@ -322,7 +323,7 @@ void VS1053::displaySpectrum( ) {
     if (spectrum[i][2] > 0) spectrum[i][2]--;
     if (spectrum[i][0] > spectrum[i][2]) spectrum[i][2] = spectrum[i][0];
     if (visual)
-      tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][2] - 3, larg, 2, TFT_RED);
+      tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][2] - 3, larg, 2, TFT_WHITE );
     spectrum[i][1] = spectrum[i][0];
     posi += larg + 2;
   }
