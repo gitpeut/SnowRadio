@@ -3,7 +3,7 @@
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
+uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=200;
 
  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 //
@@ -32,7 +32,9 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
         vs1053player->stopSong();
         delay(10);
         vs1053player->startSong();
-        xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
+        
+        skipstartsound = 200;
+        
       }
       
       
@@ -41,6 +43,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
             vs1053player->playChunk(playBuffer, 32  );
             //xSemaphoreGive( tftSemaphore);
+            
             --bandcounter;
             if ( ! bandcounter ){
              
@@ -49,6 +52,12 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
               if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL )vs1053player->displaySpectrum();
                delay(10); // please the task watchdog
               bandcounter = GETBANDFREQ;         
+            }
+            if ( skipstartsound ){
+              --skipstartsound;
+              if ( !skipstartsound ){
+                  vs1053player->setVolume( getVolume() );
+              }
             }
             VSlow = 0;   
           }else{

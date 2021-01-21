@@ -221,6 +221,8 @@ while(1){
         tellPixels( PIX_YELLOW );
  
         xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+
+        vs1053player->setVolume( 0 );
         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );

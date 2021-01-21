@@ -394,20 +394,6 @@ void setup () {
         gr_malloc  = malloc;
     }
 
-    Serial.println("Testing gr functions");
-    char *z;
-    z = ( char *)gr_calloc( 1,3000);    
-    if ( z ){
-        
-        for ( int i =0; i < 3000 ; ++i ) z[i] = 'a';
-        for ( int i =0; i < 3000 ; ++i ) { Serial.print( z[i] ) ; if ( i%80 == 0 ) Serial.println(""); }
-        
-        free(z);
-    }else{
-      Serial.println("z is NULL" );
-    }
-    
-    
     // Enable WDT
    
     enableCore0WDT(); 
