@@ -1,10 +1,10 @@
 
 #define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
-#define SKIPSTART 450
+#define SKIPSTART 350
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=(SKIPSTART * 8);
+uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
 
  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 //
@@ -56,7 +56,10 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=(SKIPSTART * 8);
                 if ( skipstartsound <= (getVolume()*4) ){ 
                   vs1053player->setVolume( (getVolume() - (skipstartsound/4) + 1) );                                  
                 }
-                if ( skipstartsound == 1 ) vs1053player->setVolume( getVolume());
+                if ( skipstartsound == 1 ) {
+                  //Serial.println("** end fade in **");
+                  vs1053player->setVolume( getVolume());
+                }
                 --skipstartsound;
                 
             }

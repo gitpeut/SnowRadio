@@ -110,6 +110,8 @@ uint8_t radioBuffer[256];
 */
 
   setStation( get_last_volstat(0),-1 );
+  vs1053player->setVolume(0); // fade in at startup
+  
   Serial.printf("Radiotask starting loop\n", xPortGetCoreID()); 
 
 while(1){
