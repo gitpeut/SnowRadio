@@ -219,7 +219,7 @@ while(1){
   
       
 //    if ( getStation() != playingStation && radioclient->connected() || unavailablecount > MAXUNAVAILABLE ){
-    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 50 ){
+    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 100 ){
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         radioclient->stop();  
@@ -228,8 +228,7 @@ while(1){
 
         for ( int curvol = getVolume(); curvol; --curvol ){
           vs1053player->setVolume( curvol  );
-          delay( 5 );
-          
+          delay( 5 );         
         }
         
         xQueueReset( playQueue);

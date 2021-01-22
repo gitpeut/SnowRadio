@@ -1,6 +1,6 @@
 
 #define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
-#define SKIPSTART 250
+#define SKIPSTART 450
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
@@ -53,10 +53,10 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=(SKIPSTART * 8);
             }
 
             if ( skipstartsound ){
-                if ( skipstartsound <= getVolume() ){ 
-                  vs1053player->setVolume( (getVolume() - skipstartsound + 1) );
-                  delay(5);                
+                if ( skipstartsound <= (getVolume()*4) ){ 
+                  vs1053player->setVolume( (getVolume() - (skipstartsound/4) + 1) );                                  
                 }
+                if ( skipstartsound == 1 ) vs1053player->setVolume( getVolume());
                 --skipstartsound;
                 
             }
