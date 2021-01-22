@@ -139,7 +139,7 @@ TaskHandle_t      scrollTask;
 #define GESTURETASKPRIO   7
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5
-#define WEBSERVERTASKPRIO 4
+#define WEBSERVERTASKPRIO 2
 #define SCROLLTASKPRIO    4
 
 
@@ -505,10 +505,6 @@ Serial.println("player begin...");
       
     Serial.println("Switch to MP3...");
 //    vs1053player->switchToMp3Mode();
-
-    delay(100);
-    //Serial.println("Apply patches to VS1053...");
-//    patchVS1053();
 
    
     Serial.println("Set volume and station...");

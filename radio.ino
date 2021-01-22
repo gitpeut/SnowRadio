@@ -221,7 +221,7 @@ while(1){
   
       
 //    if ( getStation() != playingStation && radioclient->connected() || unavailablecount > MAXUNAVAILABLE ){
-    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 100 ){
+    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 200 ){
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         radioclient->stop();  
