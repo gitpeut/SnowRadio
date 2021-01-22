@@ -139,7 +139,7 @@ TaskHandle_t      scrollTask;
 #define GESTURETASKPRIO   7
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5
-#define WEBSERVERTASKPRIO 5
+#define WEBSERVERTASKPRIO 4
 #define SCROLLTASKPRIO    4
 
 

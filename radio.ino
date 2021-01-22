@@ -96,7 +96,7 @@ void radio( void *param) {
 
 static int connectmillis;
 int   bufbegin=1, rc;
-int   noreads = 0;
+int   noreads = 0, lowqueue=0;
 int   totalbytes=0, threshbytes=5000;
 //uint8_t radioBuffer[32];
 uint8_t radioBuffer[256];
@@ -122,7 +122,8 @@ while(1){
 
       if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
       unavailablecount = 0;   
-      
+      lowqueue--; 
+      if ( lowqueue < 0 ) lowqueue = 0;
       
       int bytesread = 0;
 
@@ -160,10 +161,14 @@ while(1){
     }else{ //no bytes available
       if (  millis() > connectmillis )unavailablecount++;
       
-        if( unavailablecount > 10 )Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
+        if( unavailablecount > 10 && unavailablecount%10 == 0 )Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
         delay(1);
-      
-       if(!radioclient->connected() ){
+
+        if ( uxQueueMessagesWaiting(playQueue) < 20 ){
+          lowqueue++; 
+        }
+        
+        if(!radioclient->connected() ){
                         
             //Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
 
@@ -187,9 +192,10 @@ while(1){
               connectmillis = millis() + 5000;
                //reset chunked encoding counters
               reset_chunkstate();
+              lowqueue = 0;
                tellPixels( PIX_DECO );
             }else{
-              if ( rc == 400 ){
+              if ( rc >= 400 ){
                   tellPixels( PIX_BLINKYELLOW );
                   tft_notAvailable( getStation() );                        
                   delay(2000 );
@@ -213,16 +219,24 @@ while(1){
   
       
 //    if ( getStation() != playingStation && radioclient->connected() || unavailablecount > MAXUNAVAILABLE ){
-    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE ){
-        Serial.printf("playingStation %d != currentStation %d. reconnect...\n", playingStation, getStation() );        
+    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 50 ){
+        Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         radioclient->stop();  
         
         tellPixels( PIX_YELLOW );
- 
-        xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
 
-        vs1053player->setVolume( 0 );
+        for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );
+          
+        }
+        
+        xQueueReset( playQueue);
+        xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+        lowqueue = 0;
+        
+        
         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );

@@ -1,9 +1,10 @@
 
 #define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
+#define SKIPSTART 250
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=200;
+uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=(SKIPSTART * 8);
 
  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 //
@@ -29,11 +30,8 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=200;
       xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
 
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){
-        vs1053player->stopSong();
-        delay(10);
-        vs1053player->startSong();
         
-        skipstartsound = 200;
+        skipstartsound = SKIPSTART;
         
       }
       
@@ -53,12 +51,16 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=200;
                delay(10); // please the task watchdog
               bandcounter = GETBANDFREQ;         
             }
+
             if ( skipstartsound ){
-              --skipstartsound;
-              if ( !skipstartsound ){
-                  vs1053player->setVolume( getVolume() );
-              }
+                if ( skipstartsound <= getVolume() ){ 
+                  vs1053player->setVolume( (getVolume() - skipstartsound + 1) );
+                  delay(5);                
+                }
+                --skipstartsound;
+                
             }
+
             VSlow = 0;   
           }else{
             --i;  

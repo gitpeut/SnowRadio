@@ -327,7 +327,11 @@ void handleWebServer( void *param ){
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
-      
+        
+        for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );
+        }
        
        dossdp = -30000; 
        xSemaphoreTake( updateSemaphore, portMAX_DELAY);
