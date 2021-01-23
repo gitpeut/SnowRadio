@@ -13,6 +13,7 @@ int smallfont= 2;
 int bigfont=4;
 
 
+
 //----------------------------------------------------------
 void IRAM_ATTR grabTft(){
   //printf("grab TFT\n");
@@ -288,6 +289,7 @@ releaseTft();
 
 img.deleteSprite();
 }
+
 
 //---------------------------------------------------------------------
 void tft_scrollstations( void *param ){

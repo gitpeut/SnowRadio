@@ -6,16 +6,10 @@ void play ( void *param ){
 uint8_t   playBuffer[32];
 uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
 
- Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
-//
-//https://github.com/espressif/arduino-esp32/issues/595
-//
-  
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;
-  TIMERG0.wdt_wprotect=0;
-    
+  Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
+
   vs1053player->startSong();
+
 //    vs1053player->getBands() ;
 //    displaySpectrum();
 
@@ -26,7 +20,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
   Serial.printf ( "Queueu filled up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
   
     while(1){
-      //delay(20);//wdt avoidance
+      
       xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
 
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){

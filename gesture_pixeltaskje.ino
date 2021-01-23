@@ -1,7 +1,137 @@
-
-
 hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
+/*------------------------------------------------------------------------------*/
+void IRAM_ATTR gTmo(){
+ BaseType_t    pxHighP=0;
+
+ goodbyeCount++;
+
+ xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
+ if( pxHighP ){
+    portYIELD_FROM_ISR();
+ } 
+}
+
+/*------------------------------------------------------------------------------*/
+void stopgTimer(){
+
+ if( gTimer != NULL ){
+    timerAlarmDisable( gTimer);
+    gTimer = NULL;
+ }
+
+} 
+/*------------------------------------------------------------------------------*/
+
+void setgTimer(){
+  
+ if( gTimer != NULL ){
+    timerAlarmDisable( gTimer);
+    gTimer = NULL;
+ }
+
+ gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
+ timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
+ timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
+ timerAlarmEnable(gTimer);                        // turn timer 1 on
+
+}
+
+/*------------------------------------------------------------------------------*/
+int getVolume(){
+  int v;
+  
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  v = currentVolume;
+  xSemaphoreGive(volSemaphore);
+
+  return(v);
+}
+/*------------------------------------------------------------------------------*/
+int setVolume( int v){
+
+  //Serial.printf( "Changing volume to %d\n", v); 
+
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  currentVolume = v;
+  vs1053player->setVolume( v );
+  xSemaphoreGive(volSemaphore);
+
+ 
+  showVolume(v);
+  
+  save_last_volstat(1);
+  
+  return(v);
+}
+/*------------------------------------------------------------------------------*/
+int getStation(){
+  int s;
+  
+  xSemaphoreTake(staSemaphore, portMAX_DELAY);
+  s = currentStation;
+  xSemaphoreGive(staSemaphore);
+
+  return(s);
+}
+/*------------------------------------------------------------------------------*/
+int setStation(int s, int p){
+  
+  xSemaphoreTake(staSemaphore, portMAX_DELAY);
+  currentStation = s;
+  playingStation = p;
+  xSemaphoreGive(staSemaphore);
+  
+  return(s);
+}
+
+/*------------------------------------------------------------------------------*/
+void change_volstat(int dir){
+int current_volume  = getVolume();
+int current_station = getStation();
+
+  if ( gmode == 1 ){
+      current_volume += (dir*5);
+  
+      if ( current_volume > 100 )current_volume = 100;    
+      if ( current_volume < 0  ) current_volume = 0;    
+  
+      
+       
+       setVolume(current_volume );
+       save_last_volstat(1);
+  }
+  
+  if ( gmode == 2 ){
+      current_station += dir;  
+      
+      Serial.printf( "Changing station\n"); 
+      while(1){
+        if ( current_station < 0 )current_station = STATIONSSIZE - 1;
+        if ( current_station >= STATIONSSIZE )current_station = 0;
+        if ( stations[ current_station].status == 1 ) break; 
+        current_station += dir;
+      }
+      Serial.printf( "Changing station to %d-%s\n", current_station,stations[ current_station].name ); 
+           
+      setStation( current_station, -1 );
+      
+  }
+
+}
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+#ifndef USEPIXELS
+
+ void tellPixels( uint32_t command ){
+  ; //do nothing if pixels are not used, or soemthing else if screen is used.
+ }
+
+#else
+
+
+
 
 
 
@@ -262,88 +392,7 @@ gstrip.show();
 
 }
 
-/*------------------------------------------------------------------------------*/
-int getVolume(){
-  int v;
-  
-  xSemaphoreTake(volSemaphore, portMAX_DELAY);
-  v = currentVolume;
-  xSemaphoreGive(volSemaphore);
 
-  return(v);
-}
-/*------------------------------------------------------------------------------*/
-int setVolume( int v){
-
-  //Serial.printf( "Changing volume to %d\n", v); 
-
-  xSemaphoreTake(volSemaphore, portMAX_DELAY);
-  currentVolume = v;
-  vs1053player->setVolume( v );
-  xSemaphoreGive(volSemaphore);
-
- 
-  showVolume(v);
-  
-  save_last_volstat(1);
-  
-  return(v);
-}
-/*------------------------------------------------------------------------------*/
-int getStation(){
-  int s;
-  
-  xSemaphoreTake(staSemaphore, portMAX_DELAY);
-  s = currentStation;
-  xSemaphoreGive(staSemaphore);
-
-  return(s);
-}
-/*------------------------------------------------------------------------------*/
-int setStation(int s, int p){
-  
-  xSemaphoreTake(staSemaphore, portMAX_DELAY);
-  currentStation = s;
-  playingStation = p;
-  xSemaphoreGive(staSemaphore);
-  
-  return(s);
-}
-
-/*------------------------------------------------------------------------------*/
-void change_volstat(int dir){
-int current_volume  = getVolume();
-int current_station = getStation();
-
-if ( gmode == 1 ){
-    current_volume += (dir*5);
-
-    if ( current_volume > 100 )current_volume = 100;    
-    if ( current_volume < 0  ) current_volume = 0;    
-
-    
-     
-     setVolume(current_volume );
-     save_last_volstat(1);
-}
-
-if ( gmode == 2 ){
-    current_station += dir;  
-    
-    Serial.printf( "Changing station\n"); 
-    while(1){
-      if ( current_station < 0 )current_station = STATIONSSIZE - 1;
-      if ( current_station >= STATIONSSIZE )current_station = 0;
-      if ( stations[ current_station].status == 1 ) break; 
-      current_station += dir;
-    }
-    Serial.printf( "Changing station to %d-%s\n", current_station,stations[ current_station].name ); 
-         
-    setStation( current_station, -1 );
-    
-}
-
-}
 /*------------------------------------------------------------------------------*/
 float myexp(float x) { //exponent approximation
   return (1.0/(1.0-(0.634-1.344*x)*x));
@@ -626,42 +675,6 @@ static uint32_t previous_command=-1;
 }
 
 
-/*------------------------------------------------------------------------------*/
-void IRAM_ATTR gTmo(){
- BaseType_t    pxHighP=0;
-
- goodbyeCount++;
-
- xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
- if( pxHighP ){
-    portYIELD_FROM_ISR();
- } 
-}
-
-/*------------------------------------------------------------------------------*/
-void stopgTimer(){
-
- if( gTimer != NULL ){
-    timerAlarmDisable( gTimer);
-    gTimer = NULL;
- }
-
-} 
-/*------------------------------------------------------------------------------*/
-
-void setgTimer(){
-  
- if( gTimer != NULL ){
-    timerAlarmDisable( gTimer);
-    gTimer = NULL;
- }
-
- gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
- timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
- timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
- timerAlarmEnable(gTimer);                        // turn timer 1 on
-
-}
 
 
 /*------------------------------------------------------------------------------*/
@@ -695,3 +708,4 @@ void initPixels(){
 
    
 }
+#endif

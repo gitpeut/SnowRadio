@@ -1,3 +1,4 @@
+#ifdef USEGESTURES
 uint8_t             ledlast_state = 255;
 
 /*--------------------------------------------------------------------*/
@@ -145,8 +146,9 @@ while(1){
 
 int gesture_init(){
 
+#ifdef USEPIXELS  
     initPixels();
-     
+#endif     
 		xTaskCreatePinnedToCore( 
          gesture_process,                                      // Task to handle special functions.
          "Gesture",                                            // name of task.
@@ -158,3 +160,4 @@ int gesture_init(){
                 
 return(0);
 }
+#endif

@@ -3,10 +3,13 @@
 // Jose Baars, 2019
 // public domain
 
+/*define or undefine */
+
 #undef USESSDP
 #undef USEOTA
 #define USETLS 1
-
+#undef USEPIXELS
+#undef USEGESTURES
 
 //tft
 
@@ -110,7 +113,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V2.2"
+#define APVERSION "V2.3"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -142,9 +145,6 @@ TaskHandle_t      scrollTask;
 #define WEBSERVERTASKPRIO 2
 #define SCROLLTASKPRIO    4
 
-
-
-
 QueueHandle_t playQueue;
 #define PLAYQUEUESIZE (512 + 256) 
 
@@ -171,9 +171,6 @@ int                     chosenStation = 0;
 int                     scrollStation = -1;
 int                     scrollDirection;
 int                     DEBUG = 1 ;                            // Debug on/off
-
-
-
 
 // neopixel 
 #define NEOPIN      2
@@ -394,14 +391,18 @@ void setup () {
         gr_malloc  = malloc;
     }
 
-    // Enable WDT
-   
+    // Enable WDT on core 0
+    // https://forum.arduino.cc/index.php?topic=621311.0
+    // but reset wachtdog in the loop of tasks running on core0 using 
+    // TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    // TIMERG0.wdt_feed=1;
+    // TIMERG0.wdt_wprotect=0;
+    // This hack eventually causes indefinite hangs: just run everything on core 1 
+    
     enableCore0WDT(); 
     //enableCore1WDT();
 
-     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-     TIMERG0.wdt_feed=1;
-     TIMERG0.wdt_wprotect=0;
+    
  
      Serial.println("SPI begin...");
      SPI.begin(); 
@@ -459,17 +460,20 @@ Serial.println("player begin...");
      Serial.println("Start File System...");
      setupFS();   
        
-     Serial.println("Gesture init");
-     
-     Serial.println("Start pixeltask...");    
-     initPixels();
-   
-     Serial.println("pixels started...");    
-     //if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
-     //delay(200);
-     
-     tellPixels( PIX_BLINKYELLOW );
-     
+     #ifdef USEPIXELS
+
+       Serial.println("Start pixeltask...");    
+       initPixels();
+     #endif
+
+     #ifdef USEGESTURES
+       Serial.println("Start gestures...");    
+       if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
+       delay(200);
+    
+       tellPixels( PIX_BLINKYELLOW );
+     #endif
+      
      Serial.println("point radioclient to insecure WiFiclient");
      radioclient = &iclient;
 
@@ -506,15 +510,12 @@ Serial.println("player begin...");
     Serial.println("Switch to MP3...");
 //    vs1053player->switchToMp3Mode();
 
-   
-    Serial.println("Set volume and station...");
-
-    Serial.println("TFT init...");
+ Serial.println("TFT init...");
     tft_init();
  
  delay(50); 
  Serial.println("Start WebServer...");
-  setupWebServer();
+    setupWebServer();
  
  Serial.println("Start play task...");  
     play_init();

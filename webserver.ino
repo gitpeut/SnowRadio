@@ -271,13 +271,6 @@ void handleWebServer( void *param ){
 
   
   Serial.printf("WebServer running on core %d\n", xPortGetCoreID()); 
-//
-//https://github.com/espressif/arduino-esp32/issues/595
-//
-  
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;
-  TIMERG0.wdt_wprotect=0;
 
   #ifdef USESSDP
     setupSSDP();
@@ -420,7 +413,11 @@ if ( param == NULL ){
       timecount = millis() + (10*1000);
    }
 
-   
+  /*
+    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_feed=1;
+    TIMERG0.wdt_wprotect=0;
+   */
    
    delay(50);
   }
