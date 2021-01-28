@@ -34,7 +34,10 @@ screenPage currDisplayScreen = HOME;
 
 #include <SPI.h>
 #include "FS.h"
-#include "SPIFFS.h"
+#include <SPIFFS.h>
+#include <FFat.h>
+#include <LITTLEFS.h>
+#include <esp_littlefs.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <WiFi.h>
 #include <WiFiManager.h>
@@ -79,13 +82,13 @@ enum FSnumber{
 //choose file system
 //For now and historic reasons, SPIFFS is used.
 //
-fs::FS      RadioFS     = SPIFFS;
-const int   RadioFSNO   = FSNO_SPIFFS;
-const char  *RadioMount = "/spiffs";
+//fs::FS      RadioFS     = SPIFFS;
+//const int   RadioFSNO   = FSNO_SPIFFS;
+//const char  *RadioMount = "/spiffs";
 
-//fs::FS      RadioFS     = LITTLEFS;
-//const int   RadioFSNO   = FSNO_LITTLEFS;
-//const char  *RadioMount = "/littlefs";
+fs::FS      RadioFS     = LITTLEFS;
+const int   RadioFSNO   = FSNO_LITTLEFS;
+const char  *RadioMount = "/littlefs";
 
 //fs::FS      RadioFS     = FFat;
 //const int   RadioFSNO   = FSNO_FFAT;
@@ -259,22 +262,22 @@ void verbose_print_reset_reason(RESET_REASON reason, char *textbuffer)
 {
   switch ( reason)
   {
-    case 1  : strcpy(textbuffer,("POWERON_RESET Vbat power on reset"));break;
-    case 3  : strcpy(textbuffer,("SW_RESET Software reset digital core"));break;
-    case 4  : strcpy(textbuffer,("OWDT_RESET Legacy watch dog reset digital core"));break;
-    case 5  : strcpy(textbuffer,("DEEPSLEEP_RESET Deep Sleep reset digital core"));break;
-    case 6  : strcpy(textbuffer,("SDIO_RESET Reset by SLC module, reset digital core"));break;
-    case 7  : strcpy(textbuffer,("TG0WDT_SYS_RESET Timer Group0 Watch dog reset digital core"));break;
-    case 8  : strcpy(textbuffer,("TG1WDT_SYS_RESET Timer Group1 Watch dog reset digital core"));break;
-    case 9  : strcpy(textbuffer,("RTCWDT_SYS_RESET RTC Watch dog Reset digital core"));break;
-    case 10 : strcpy(textbuffer,("INTRUSION_RESET Instrusion tested to reset CPU"));break;
-    case 11 : strcpy(textbuffer,("TGWDT_CPU_RESET Time Group reset CPU"));break;
-    case 12 : strcpy(textbuffer,("SW_CPU_RESET Software reset CPU"));break;
-    case 13 : strcpy(textbuffer,("RTCWDT_CPU_RESET  RTC Watch dog Reset CPU"));break;
-    case 14 : strcpy(textbuffer,("EXT_CPU_RESET for APP CPU, reseted by PRO CPU"));break;
-    case 15 : strcpy(textbuffer,("RTCWDT_BROWN_OUT_RESET Reset when the vdd voltage is not stable"));break;
-    case 16 : strcpy(textbuffer,("RTCWDT_RTC_RESET RTC Watch dog reset digital core and rtc module"));break;
-    default : strcpy(textbuffer,("NO_REASON unknown reason"));break;
+    case 1  : strcpy_P(textbuffer,(PGM_P)F("POWERON_RESET Vbat power on reset") );break;
+    case 3  : strcpy_P(textbuffer,(PGM_P)F("SW_RESET Software reset digital core"));break;
+    case 4  : strcpy_P(textbuffer,(PGM_P)F("OWDT_RESET Legacy watch dog reset digital core"));break;
+    case 5  : strcpy_P(textbuffer,(PGM_P)F("DEEPSLEEP_RESET Deep Sleep reset digital core"));break;
+    case 6  : strcpy_P(textbuffer,(PGM_P)F("SDIO_RESET Reset by SLC module, reset digital core"));break;
+    case 7  : strcpy_P(textbuffer,(PGM_P)F("TG0WDT_SYS_RESET Timer Group0 Watch dog reset digital core"));break;
+    case 8  : strcpy_P(textbuffer,(PGM_P)F("TG1WDT_SYS_RESET Timer Group1 Watch dog reset digital core"));break;
+    case 9  : strcpy_P(textbuffer,(PGM_P)F("RTCWDT_SYS_RESET RTC Watch dog Reset digital core"));break;
+    case 10 : strcpy_P(textbuffer,(PGM_P)F("INTRUSION_RESET Instrusion tested to reset CPU"));break;
+    case 11 : strcpy_P(textbuffer,(PGM_P)F("TGWDT_CPU_RESET Time Group reset CPU"));break;
+    case 12 : strcpy_P(textbuffer,(PGM_P)F("SW_CPU_RESET Software reset CPU"));break;
+    case 13 : strcpy_P(textbuffer,(PGM_P)F("RTCWDT_CPU_RESET  RTC Watch dog Reset CPU"));break;
+    case 14 : strcpy_P(textbuffer,(PGM_P)F("EXT_CPU_RESET for APP CPU, reseted by PRO CPU"));break;
+    case 15 : strcpy_P(textbuffer,(PGM_P)F("RTCWDT_BROWN_OUT_RESET Reset when the vdd voltage is not stable"));break;
+    case 16 : strcpy_P(textbuffer,(PGM_P)F("RTCWDT_RTC_RESET RTC Watch dog reset digital core and rtc module"));break;
+    default : strcpy_P(textbuffer,(PGM_P)F("NO_REASON unknown reason"));break;
   }
 }
 /*------------------------------------------------------*/

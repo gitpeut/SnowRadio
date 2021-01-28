@@ -44,17 +44,7 @@ String getContentType(String filename) {
   
   return "text/plain";
 }
-//----------------------------------------------
 
-bool exists(String path){
-  bool yes = false;
-  File file = RadioFS.open(path, "r");
-  if(!file.isDirectory()){
-    yes = true;
-  }
-  file.close();
-  return yes;
-}
 //----------------------------------------------
 
 bool handleFileRead(String path) {
@@ -64,12 +54,13 @@ bool handleFileRead(String path) {
   }
   String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
-  if (exists(pathWithGz) || exists(path)) {
-    if (exists(pathWithGz)) {
+  if (RadioFS.exists(pathWithGz) || RadioFS.exists(path)) {
+    if (RadioFS.exists(pathWithGz)) {
       path += ".gz";
     }
     File file = RadioFS.open(path, "r");
     server.streamFile(file, contentType);
+    
     file.close();
     return true;
   }
@@ -97,7 +88,7 @@ void handleFileUpload(){
     Serial.print("handleFileUpload Name: "); Serial.println(filename);
 
     //reading_file++;
-    fsUploadFile = SPIFFS.open(filename, "w");
+    fsUploadFile = RadioFS.open(filename, "w");
 
     if ( !fsUploadFile  ){
       Serial.print("Couldn't open ");Serial.println( filename );
@@ -151,7 +142,7 @@ void handleFileDelete() {
   if (path == "/") {
     return server.send(500, "text/plain", "BAD PATH");
   }
-  if (!exists(path)) {
+  if (!RadioFS.exists(path)) {
     return server.send(404, "text/plain", "FileNotFound");
   }
   RadioFS.remove(path);
@@ -170,8 +161,8 @@ void handleFileCreate() {
   if (path == "/") {
     return server.send(500, "text/plain", "BAD PATH");
   }
-  if (exists(path)) {
-    return server.send(500, "text/plain", "FILE EXISTS");
+  if (RadioFS.exists(path)) {
+    return server.send(500, "text/plain", "FILE exists");
   }
   File file = RadioFS.open(path, "w");
   if (file) {
@@ -208,8 +199,13 @@ void handleFileList() {
           output += "{\"type\":\"";
           output += (file.isDirectory()) ? "dir" : "file";
           output += "\",\"name\":\"";
-          output += String(file.name()).substring(1);
-          output += "\"}";
+          output += String(file.name()).substring(1) + "\"";
+          if ( !file.isDirectory()){
+            output += ", \"size\": ";
+            output += String(file.size());
+            
+          }
+          output += "}";
           file = root.openNextFile();
       }
   }
