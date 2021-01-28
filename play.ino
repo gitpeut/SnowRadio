@@ -46,7 +46,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
                 vs1053player->getBands();
                 delay(10); // please the task watchdog
                 if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL ){
-                  xSemaphoreTake( tftSemaphore, portMAX_DELAY);
+                  xSemaphoreTake( tftSemaphore, 50 );
                   vs1053player->displaySpectrum();
                   xSemaphoreGive( tftSemaphore);
                 }

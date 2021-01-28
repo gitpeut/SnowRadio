@@ -5,11 +5,18 @@ void IRAM_ATTR gTmo(){
  BaseType_t    pxHighP=0;
 
  goodbyeCount++;
-
- xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
- if( pxHighP ){
+ #ifdef USEPIXELS
+  xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
+  if( pxHighP ){
     portYIELD_FROM_ISR();
- } 
+  }
+ #else
+  xTaskNotifyFromISR( gestureTask, 321 ,eSetValueWithOverwrite, &pxHighP); 
+     if( pxHighP ){
+        portYIELD_FROM_ISR()
+  }
+  gmode = gOff;
+ #endif  
 }
 
 /*------------------------------------------------------------------------------*/
@@ -23,7 +30,7 @@ void stopgTimer(){
 } 
 /*------------------------------------------------------------------------------*/
 
-void setgTimer(){
+void setgTimer(){ 
   
  if( gTimer != NULL ){
     timerAlarmDisable( gTimer);
@@ -85,11 +92,16 @@ int setStation(int s, int p){
 }
 
 /*------------------------------------------------------------------------------*/
+#ifdef MULTILEVELGESTURES
 void change_volstat(int dir){
+#else
+void change_volstat(int dir, int gmode){
+#endif
+
 int current_volume  = getVolume();
 int current_station = getStation();
 
-  if ( gmode == 1 ){
+  if ( gmode == gVolume ){
       current_volume += (dir*5);
   
       if ( current_volume > 100 )current_volume = 100;    
@@ -101,7 +113,7 @@ int current_station = getStation();
        save_last_volstat(1);
   }
   
-  if ( gmode == 2 ){
+  if ( gmode == gStation ){
       current_station += dir;  
       
       Serial.printf( "Changing station\n"); 
@@ -127,12 +139,205 @@ int current_station = getStation();
   ; //do nothing if pixels are not used, or soemthing else if screen is used.
  }
 
+int toggleMute(){
+
+
+  if ( vs1053player->getVolume() <  getVolume() ){
+      for ( int curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+      } 
+  }else{
+     for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+     }
+  }
+   
+}
+
+#ifndef MULTILEVELGESTURES
+
+// Single level gestures
+  
+  int parse_gestures( uint8_t data){
+  int rc = 0;
+    
+    switch( gmode ){
+      case gOff:
+          switch(data){
+              case GES_CLOCKWISE_FLAG:
+              case GES_COUNT_CLOCKWISE_FLAG:
+                gmode = gVolume;
+                log_i("wake gesture sensor, mode to gVolume");
+                setgTimer();
+                break;
+              default:
+                log_i("not listening to this gesture until wakeup");
+                break;  
+          }
+          break;
+      case gVolume:
+          switch(data){
+              case GES_DOWN_FLAG:
+                log_i("lower volume");
+                change_volstat( -1, gVolume );
+                setgTimer();
+                break;
+              case GES_UP_FLAG:
+                log_i("higher volume");
+                change_volstat( 1, gVolume );
+                setgTimer();
+                break;
+              case GES_LEFT_FLAG:
+                log_i("previous station");
+                change_volstat( -1, gStation );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("next station");
+                change_volstat( 1, gStation );
+                setgTimer();
+                break;
+              case GES_FORWARD_FLAG:  
+              case GES_BACKWARD_FLAG:  
+                log_i("toggle mute");
+                stopgTimer();
+                gmode = gOff;
+                toggleMute();
+                break;
+              case GES_CLOCKWISE_FLAG:
+              case GES_COUNT_CLOCKWISE_FLAG:
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                break; 
+              default:
+                break;  
+          }
+          break;
+      default:
+            log_i( "Unknown gmode %d\n", gmode);
+            break;
+    }
+
+   return(rc);
+}
+
 #else
 
+// Oranje radio gestures
 
+int parse_gestures( uint8_t data){
+int rc = 0;
+    
+    switch( gmode ){
+      case gOff:
+          switch(data){
+              case GES_UP_FLAG:
+                gmode = gVolume;
+                log_i("wake gesture sensor, mode to gVolume");
+                setgTimer();
+                break;
+              default:
+                log_i("not listening to this gesture until wakeup");
+                break;  
+          }
+          break;
+      case gVolume:
+          switch(data){
+              case GES_LEFT_FLAG:
+                log_i("lower volume");
+                change_volstat( -1 );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("higher volume");
+                change_volstat( 1 );
+                setgTimer();
+                break;
+              case GES_CLOCKWISE_FLAG:
+                log_i("mode to gStation");
+                gmode = gStation;
+                setgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                break; 
+              default:
+                break;  
+          }
+          break;
+      case gStation:
+          switch(data){
+              case GES_LEFT_FLAG:
+                log_i("previous station");
+                change_volstat( -1 );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("next station");
+                change_volstat( 1 );
+                setgTimer();
+                break;
+              case GES_CLOCKWISE_FLAG:
+                log_i("scroll mode");
+                gmode = gScroll;
+                setgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                break; 
+              default:
+                break;  
+          }
+          break;
+       case gScroll:
+          switch(data){
+              case GES_CLOCKWISE_FLAG:
+                log_i("scroll down the list of stations");
+                tft_scrollstation( SCROLLUP );
+                stopgTimer();
+                break;
+               case GES_COUNT_CLOCKWISE_FLAG:
+                log_i("scroll up the list of stations");
+                tft_scrollstation( SCROLLDOWN );
+                stopgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening to gestures");
+                
+                xSemaphoreTake( chooseSemaphore, portMAX_DELAY);
+                chosenStation = 2;
+                xSemaphoreGive( chooseSemaphore);
+               
+                stopgTimer();
+                gmode = gOff;
+                break; 
+              case GES_UP_FLAG:
+                log_i("Change station to current station displayed");
+                xSemaphoreTake( chooseSemaphore, portMAX_DELAY);
+                chosenStation = 1;
+                xSemaphoreGive( chooseSemaphore);
+                break;   
+              default:
+                break;  
+          }
+          break;
+          default:
+            log_i( "Unknown gmode %d\n", gmode);
+            break;
+    }
 
-
-
+   return(rc);
+}
+#endif
+ 
+#else
 
 
 /*------------------------------------------------------------------------------*/

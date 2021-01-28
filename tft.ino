@@ -305,7 +305,7 @@ int delaytime;
   stopgTimer();
   
   scrollStation = -1;
-  chosenStation = false;
+  chosenStation = 0;
   begint        = currentStation;
   
   //pinMode( SCROLLPIN,INPUT_PULLUP );
@@ -405,6 +405,7 @@ img.deleteSprite();
 
 if ( tcount < endt ){
    setStation( t, -1 );
+   tft_showstation( t );
    //currentStation = t;
    //delay(4000);
 }else{

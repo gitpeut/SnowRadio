@@ -8,14 +8,10 @@
 #undef USESSDP
 #undef USEOTA
 #define USETLS 1
-#define USEPIXELS 1  
+#undef USEPIXELS   
 #define USEGESTURES 1
+#undef MULTILEVELGESTURES
 #undef USETOUCH
-
-
-
-
-
 
 // Which page are we on? Home page = normal use, stnslect is list of stations
 enum screenPage
@@ -80,9 +76,23 @@ enum FSnumber{
   FSNO_FFAT 
 };
 
+//choose file system
+//For now and historic reasons, SPIFFS is used.
+//
 fs::FS      RadioFS     = SPIFFS;
 const int   RadioFSNO   = FSNO_SPIFFS;
 const char  *RadioMount = "/spiffs";
+
+//fs::FS      RadioFS     = LITTLEFS;
+//const int   RadioFSNO   = FSNO_LITTLEFS;
+//const char  *RadioMount = "/littlefs";
+
+//fs::FS      RadioFS     = FFat;
+//const int   RadioFSNO   = FSNO_FFAT;
+//const char  *RadioMount = "/ffat";
+
+
+
 
 // pointers to memory allocation functions to be set 
 // to alloc and malloc or if PSRAM is available to
@@ -211,9 +221,13 @@ int                     DEBUG = 1 ;                            // Debug on/off
 
 sk gstrip;
 
-
-
-
+enum gmenuLevel{
+  gOff,
+  gVolume,
+  gStation,
+  gScroll
+};
+int gmode=gOff;
 
 
 
@@ -221,8 +235,6 @@ sk gstrip;
 VS1053* vs1053player ;
 
 
-
-int gmode=1;
 //tft
 #define SCROLLUP 0
 #define SCROLLDOWN 1
@@ -498,7 +510,9 @@ void setup () {
      vs1053player->begin();
 
      // radiofs
-     patch_VS1053( "/spiffs/spectrum1053b-2.plg",  0 );
+     char patchname[128];
+     sprintf( patchname,"%s%s", RadioMount, "/spectrum1053b-2.plg");
+     patch_VS1053( patchname,  0 );
      //patch_VS1053( "/spiffs/vs1053b-patch270-flac.plg",  0 );
      //patch_VS1053( "/spiffs/vs1053b-flac-latm.plg",  0 );
      
