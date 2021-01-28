@@ -57,8 +57,7 @@ int setVolume( int v){
   vs1053player->setVolume( v );
   xSemaphoreGive(volSemaphore);
 
- 
-  showVolume(v);
+  if (currDisplayScreen == HOME) showVolume(v);
   
   save_last_volstat(1);
   

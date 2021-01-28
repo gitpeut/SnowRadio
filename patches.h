@@ -626,7 +626,7 @@ const unsigned short plugin[] PROGMEM= { /* Compressed plugin */
   0x0050,
 #define PLUGIN_SIZE 4667
 };
-#endif
+
 
 
 //const unsigned short analizer[1000] PROGMEM = { /* Compressed plugin */
@@ -759,6 +759,7 @@ const unsigned short analizer[1000] = { /* Compressed plugin */
         0x0980, 0x2000, 0x0000, 0x6010, 0x0024, 0x000a, 0x0001, 0x0d00,
 };
 
+#endif
 
 // FINE PATCHES
 #endif

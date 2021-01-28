@@ -677,6 +677,11 @@ void tft_init(){
   int bmpy      = tft.height() * 10 / 50;
   
 //  drawBmp("/OranjeRadio24.bmp", bmpx, bmpy );
+  #ifdef USETOUCH
+  // Use this calibration code in setup():
+    uint16_t calData[5] = { 264, 3533, 367, 3509, 4 };
+    tft.setTouch(calData);
+  #endif  
 
 
   if ( tft.width() > 200 ){

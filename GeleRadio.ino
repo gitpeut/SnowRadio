@@ -8,26 +8,24 @@
 #undef USESSDP
 #undef USEOTA
 #define USETLS 1
-#undef USEPIXELS
-#undef USEGESTURES
-
-//tft
-
-#define TFT_CS      4
-#define TFT_RST    14  // you can also connect this to the Arduino reset
-#define TFT_DC     13
-#define TFT_LED    27
-
-//LED
-//
-//SDO(MISO)     19
-//SCK           18
-//SDI(MOSI)     23
-//DC            13
-//RESET         14
-//CS            4
+#define USEPIXELS 1  
+#define USEGESTURES 1
+#undef USETOUCH
 
 
+
+
+
+
+// Which page are we on? Home page = normal use, stnslect is list of stations
+enum screenPage
+{
+  HOME,
+  STNSELECT
+  // This will be expanded as I develop a menu structure
+};
+
+screenPage currDisplayScreen = HOME;
 
 
 
@@ -45,6 +43,7 @@
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include "lotfi_VS1053.h"
+#include <rom/rtc.h>
 
 #include <WiFiClient.h>
 #ifdef USETLS
@@ -73,8 +72,17 @@
 
 #include "sk.h"
 #include <wificredentials.h>
+#include "0pins.h"
 
-#define FORMAT_SPIFFS_IF_FAILED true
+enum FSnumber{
+  FSNO_SPIFFS,
+  FSNO_LITTLEFS,
+  FSNO_FFAT 
+};
+
+fs::FS      RadioFS     = SPIFFS;
+const int   RadioFSNO   = FSNO_SPIFFS;
+const char  *RadioMount = "/spiffs";
 
 // pointers to memory allocation functions to be set 
 // to alloc and malloc or if PSRAM is available to
@@ -93,11 +101,11 @@ int               contentsize=0;
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
-TFT_eSprite img  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
+TFT_eSprite img   = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
 TFT_eSprite bats  = TFT_eSprite(&tft); 
 TFT_eSprite vols  = TFT_eSprite(&tft);  
 TFT_eSprite clocks  = TFT_eSprite(&tft);  
-TFT_eSprite bmp  = TFT_eSprite(&tft);  
+TFT_eSprite bmp   = TFT_eSprite(&tft);  
 //TFT_eSprite spa  = TFT_eSprite(&tft);
 
 //hangdetection
@@ -113,7 +121,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V2.3"
+#define APVERSION "V3.2"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -129,17 +137,19 @@ TaskHandle_t      webserverTask;
 TaskHandle_t      radioTask;
 TaskHandle_t      playTask;
 TaskHandle_t      scrollTask;
-
+TaskHandle_t      touchTask;
 
 
 #define WEBCORE     1
 #define RADIOCORE   1
-#define GESTURECORE 1
+#define GESTURECORE 0
 #define PLAYCORE    1
+#define TOUCHCORE   1
 
 
 #define PIXELTASKPRIO     3
-#define GESTURETASKPRIO   7
+#define GESTURETASKPRIO   6
+#define TOUCHTASKPRIO     7
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5
 #define WEBSERVERTASKPRIO 2
@@ -173,7 +183,6 @@ int                     scrollDirection;
 int                     DEBUG = 1 ;                            // Debug on/off
 
 // neopixel 
-#define NEOPIN      2
 #define NEONUMBER   10
 
 #define PIX_BLACKC    0
@@ -202,18 +211,10 @@ int                     DEBUG = 1 ;                            // Debug on/off
 
 sk gstrip;
 
-//gesture sensor
-
-#define GSDAPIN 27
-#define GSCLPIN 26
-#define GINTPIN 25
 
 
 
-//vs1053
-#define VS_CS_PIN     5
-#define VS_DCS_PIN   15
-#define VS_DREQ_PIN  22
+
 
 
 // The object for the MP3 player
@@ -230,10 +231,6 @@ WebServer server(80);
 
 //battery
 float   batvolt = 0.0;
-#define BATPIN     36
-
-
-#define VS1053_RST    21
 
 // Default volume
 int currentVolume=65; 
@@ -241,10 +238,49 @@ int currentVolume=65;
 bool stationChunked = false;
 bool stationClose   = false;
 
-//pixels and gestures
+/*------------------------------------------------------*/
+// https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/ResetReason/ResetReason.ino
+
+void verbose_print_reset_reason(RESET_REASON reason, char *textbuffer)
+{
+  switch ( reason)
+  {
+    case 1  : strcpy(textbuffer,("POWERON_RESET Vbat power on reset"));break;
+    case 3  : strcpy(textbuffer,("SW_RESET Software reset digital core"));break;
+    case 4  : strcpy(textbuffer,("OWDT_RESET Legacy watch dog reset digital core"));break;
+    case 5  : strcpy(textbuffer,("DEEPSLEEP_RESET Deep Sleep reset digital core"));break;
+    case 6  : strcpy(textbuffer,("SDIO_RESET Reset by SLC module, reset digital core"));break;
+    case 7  : strcpy(textbuffer,("TG0WDT_SYS_RESET Timer Group0 Watch dog reset digital core"));break;
+    case 8  : strcpy(textbuffer,("TG1WDT_SYS_RESET Timer Group1 Watch dog reset digital core"));break;
+    case 9  : strcpy(textbuffer,("RTCWDT_SYS_RESET RTC Watch dog Reset digital core"));break;
+    case 10 : strcpy(textbuffer,("INTRUSION_RESET Instrusion tested to reset CPU"));break;
+    case 11 : strcpy(textbuffer,("TGWDT_CPU_RESET Time Group reset CPU"));break;
+    case 12 : strcpy(textbuffer,("SW_CPU_RESET Software reset CPU"));break;
+    case 13 : strcpy(textbuffer,("RTCWDT_CPU_RESET  RTC Watch dog Reset CPU"));break;
+    case 14 : strcpy(textbuffer,("EXT_CPU_RESET for APP CPU, reseted by PRO CPU"));break;
+    case 15 : strcpy(textbuffer,("RTCWDT_BROWN_OUT_RESET Reset when the vdd voltage is not stable"));break;
+    case 16 : strcpy(textbuffer,("RTCWDT_RTC_RESET RTC Watch dog reset digital core and rtc module"));break;
+    default : strcpy(textbuffer,("NO_REASON unknown reason"));break;
+  }
+}
+/*------------------------------------------------------*/
+void log_boot(){ 
+char textbuffer[132];
+
+sprintf ( textbuffer, "Core 0 reset reason:  ");
+//cpu 0 reason  
+verbose_print_reset_reason(rtc_get_reset_reason(0), textbuffer + 20);
+syslog( textbuffer);
+Serial.println( textbuffer );
+
+sprintf ( textbuffer, "Core 1 reset reason:  ");
+//cpu 1 reason  
+verbose_print_reset_reason(rtc_get_reset_reason(1), textbuffer + 20);
+syslog( textbuffer);
+Serial.println( textbuffer );
 
 
-
+}
 /*------------------------------------------------------*/
 
 #ifdef USEOTA
@@ -274,7 +310,7 @@ void initOTA( char *apname, char *appass){
       syslog((char *)"Installing new firmware over ArduinoOTA");
     } else { // U_SPIFFS
       type = "filesystem";
-      SPIFFS.end();
+      RadioFS.end();
     }
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
@@ -383,7 +419,7 @@ void setup () {
 
     if ( psramFound() ){
          Serial.println ( "PSRAM found");
-         gr_calloc  = ps_calloc;
+         gr_calloc = ps_calloc;
          gr_malloc = ps_malloc;
     }else{
         Serial.println ( "No PSRAM found");
@@ -425,10 +461,7 @@ void setup () {
                               -1 ,
                               -1 ) ;
                               
-Serial.println("player begin...");
 
-    vs1053player->begin();
-    
      Serial.println("Creating semaphores...");
     
      staSemaphore = xSemaphoreCreateMutex();
@@ -459,6 +492,16 @@ Serial.println("player begin...");
       
      Serial.println("Start File System...");
      setupFS();   
+
+     Serial.println("player begin...");
+
+     vs1053player->begin();
+
+     // radiofs
+     patch_VS1053( "/spiffs/spectrum1053b-2.plg",  0 );
+     //patch_VS1053( "/spiffs/vs1053b-patch270-flac.plg",  0 );
+     //patch_VS1053( "/spiffs/vs1053b-flac-latm.plg",  0 );
+     
        
      #ifdef USEPIXELS
 
@@ -466,13 +509,7 @@ Serial.println("player begin...");
        initPixels();
      #endif
 
-     #ifdef USEGESTURES
-       Serial.println("Start gestures...");    
-       if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
-       delay(200);
     
-       tellPixels( PIX_BLINKYELLOW );
-     #endif
       
      Serial.println("point radioclient to insecure WiFiclient");
      radioclient = &iclient;
@@ -485,7 +522,18 @@ Serial.println("player begin...");
      getWiFi( APNAME,APPAS);    
       
      Serial.println("log boot");    
-     syslog( (char *)"Boot"); 
+     log_boot();
+
+      // to be sure start gestures (I2C) after WIFiManager as per
+      // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
+      
+      #ifdef USEGESTURES
+       Serial.println("Start gestures...");    
+       if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
+       delay(200);
+    
+       tellPixels( PIX_BLINKYELLOW );
+     #endif
      
     // Wait for VS1053 and PAM8403 to power up
     // otherwise the system might not start up correctly

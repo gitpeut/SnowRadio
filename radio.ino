@@ -120,6 +120,10 @@ while(1){
 
     if ( uxQueueMessagesWaiting(playQueue) < 20 ){
         lowqueue++; 
+        if ( lowqueue > 30  ){
+           syslog( (char *)"Restart to solve low queue");  
+           ESP.restart(); 
+        }
     }
       
     if(radioclient->available() > 0 ){
@@ -231,9 +235,9 @@ while(1){
     }
 
 //        Serial.printf("player playptr %d getptr %d endptr %d \n", mp3Playptr, mp3Getptr, mp3Endptr);  
-  
+   
       
-   if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE || lowqueue > 200 ){
+   if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE  ){
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         radioclient->stop();  

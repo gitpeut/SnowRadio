@@ -26,6 +26,9 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){
         
         skipstartsound = SKIPSTART;
+        vs1053player->stopSong();
+        delay(5);
+        vs1053player->startSong();
         
       }
       
@@ -38,11 +41,18 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
             
             --bandcounter;
             if ( ! bandcounter ){
-             
-              vs1053player->getBands();
-               delay(10); // please the task watchdog
-              if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL )vs1053player->displaySpectrum();
-               delay(10); // please the task watchdog
+
+              if ( currDisplayScreen == HOME ){
+                vs1053player->getBands();
+                delay(10); // please the task watchdog
+                if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL ){
+                  xSemaphoreTake( tftSemaphore, portMAX_DELAY);
+                  vs1053player->displaySpectrum();
+                  xSemaphoreGive( tftSemaphore);
+                }
+              }
+    
+              delay(10); // please the task watchdog
               bandcounter = GETBANDFREQ;         
             }
 
@@ -68,7 +78,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
                 syslog( (char *)"VSlow for a long time.");
               }
             }
-            delay(30);
+            delay(3);
           }
       }
      

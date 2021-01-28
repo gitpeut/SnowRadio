@@ -373,19 +373,21 @@ int i,j,rc;
 int get_last_volstat(int volstat){
 FILE *last=NULL;
 char  buffer[8];
+char  filename[128];
 int   idx;
 
 switch( volstat ){
   case 0:
-    last = fopen( "/spiffs/last_station.txt", "r");
+    sprintf( filename, "%s/last_station.txt", RadioMount);
     break;
   case 1:
-    last = fopen( "/spiffs/last_volume.txt", "r");
+    sprintf( filename, "%s/last_volume.txt", RadioMount);
     break;
 }
- 
+
+last = fopen( filename, "r"); 
 if ( last == NULL) {
-  Serial.printf("Couldn't open /spiffs/last_%s.txt\n", volstat?"volume":"station" );
+  Serial.printf("Couldn't open %s/last_%s.txt\n", RadioMount, volstat?"volume":"station" );
   
   return( volstat?65:0);
 }
@@ -405,15 +407,18 @@ return( idx );
 
 int save_last_volstat( int volstat){
 FILE *last=NULL;
+char  filename[128];
 
 switch( volstat ){
   case 0:
-    last = fopen( "/spiffs/last_station.txt", "w");
+    sprintf( filename, "%s/last_station.txt", RadioMount);
     break;
   case 1:
-    last = fopen( "/spiffs/last_volume.txt", "w");
+    sprintf( filename, "%s/last_volume.txt", RadioMount);
     break;
 }
+
+last = fopen( filename, "w");
 
 if ( last == NULL) {
   Serial.printf("Couldn't open /last_%s.txt\n", volstat?"volume":"station" );
@@ -440,16 +445,18 @@ int     i, stations_written = 0;;
 time_t  ltime;
 char    timebuffer[32];
 
-Serial.printf("Saving stations to /spiffs/stations.json\n");
+Serial.printf("Saving stations to %s/stations.json\n", RadioMount);
 
 time(&ltime);
 ctime_r( &ltime, timebuffer);
 timebuffer[24] = 0;
 
+char filename[128];
+sprintf( filename, "%s/stations.json", RadioMount);
 
-uit = fopen( "/spiffs/stations.json", "w");
+uit = fopen( filename, "w");
 if ( uit == NULL) {
-  Serial.printf("Couldn't open /spiffs/stations.json\n");
+  Serial.printf("Couldn't open %s\n", filename);
   return(-1);
 }
 
@@ -467,7 +474,7 @@ for ( i = 0; i< STATIONSSIZE; ++i ){
 fprintf(uit,"]}" );
 fclose(uit);
 
-Serial.printf("Saved stations to /spiffs/stations.json\n");
+Serial.printf("Saved stations to %s\n", filename);
 
 return(0);
 }
@@ -589,16 +596,19 @@ int read_stations(){
 FILE    *in=NULL;
 char    *readBuffer;
 size_t  read_result;
-struct stat sStat;
+struct  stat sStat;
+char    filename[128];
 
-Serial.printf("Loading stations fromm /spiffs/stations.json\n");
+Serial.printf("Loading stations from %s/stations.json\n", RadioMount);
 
-if( stat("/spiffs/stations.json",&sStat) < 0){
-  Serial.printf("Couldn't find /spiffs/stations.json\n");
+sprintf( filename, "%s/stations.json", RadioMount);
+
+if( stat( filename,&sStat) < 0){
+  Serial.printf("Couldn't find %s\n", filename);
   return(-3);
 }
 
-Serial.printf("Size of /spiffs/stations.json\t%d bytes\n",sStat.st_size);
+Serial.printf("Size of %s\t%d bytes\n",filename, sStat.st_size);
 
 readBuffer = (char *)gr_calloc( 1, sStat.st_size+4 );
 if ( readBuffer == NULL ){
@@ -606,7 +616,7 @@ if ( readBuffer == NULL ){
     return(-2);
 }
 
-in  = fopen( "/spiffs/stations.json", "r" );
+in  = fopen( filename, "r" );
 if ( in == NULL ) {
         Serial.printf("Error opening stations.json\n");         
         return(-1);
@@ -618,7 +628,7 @@ read_result = fread( readBuffer, 1, sStat.st_size, in );
 
 fclose(in);
 
-Serial.printf("Read %d bytes from /spiffs/stations.json", read_result);
+Serial.printf("Read %d bytes from %s", read_result, filename);
 readBuffer[read_result] = 0;
 
 

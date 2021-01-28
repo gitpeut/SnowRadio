@@ -85,8 +85,7 @@ class VS1053
       SPI.endTransaction() ;                      // Allow other SPI users
     }
 
-    uint16_t    read_register ( uint8_t _reg ) const ;
-    void        write_register ( uint8_t _reg, uint16_t _value ) const ;
+
     bool        sdi_send_buffer ( uint8_t* data, size_t len ) ;
     void        sdi_send_fillers ( size_t length ) ;
     void        wram_write ( uint16_t address, uint16_t data ) ;
@@ -100,6 +99,8 @@ class VS1053
     uint8_t     Spectrum_hy = 70; //высота графика = graph height
 
   public:
+    uint16_t    read_register ( uint8_t _reg ) const ;
+    void        write_register ( uint8_t _reg, uint16_t _value ) const ;
     
     // Constructor.  Only sets pin values.  Doesn't touch the chip.  Be sure to call begin()!
     VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
@@ -135,13 +136,16 @@ class VS1053
     {
       return ( digitalRead ( dreq_pin ) == HIGH ) ;
     }
-    void     AdjustRate ( long ppm2 ) ;                  // Fine tune the datarate
+    void AdjustRate ( long ppm2 ) ;                  // Fine tune the datarate
     void LoadUserCode( const unsigned short * iplugin, uint16_t sizea);                                                        
     void switchToMp3Mode(); // An optional switch preventing the module starting up in MIDI mode
     bool isChipConnected();// Checks whether the VS1053 chip is connected and is able to exchange data to the ESP
     void getBands();
     void displaySpectrum();
-
+    inline void showSpectrum(){
+      getBands();
+      displaySpectrum();
+    }
 } ;
 
 #endif

@@ -58,6 +58,7 @@ VS1053::VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
 }
 
 
+//----------------------------------------------------------------------------------
 
 uint16_t VS1053::read_register ( uint8_t _reg ) const
 {
@@ -73,6 +74,7 @@ uint16_t VS1053::read_register ( uint8_t _reg ) const
   control_mode_off() ;
   return result ;
 }
+//----------------------------------------------------------------------------------
 
 void VS1053::write_register ( uint8_t _reg, uint16_t _value ) const
 {
@@ -83,6 +85,7 @@ void VS1053::write_register ( uint8_t _reg, uint16_t _value ) const
   await_data_request() ;
   control_mode_off() ;
 }
+//----------------------------------------------------------------------------------
 
 bool VS1053::sdi_send_buffer ( uint8_t* data, size_t len )
 {
@@ -105,6 +108,8 @@ bool VS1053::sdi_send_buffer ( uint8_t* data, size_t len )
   return data_request() ;                          // True if more data can de stored in fifo
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::sdi_send_fillers ( size_t len )
 {
   size_t chunk_length ;                            // Length of chunk 32 byte or shorter
@@ -126,6 +131,7 @@ void VS1053::sdi_send_fillers ( size_t len )
   }
   data_mode_off();
 }
+//----------------------------------------------------------------------------------
 
 void VS1053::wram_write ( uint16_t address, uint16_t data )
 {
@@ -138,6 +144,7 @@ uint16_t VS1053::wram_read ( uint16_t address )
   write_register ( SCI_WRAMADDR, address ) ;            // Start reading from WRAM
   return read_register ( SCI_WRAM ) ;                   // Read back result
 }
+//----------------------------------------------------------------------------------
 
 bool VS1053::testComm ( const char *header )
 {
@@ -193,6 +200,8 @@ bool VS1053::testComm ( const char *header )
   return ( okay ) ;                                     // Return the result
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::begin()
 {
   pinMode      ( dreq_pin,  INPUT ) ;                   // DREQ is an input
@@ -242,9 +251,9 @@ void VS1053::begin()
     //printDetails ( "After last clocksetting" ) ;
     delay ( 100 ) ;
     #ifdef LOAD_VSPATCH
-      LoadUserCode(plugin, PLUGIN_SIZE);
+      LoadUserCode(plugin, PLUGIN_SIZE);    
+      LoadUserCode(analizer, ANALIZER_SIZE);
     #endif
-    LoadUserCode(analizer, ANALIZER_SIZE);
   }
 }
 
@@ -271,6 +280,7 @@ void  VS1053::LoadUserCode( const unsigned short* iplugin, uint16_t sizea) {
   }
 }
 
+//----------------------------------------------------------------------------------
 // spectrumAnalyzerAppl1053b-2.plg
 // results in XRAM 0x1810 .. 0x1877
 #define BASE 0x1810
@@ -293,11 +303,7 @@ void VS1053::getBands()
 
 }
 
-//**************************************************************************************************
-// DISPLAY SPECTRUM *
-//**************************************************************************************************
-// *
-//**************************************************************************************************
+//----------------------------------------------------------------------------------
 
 void VS1053::displaySpectrum( ) {
 
@@ -327,10 +333,9 @@ void VS1053::displaySpectrum( ) {
     spectrum[i][1] = spectrum[i][0];
     posi += larg + 2;
   }
-
 }
 
-
+//----------------------------------------------------------------------------------
 void VS1053::setVolume ( uint8_t vol )
 {
   // Set volume.  Both left and right.
@@ -348,6 +353,8 @@ void VS1053::setVolume ( uint8_t vol )
   }
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::setTone ( uint8_t *rtone )                 // Set bass/treble (4 nibbles)
 {
   // Set tone characteristics.  See documentation for the 4 nibbles.
@@ -361,13 +368,15 @@ void VS1053::setTone ( uint8_t *rtone )                 // Set bass/treble (4 ni
   write_register ( SCI_BASS, value ) ;                  // Volume left and right
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::startSong()
 {
   sdi_send_fillers ( 10 ) ;
   output_enable ( true ) ;                              // Enable amplifier through shutdown pin(s)
 }
 
-
+//----------------------------------------------------------------------------------
 
 void VS1053::stopSong()
 {
@@ -396,12 +405,16 @@ void VS1053::stopSong()
   printDetails ( "Song stopped incorrectly!" ) ;
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::softReset()
 {
   write_register ( SCI_MODE, _BV ( SM_SDINEW ) | _BV ( SM_RESET ) ) ;
   delay ( 10 ) ;
   await_data_request() ;
 }
+
+//----------------------------------------------------------------------------------
 
 void VS1053::printDetails ( const char *header )
 {
@@ -422,6 +435,8 @@ void VS1053::printDetails ( const char *header )
   }
 }
 
+//----------------------------------------------------------------------------------
+
 void  VS1053::output_enable ( bool ena )               // Enable amplifier through shutdown pin(s)
 {
   if ( shutdown_pin >= 0 )                             // Shutdown in use?
@@ -434,6 +449,8 @@ void  VS1053::output_enable ( bool ena )               // Enable amplifier throu
   }
 }
 
+//----------------------------------------------------------------------------------
+
 void VS1053::switchToMp3Mode() {
     wram_write(0xC017, 3); // GPIO DDR = 3
     wram_write(0xC019, 0); // GPIO ODATA = 0
@@ -441,6 +458,8 @@ void VS1053::switchToMp3Mode() {
 //    LOG("Switched to mp3 mode\n");
     softReset();
 }
+
+//----------------------------------------------------------------------------------
 
 /**
  * A lightweight method to check if VS1053 is correctly wired up (power supply and connection to SPI interface).

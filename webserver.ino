@@ -67,6 +67,15 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += uptime;
   output += "\",\r\n";
 
+  output += "\t\"RAMsize\" : ";
+  output += ESP.getHeapSize();
+  output += ",\r\n";
+  
+  output += "\t\"RAMfree\" : ";
+  output += ESP.getFreeHeap();
+  output += ",\r\n";
+
+
   //output += "\t\"Battery\" : ";
   //output += batvolt;
   //output += ",\r\n";
@@ -404,7 +413,7 @@ if ( param == NULL ){
       time( &rawt );
       localtime_r( &rawt, &tinfo);
        
-      if ( oldmin != tinfo.tm_min ){
+      if ( oldmin != tinfo.tm_min && currDisplayScreen == HOME ){
          oldmin = tinfo.tm_min; 
          showClock(tinfo.tm_hour, tinfo.tm_min);
          //showBattery();
