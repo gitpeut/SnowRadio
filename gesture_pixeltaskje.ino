@@ -102,7 +102,7 @@ int current_volume  = getVolume();
 int current_station = getStation();
 
   if ( gmode == gVolume ){
-      current_volume += (dir*5);
+      current_volume += (dir*10); // number of volume increase or decrease
   
       if ( current_volume > 100 )current_volume = 100;    
       if ( current_volume < 0  ) current_volume = 0;    
@@ -134,13 +134,14 @@ int current_station = getStation();
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 #ifndef USEPIXELS
-
+//--------------------------------------------------------------------------
  void tellPixels( uint32_t command ){
   ; //do nothing if pixels are not used, or soemthing else if screen is used.
  }
 
-int toggleMute(){
+//--------------------------------------------------------------------------
 
+int toggleMute(){
 
   if ( vs1053player->getVolume() <  getVolume() ){
       for ( int curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
@@ -155,6 +156,24 @@ int toggleMute(){
   }
    
 }
+//--------------------------------------------------------------------------
+
+void show_gesture_on(){
+  uint16_t barcolor = TFT_RED;
+  vs1053player->displaySpectrum( &barcolor);
+  tft_show_gesture( true );
+  
+}
+
+void show_gesture_off(){
+  uint16_t barcolor = TFT_GREEN;
+  tft_show_gesture( false );
+  vs1053player->displaySpectrum( &barcolor);
+  
+}
+
+
+//--------------------------------------------------------------------------
 
 #ifndef MULTILEVELGESTURES
 
@@ -169,6 +188,7 @@ int toggleMute(){
               case GES_CLOCKWISE_FLAG:
               case GES_COUNT_CLOCKWISE_FLAG:
                 gmode = gVolume;
+                show_gesture_on();
                 log_i("wake gesture sensor, mode to gVolume");
                 setgTimer();
                 break;
@@ -208,6 +228,7 @@ int toggleMute(){
                 break;
               case GES_CLOCKWISE_FLAG:
               case GES_COUNT_CLOCKWISE_FLAG:
+                show_gesture_off();
                 log_i("stop listening for gestures");
                 stopgTimer();
                 gmode = gOff;
@@ -236,6 +257,7 @@ int rc = 0;
           switch(data){
               case GES_UP_FLAG:
                 gmode = gVolume;
+                show_gesture_on();
                 log_i("wake gesture sensor, mode to gVolume");
                 setgTimer();
                 break;
@@ -265,6 +287,7 @@ int rc = 0;
                 log_i("stop listening for gestures");
                 stopgTimer();
                 gmode = gOff;
+                show_gesture_off();
                 break; 
               default:
                 break;  
@@ -291,6 +314,7 @@ int rc = 0;
                 log_i("stop listening for gestures");
                 stopgTimer();
                 gmode = gOff;
+                show_gesture_off();
                 break; 
               default:
                 break;  
@@ -317,6 +341,7 @@ int rc = 0;
                
                 stopgTimer();
                 gmode = gOff;
+                show_gesture_off();
                 break; 
               case GES_UP_FLAG:
                 log_i("Change station to current station displayed");

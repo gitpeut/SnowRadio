@@ -30,6 +30,36 @@ xSemaphoreGive( tftSemaphore);
 }
 //----------------------------------------------------------
 
+void tft_show_gesture( bool showonscreen ){
+int   w=tft.width(), h=10;
+int   xpos=0,ypos=36;
+uint16_t  gestcolors[2];
+
+
+if ( showonscreen ){
+    gestcolors[0] = TFT_RED;
+    gestcolors[1] = TFT_YELLOW;    
+}else{
+    gestcolors[0] = TFT_BLACK;
+    gestcolors[1] = TFT_BLACK;    
+}
+
+gest.createSprite(w,h);
+gest.fillSprite( gestcolors[0] );
+
+
+gest.drawRoundRect( 0, 0, w , h, 2, gestcolors[1] );//rectangle
+gest.fillRect( 2, 2, w-4, h-4, gestcolors[0] );// inside
+
+log_i("display gesture sprite at [%d,%d] on screen w= %d h = %d\n", xpos,ypos, tft.width(), tft.height());
+grabTft();
+  gest.pushSprite( xpos, ypos);
+releaseTft();  
+
+gest.deleteSprite();  
+}
+//----------------------------------------------------------
+
 int read_battery(){
   int i;
   int     batread=0, batotal=0;
@@ -57,9 +87,6 @@ int read_battery(){
   return(0);  
  
 }
-
-
-
 
 //-------------------------------------------------------------------------------
 void showBattery(){

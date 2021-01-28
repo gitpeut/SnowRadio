@@ -305,7 +305,13 @@ void VS1053::getBands()
 
 //----------------------------------------------------------------------------------
 
-void VS1053::displaySpectrum( ) {
+void VS1053::displaySpectrum( uint16_t *askcolor ) {
+
+static uint16_t barcolor=TFT_GREEN;
+if ( askcolor != NULL ) {
+  barcolor = *askcolor;
+  return;
+}
 
 //  Serial.print ("bands:   "); Serial.println (bands);
   if (bands <= 0 || bands > 14)  return;
@@ -321,7 +327,7 @@ void VS1053::displaySpectrum( ) {
   {
     if (visual) {
       if (spectrum[i][0] > spectrum[i][1]) {
-        tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][0], larg, spectrum[i][0], TFT_GREEN );
+        tft.fillRect (posi, Spectrum_y0 + Spectrum_hy - spectrum[i][0], larg, spectrum[i][0], barcolor );
         tft.fillRect (posi, Spectrum_y0, larg, Spectrum_hy - spectrum[i][0], TFT_BLACK);
       } else
         tft.fillRect (posi, Spectrum_y0, larg, Spectrum_hy - spectrum[i][0], TFT_BLACK);

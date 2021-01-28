@@ -111,11 +111,13 @@ int               contentsize=0;
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
-TFT_eSprite img   = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite bats  = TFT_eSprite(&tft); 
-TFT_eSprite vols  = TFT_eSprite(&tft);  
+TFT_eSprite img     = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
+TFT_eSprite bats    = TFT_eSprite(&tft); 
+TFT_eSprite vols    = TFT_eSprite(&tft);  
 TFT_eSprite clocks  = TFT_eSprite(&tft);  
-TFT_eSprite bmp   = TFT_eSprite(&tft);  
+TFT_eSprite bmp     = TFT_eSprite(&tft);  
+TFT_eSprite gest    = TFT_eSprite(&tft); 
+
 //TFT_eSprite spa  = TFT_eSprite(&tft);
 
 //hangdetection

@@ -141,7 +141,7 @@ class VS1053
     void switchToMp3Mode(); // An optional switch preventing the module starting up in MIDI mode
     bool isChipConnected();// Checks whether the VS1053 chip is connected and is able to exchange data to the ESP
     void getBands();
-    void displaySpectrum();
+    void displaySpectrum( uint16_t *askcolor=NULL);
     inline void showSpectrum(){
       getBands();
       displaySpectrum();
