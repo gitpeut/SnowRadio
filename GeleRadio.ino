@@ -131,7 +131,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V3.2"
+#define APVERSION "V3.3"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
