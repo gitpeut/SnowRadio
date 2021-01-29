@@ -24,6 +24,8 @@ void stopgTimer(){
 
  if( gTimer != NULL ){
     timerAlarmDisable( gTimer);
+    timerDetachInterrupt(gTimer); 
+    timerEnd(gTimer);
     gTimer = NULL;
  }
 
@@ -33,15 +35,13 @@ void stopgTimer(){
 void setgTimer(){ 
   
  if( gTimer != NULL ){
-    timerAlarmDisable( gTimer);
-    gTimer = NULL;
+   timerRestart( gTimer );
+ }else{
+   gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
+   timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
+   timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
+   timerAlarmEnable(gTimer);                        // turn timer 1 on
  }
-
- gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
- timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
- timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
- timerAlarmEnable(gTimer);                        // turn timer 1 on
-
 }
 
 /*------------------------------------------------------------------------------*/
