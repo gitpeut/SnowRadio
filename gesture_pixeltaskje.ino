@@ -33,7 +33,7 @@ void stopgTimer(){
 
 void setgTimer(){ 
   
- if( gTimer != NULL ){
+ if( gTimer != NULL ){   
    timerAttachInterrupt(gTimer, gTmo, true);   
    timerAlarmEnable(gTimer);  
    timerRestart( gTimer );

@@ -52,6 +52,7 @@ while(1){
  if ( notify_value == 321 ){
      log_i("timeout - not listening to gestures anymore");
      show_gesture_off();
+     stopgTimer();
      continue;
  }
  for(int rtry=0 ; gerror = paj7620ReadReg(0x43, 1, &data) ; rtry++ ){
