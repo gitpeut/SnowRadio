@@ -12,7 +12,7 @@ void IRAM_ATTR gTmo(){
   }
  #else
   xTaskNotifyFromISR( gestureTask, 321 ,eSetValueWithOverwrite, &pxHighP); 
-     if( pxHighP ){
+  if( pxHighP ){
         portYIELD_FROM_ISR()
   }
   gmode = gOff;
@@ -24,8 +24,7 @@ void stopgTimer(){
 
  if( gTimer != NULL ){
     timerAlarmDisable( gTimer);
-    timerDetachInterrupt(gTimer); 
-    timerEnd(gTimer);
+    timerEnd(gTimer); //timerEnd will also detach interrupt
     gTimer = NULL;
  }
 
@@ -35,6 +34,8 @@ void stopgTimer(){
 void setgTimer(){ 
   
  if( gTimer != NULL ){
+   timerAttachInterrupt(gTimer, gTmo, true);   
+   timerAlarmEnable(gTimer);  
    timerRestart( gTimer );
  }else{
    gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
@@ -160,7 +161,7 @@ int toggleMute(){
 
 void show_gesture_on(){
   uint16_t barcolor = TFT_RED;
-  vs1053player->displaySpectrum( &barcolor);
+  //vs1053player->displaySpectrum( &barcolor);
   tft_show_gesture( true );
   
 }
@@ -168,7 +169,7 @@ void show_gesture_on(){
 void show_gesture_off(){
   uint16_t barcolor = TFT_GREEN;
   tft_show_gesture( false );
-  vs1053player->displaySpectrum( &barcolor);
+  //vs1053player->displaySpectrum( &barcolor);
   
 }
 
