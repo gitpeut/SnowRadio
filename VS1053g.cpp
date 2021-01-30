@@ -1,55 +1,111 @@
+#include "VS1053g.h"
 
+//----------------------------------------------------------------------------------
 
-#undef TESTREAD
+VS1053g::VS1053g( uint8_t _cs_ping, uint8_t _dcs_ping, uint8_t _dreq_ping) : VS1053 (_cs_ping, _dcs_ping, _dreq_ping) { 
+ 
+ if ( psramFound() ){
+        log_i( "PSRAM found");
+        g_calloc = ps_calloc;
+        g_malloc = ps_malloc;
+    }else{
+        log_i( "No PSRAM found");
+        g_calloc  = calloc;
+        g_malloc  = malloc;
+    }  
 
-#ifdef TESTREAD
-#include "vs1053b-patches.plg" 
-#endif
-
-// allows for unedited raw .plg files to be uploaded to SPIFFS
-// and to be read and patch VS1053. After the .plg file has been 
-// read, a .plg.bin is written and the plg file is deleted.
-// if a new .plg file isplaced on SPIFFS this new plg file is used 
-// to patch VS1053.
-
-size_t skiplast=0;
-//-----------------------------------------------------
-
-enum patchMode{
-    pFindPlugin,
-    pCheckPlugin,
-    pFind0x,
-    pFindx,
-    pCopyValue,
-    pComment,
-    pIsComment,
-    pFindEndStarComment,
-    pEndStarComment,
-    pFindEndSlashComment
-};
-
-//-----------------------------------------------------
-// requires write_register to be public in the VS1053 
-// class.
-
-void WriteVS10xxRegister( unsigned short addr, unsigned short value){
-    //printf( "%04x %04x\n", addr,value);
-    vs1053player->write_register((uint8_t)addr, (uint16_t)value);
+  for (int i = 0; i < 14; i++) {
+    spectrum[i][1] = 0; // dato precedente // lotfi
+    spectrum[i][2] = 0; // picco grafico (non da Vs1053)
+  }
+  
 }
 
-//-----------------------------------------------------
-int VS1053_rename( const char *oldname, const char *newname){
-    return( rename( oldname, newname ) );
+//----------------------------------------------------------------------------------
+#define BASE 0x1810
+void VS1053g::getBands()
+{
+  const uint16_t base = 0x1810;
+  const uint8_t  wramaddr=7,wram =6;  
+
+  write_register( wramaddr, base + 2);
+  bands = read_register( wram);
+  
+  write_register(wramaddr, base + 4);
+
+  uint8_t current_volume = getVolume();
+  
+  for (uint8_t i = 0; i < 14; i++) {
+    uint8_t val = read_register( wram );
+    /* current value in bits 5..0, normally 0..31
+      peak value in bits 11..6, normally 0..31 */
+    uint8_t cur1 = val & 31;
+    uint8_t cur = (cur1 * current_volume ) / 30; // big bars
+    if ( cur < 0 ) {
+      cur = 0;
+    } else if ( cur > ( spectrum_top - 4) ){
+      cur = spectrum_height - 4;
+    }
+    spectrum[i][0] = cur;
+  }
+
 }
+
+//----------------------------------------------------------------------------------
+
+void VS1053g::displaySpectrum( uint16_t *askcolor ) {
+
+  static uint16_t barcolor=TFT_GREEN;
+  if ( askcolor != NULL ) {
+    barcolor = *askcolor;
+    return;
+  }
+  
+  if (bands <= 0 || bands > 14)  return;
+      
+  uint8_t   bar_width = tft.width() / bands - 2;
+  uint16_t  barx = 2; // start location of the first bar
+  boolean   visual = true; //paint to display
+  
+  if (bands != prevbands) {
+    prevbands = bands;
+    if (visual) tft.fillRect (0, spectrum_top, tft.width(), spectrum_height + 1, TFT_BLACK);
+  }
+  for (uint8_t i = 0; i < bands; i++) // Handle all sections
+  {
+    if (visual) {
+      if (spectrum[i][0] > spectrum[i][1]) {
+        tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], barcolor );
+        tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+      } else {
+        tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+      }  
+    }
+    if (spectrum[i][2] > 0) { 
+      spectrum[i][2]--;
+    }
+    if (spectrum[i][0] > spectrum[i][2]) {
+      spectrum[i][2] = spectrum[i][0];
+    }
+    if (visual) { 
+      tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][2] - 3, bar_width, 2, TFT_WHITE );
+    }
+    
+    spectrum[i][1] = spectrum[i][0];
+    barx += bar_width + 2;
+  }
+}
+
+
 //-----------------------------------------------------
-int VS1053_file_size( const char *filename){
+int VS1053g::VS1053_file_size( const char *filename){
 struct stat buf;
 FILE *binfile;
 
     binfile = fopen( filename, "rb");
     
     if ( binfile == NULL ) {
-      Serial.printf("Couldn't open %s for read\n", filename );
+      log_e("Couldn't open %s for read", filename );
       return(-1); 
     }
     
@@ -65,7 +121,7 @@ return( buf.st_size );
 //-----------------------------------------------------------------------
 // pasre RLE values in bin file and write to VS1053 
 
-void write_VS1553_registers( unsigned short *pluginr, size_t valuecount){
+void VS1053g::write_VS1053_registers( unsigned short *pluginr, size_t valuecount){
     
     size_t i = 0, shortcount=0;
     unsigned short addr, n, val;
@@ -77,26 +133,26 @@ void write_VS1553_registers( unsigned short *pluginr, size_t valuecount){
           n &= 0x7FFF;
           val = pluginr[i++];
           while (n--) {
-            WriteVS10xxRegister(addr, val);
+            write_register(addr, val);
             shortcount++; shortcount++;
           }
         } else {           // Copy run, copy n samples 
           while (n--) {
             val = pluginr[i++];
-            WriteVS10xxRegister(addr, val);
+            write_register(addr,val);
             shortcount++; shortcount++;
           }
         }
     }
 
-    Serial.printf( "VS1053 found %u values, wrote %u shorts to VS1053\n", valuecount, shortcount);
+    log_i( "VS1053 found %u values, wrote %u shorts to VS1053", valuecount, shortcount);
     
 }
 
 //--------------------------------------------------------------------
 // read saved bin file and write registers to vs1053
 
-int read_VS1053_bin( const char *bin_filename){
+int VS1053g::read_VS1053_bin( const char *bin_filename){
 size_t  size, readnumber, shortsize;    
 FILE *binfile;
 unsigned short *pluginv; 
@@ -106,20 +162,20 @@ unsigned short *pluginv;
     size = VS1053_file_size( bin_filename );
     if ( size < 0 ) return( 2);
     
-    Serial.printf("reading binfile %s of %u bytes\n", bin_filename, size);  
+    log_i("reading binfile %s of %u bytes", bin_filename, size);  
     
     shortsize = (size / sizeof( unsigned short ));
     
     binfile = fopen( bin_filename, "rb");
     
     if ( binfile == NULL ) {
-      Serial.printf("Couldn't open %s for read\n", bin_filename );
+      log_e("Couldn't open %s for read\n", bin_filename );
       return(1); 
     }
     
-    pluginv = (unsigned short *)gr_calloc( shortsize , sizeof( unsigned short ) );
+    pluginv = (unsigned short *)g_calloc( shortsize , sizeof( unsigned short ) );
     if ( ! pluginv ) {
-        Serial.printf( "no memory for patch, abort\n");
+        log_e( "no memory for patch, abort\n");
         return(2);
     }
     
@@ -130,11 +186,11 @@ unsigned short *pluginv;
  
     if ( readnumber != shortsize ){
     
-        Serial.printf( "Error reading binfile, should read %llu, read %llu\n", shortsize, readnumber);
+        log_e( "Error reading binfile, should read %llu, read %llu\n", shortsize, readnumber);
         return(3);
     }
     
-    write_VS1553_registers( pluginv, shortsize);
+    write_VS1053_registers( pluginv, shortsize);
     
     free( pluginv );
     return(0);  
@@ -142,13 +198,13 @@ unsigned short *pluginv;
 
 //--------------------------------------------------------------------
 
-int write_VS1053_binfile( unsigned short *pluginv, size_t valuecount, const char *bin_filename ){
+int VS1053g::write_VS1053_binfile( unsigned short *pluginv, size_t valuecount, const char *bin_filename ){
 FILE *binfile;
 
     binfile = fopen( bin_filename, "w");
     
     if ( binfile == NULL ) {
-      Serial.printf("Couldn't open %s for write\n", bin_filename );
+      log_e("Couldn't open %s for write\n", bin_filename );
       return(1); 
     }
 
@@ -163,7 +219,19 @@ FILE *binfile;
 //--------------------------------------------------------------------
 // good enough state machine to parse plg files
 //
-int read_VS1053_plg( const char *filename ){
+int VS1053g::read_VS1053_plg( const char *filename ){
+enum patchMode{
+    pFindPlugin,
+    pCheckPlugin,
+    pFind0x,
+    pFindx,
+    pCopyValue,
+    pComment,
+    pIsComment,
+    pFindEndStarComment,
+    pEndStarComment,
+    pFindEndSlashComment
+};  
 FILE  *plgfile=NULL;
 char  c, *v, value[64]="";
 int   mode=pFindPlugin;
@@ -176,7 +244,7 @@ for ( actionMode = 0; actionMode < 2; ++actionMode ){
 
     plgfile = fopen( filename, "r");
     if ( plgfile == NULL ) {
-      Serial.printf("Couldn't open %s for read\n", filename );
+      log_w("Couldn't open %s for read", filename );
       return(1); 
     }
 
@@ -263,16 +331,16 @@ for ( actionMode = 0; actionMode < 2; ++actionMode ){
   
     
     if ( 0 == actionMode ){
-        Serial.printf("Closed file after having read %u values\n", valuecount);
-        Serial.printf("Allocating %u bytes of memory for array \n", valuecount * sizeof(unsigned short ) );
+        log_v("Closed file after having read %u values\n", valuecount);
+        log_v("Allocating %u bytes of memory for array \n", valuecount * sizeof(unsigned short ) );
         
-        pluginv = (unsigned short *)gr_calloc( valuecount, sizeof( unsigned short ) );
+        pluginv = (unsigned short *)g_calloc( valuecount, sizeof( unsigned short ) );
         if ( ! pluginv ) {
-            Serial.printf( "no memory for patch, abort\n");
+            log_e( "no memory for patch, abort\n");
             return(2);
         }
         
-        Serial.printf("Done, read again\n");
+        log_v("Done, read again\n");
         valuecount=0;
         v = value;
         *v = 0;
@@ -290,41 +358,22 @@ for ( actionMode = 0; actionMode < 2; ++actionMode ){
        remove ( filename ); 
     }
 
-    write_VS1553_registers( pluginv, valuecount);
+    write_VS1053_registers( pluginv, valuecount);
     
     free( pluginv );
     return(0);  
 }
 
+/*------------------------------------------------------------------------*/
 
-#ifdef TESTREAD
-void compare_plugin( unsigned short *pluginv,  size_t valuecount ){
-int plugidx = 0, difcount=0;    
-    for ( pluginidx = 0; pluginidx < PLUGIN_SIZE; ++pluginidx ){ 
-        if (  pluginv [ plugidx ] != plugin [ plugidx ] ) {
-            difcount++;
-            cout << "Difference " << plugidx << " pluginv " << pluginv[ plugidx] << " plugin " << plugin[ plugidx] << std::endl; 
-        }
-        ++plugidx;
-    }
-    if ( difcount ){
-        cout << "Found "<<difcount << "differences" << std::endl;
-    }else{
-        cout << "Found no differences" << std::endl;
-    }
-
-}
-#endif
-
-
-void patch_VS1053( const char *filename, size_t skip_last_bytes){
+void VS1053g::patch_VS1053( const char *filename, size_t skip_last_bytes){
 int rc;
 char    bin_filename[80];
 
 // if plg file exists read it, convert it to bin, rename it and apply included patches
 // plg file does not exist, look for ....plg.bin, red it amd apply patches.
 // new patches can be installed by placing a new .plg file
-    Serial.printf( "Loading patch/plugin file %s\n", filename);
+    log_i( "Loading patch/plugin file %s", filename);
     
     skiplast = skip_last_bytes;
     
@@ -332,7 +381,7 @@ char    bin_filename[80];
     if ( rc == 1){ // plg file not available   
        sprintf( bin_filename,"%s.bin", filename);
        rc = read_VS1053_bin( bin_filename ); 
-       if( rc ) printf( "applying patches to VS1053 failed\n");
+       if( rc )log_e( "applying patches to VS1053 failed");
     }
-    if ( !rc ) printf( "patch file %s applied to VS1053\n", filename);    
+    if ( !rc ) log_i( "Patch file %s (or the previously saved bin version) applied to VS1053", filename);    
 }

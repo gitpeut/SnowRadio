@@ -23,7 +23,7 @@
 //tft
 
 #define TFT_CS        4
-#define TFT_RST       14  // you can also connect this to the Arduino reset
+#define TFT_RST       14  // you can also connect this to the ESP32 reset
 #define TFT_DC        13
 #define TFT_LED       32
 //SDO(MISO)           19

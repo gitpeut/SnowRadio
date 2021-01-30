@@ -10,11 +10,16 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
 
   vs1053player->startSong();
 
-//    vs1053player->getBands() ;
-//    displaySpectrum();
-
-  while ( uxQueueMessagesWaiting(playQueue) <  (PLAYQUEUESIZE/2) ) {
-    Serial.printf ( "Waiting for Queue to fill up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
+  int qfillcount = 0;
+  while ( uxQueueMessagesWaiting(playQueue) <  (PLAYQUEUESIZE/2) ) {    
+    qfillcount++;
+    if ( qfillcount%10 == 0 ){
+      log_i ( "Waiting for Queue to fill up, %d messages in playQueue", uxQueueMessagesWaiting( playQueue ) );
+    }
+    if ( qfillcount > 800 ){
+      unavailablecount =  MAXUNAVAILABLE + 1;
+      Serial.printf ( "Queue does not fill up, reconnect" );
+    }
     delay(40);
   }
   Serial.printf ( "Queueu filled up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
@@ -34,7 +39,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
       
       
         for ( int i = 0; i < 1 ; ++i ){
-          if ( digitalRead( vs_dreq_pin ) ){
+          if ( digitalRead( VS_DREQ_PIN ) ){
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
             vs1053player->playChunk(playBuffer, 32  );
             //xSemaphoreGive( tftSemaphore);

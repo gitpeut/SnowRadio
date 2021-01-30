@@ -1,3 +1,5 @@
+
+
 hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
 /*------------------------------------------------------------------------------*/
@@ -239,14 +241,15 @@ void show_gesture_off(){
           }
           break;
       default:
-            log_i( "Unknown gmode %d\n", gmode);
+            log_i( "Unknown gmode %d", gmode);
             break;
     }
 
    return(rc);
 }
 
-#else
+#else 
+
 
 // Oranje radio gestures
 
@@ -355,7 +358,7 @@ int rc = 0;
           }
           break;
           default:
-            log_i( "Unknown gmode %d\n", gmode);
+            log_i( "Unknown gmode %d", gmode);
             break;
     }
 
@@ -363,7 +366,8 @@ int rc = 0;
 }
 #endif
  
-#else
+#else //USEPIXELS
+
 
 
 /*------------------------------------------------------------------------------*/

@@ -1,4 +1,5 @@
 
+
 static struct {
   int mode;
   int h;
@@ -120,7 +121,7 @@ while(1){
 
     if ( uxQueueMessagesWaiting(playQueue) < 20 ){
         lowqueue++; 
-        if ( lowqueue > 30  ){
+        if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
            syslog( (char *)"Restart to solve low queue");  
            ESP.restart(); 
         }
@@ -249,7 +250,7 @@ while(1){
           delay( 5 );         
         }
         
-        xQueueReset( playQueue);
+        xQueueReset( playQueue); //empty queue
         xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
         lowqueue = 0;
         

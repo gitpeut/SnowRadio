@@ -1,7 +1,18 @@
 
-// Oranje radio
-// Jose Baars, 2019
+// Gele radio
+// Jose Baars, 2019 - 20121,
+// with the generous support of Aleks-Ale
+//
 // public domain
+// uses the follwing libraries:
+// wifi manager ( https://github.com/tzapu/WiFiManager.git )
+// Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )
+// ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )
+// TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )
+// If you want to use LittleFS
+// LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )
+// Thanks to all the authors 
+//
 
 /*define or undefine */
 
@@ -41,7 +52,6 @@ screenPage currDisplayScreen = HOME;
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <WiFi.h>
 #include <WiFiManager.h>
-#include "lotfi_VS1053.h"
 #include <rom/rtc.h>
 
 #include <WiFiClient.h>
@@ -66,12 +76,13 @@ screenPage currDisplayScreen = HOME;
 #endif
 #include <Update.h>
 #include <Wire.h>
-#include "paj7620.h"
 
-
-#include "sk.h"
 #include <wificredentials.h>
+#include "VS1053g.h"
+#include "paj7620.h"
+#include "sk.h"
 #include "0pins.h"
+#include "tft.h"
 
 enum FSnumber{
   FSNO_SPIFFS,
@@ -125,6 +136,7 @@ TFT_eSprite gest    = TFT_eSprite(&tft);
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
+#define RESTART_AFTER_LOWQ_COUNT 100
 
 int   unavailablecount=0;
 int   failed_connects=0;
@@ -136,7 +148,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V3.3"
+#define APVERSION "V4.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -187,7 +199,7 @@ unsigned int   position;
 
 
 #define STATIONSSIZE 100
-Station *stations; //= (Station *) gr_calloc( STATIONSSIZE * sizeof(Station *) );
+Station *stations; 
 
 static volatile int     currentStation;
 static volatile int     stationCount;
@@ -197,32 +209,7 @@ int                     scrollStation = -1;
 int                     scrollDirection;
 int                     DEBUG = 1 ;                            // Debug on/off
 
-// neopixel 
-#define NEONUMBER   10
 
-#define PIX_BLACKC    0
-#define PIX_WAKEUP    1
-#define PIX_RIGHT     2
-#define PIX_LEFT      3
-#define PIX_CONFIRM   4
-#define PIX_SCROLLUP  8
-#define PIX_STOP      10
-#define PIX_MUTE      11
-#define PIX_UNMUTE    12
-#define PIX_SCROLLDOWN 16
-#define PIX_BLACK     911
-
-#define PIX_BLINKRED    21
-#define PIX_BLINKGREEN  22
-#define PIX_BLINKBLUE   23
-#define PIX_BLINKYELLOW 24
-
-#define PIX_RED         41
-#define PIX_GREEN       42
-#define PIX_BLUE        43
-#define PIX_YELLOW      44
-
-#define PIX_DECO        51
 
 sk gstrip;
 
@@ -237,7 +224,7 @@ int gmode=gOff;
 
 
 // The object for the MP3 player
-VS1053* vs1053player ;
+VS1053g* vs1053player;
 
 
 //tft
@@ -375,7 +362,7 @@ void initOTA( char *apname, char *appass){
 /*-----------------------------------------------------------*/
 
 void getWiFi( const char *apname, const char *appass){
-  
+    
     //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wm;
 
@@ -417,7 +404,7 @@ void getWiFi( const char *apname, const char *appass){
          tellPixels( PIX_BLINKBLUE );
 
     }
-  
+    
   Serial.print("IP address = ");
   Serial.println(WiFi.localIP());
 #ifdef USEOTA
@@ -463,20 +450,14 @@ void setup () {
      
     //unreset the VS1053
     pinMode( VS1053_RST , OUTPUT);
-
     digitalWrite( VS1053_RST , LOW);
     delay( 200);
     digitalWrite( VS1053_RST , HIGH);
 
-    vs_cs_pin = VS_CS_PIN;
-    vs_dcs_pin = VS_DCS_PIN;
-    vs_dreq_pin = VS_DREQ_PIN;
     
-  vs1053player = new VS1053 ( vs_cs_pin,       // Make instance of player
-                              vs_dcs_pin,
-                              vs_dreq_pin,
-                              -1 ,
-                              -1 ) ;
+    vs1053player = new VS1053g ( VS_CS_PIN,       // Make instance of player
+                                 VS_DCS_PIN,
+                                 VS_DREQ_PIN);
                               
 
      Serial.println("Creating semaphores...");
@@ -514,10 +495,21 @@ void setup () {
 
      vs1053player->begin();
 
-     // radiofs
      char patchname[128];
+     
+     sprintf( patchname,"%s%s", RadioMount, "/vs1053b-patches.plg");
+     vs1053player->patch_VS1053( patchname );
+     
+     
+     Serial.println("Switch to MP3...");
+     vs1053player->switchToMp3Mode();
+
+
+     // radiofs
+     
      sprintf( patchname,"%s%s", RadioMount, "/spectrum1053b-2.plg");
-     patch_VS1053( patchname,  0 );
+     vs1053player->patch_VS1053( patchname );
+     
      //patch_VS1053( "/spiffs/vs1053b-patch270-flac.plg",  0 );
      //patch_VS1053( "/spiffs/vs1053b-flac-latm.plg",  0 );
      
@@ -574,9 +566,7 @@ void setup () {
       delay(500);
     }
       
-    Serial.println("Switch to MP3...");
-//    vs1053player->switchToMp3Mode();
-
+   
  Serial.println("TFT init...");
     tft_init();
  

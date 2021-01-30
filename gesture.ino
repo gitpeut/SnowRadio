@@ -45,7 +45,7 @@ for( gerror = 1; gerror; delay(300) ){
 
   
 while(1){
- log_d("Gesture read pin %d -> %d\n", GINTPIN, digitalRead(GINTPIN));
+ log_d("Gesture read pin %d -> %d", GINTPIN, digitalRead(GINTPIN));
   
  xTaskNotifyWait(0,0,&notify_value,portMAX_DELAY);
 
