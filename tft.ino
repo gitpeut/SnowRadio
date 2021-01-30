@@ -706,7 +706,7 @@ void tft_init(){
   tft.setRotation( tftrotation );
   tft.fillScreen(TFT_BLACK);
 
-  drawBmp("/OranjeRadio24.bmp", 55, 15 );
+  //drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
   int halfwidth = tft.width() / 2;
   int bmpx      = halfwidth - 25;
