@@ -67,6 +67,15 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += uptime;
   output += "\",\r\n";
 
+  output += "\t\"RAMsize\" : ";
+  output += ESP.getHeapSize();
+  output += ",\r\n";
+  
+  output += "\t\"RAMfree\" : ";
+  output += ESP.getFreeHeap();
+  output += ",\r\n";
+
+
   //output += "\t\"Battery\" : ";
   //output += batvolt;
   //output += ",\r\n";
@@ -271,13 +280,6 @@ void handleWebServer( void *param ){
 
   
   Serial.printf("WebServer running on core %d\n", xPortGetCoreID()); 
-//
-//https://github.com/espressif/arduino-esp32/issues/595
-//
-  
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;
-  TIMERG0.wdt_wprotect=0;
 
   #ifdef USESSDP
     setupSSDP();
@@ -327,7 +329,11 @@ void handleWebServer( void *param ){
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
-      
+        
+        for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );
+        }
        
        dossdp = -30000; 
        xSemaphoreTake( updateSemaphore, portMAX_DELAY);
@@ -407,7 +413,7 @@ if ( param == NULL ){
       time( &rawt );
       localtime_r( &rawt, &tinfo);
        
-      if ( oldmin != tinfo.tm_min ){
+      if ( oldmin != tinfo.tm_min && currDisplayScreen == HOME ){
          oldmin = tinfo.tm_min; 
          showClock(tinfo.tm_hour, tinfo.tm_min);
          //showBattery();
@@ -415,8 +421,14 @@ if ( param == NULL ){
    
       timecount = millis() + (10*1000);
    }
+
+  /*
+    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_feed=1;
+    TIMERG0.wdt_wprotect=0;
+   */
    
-   delay(20);
+   delay(50);
   }
 
 } 

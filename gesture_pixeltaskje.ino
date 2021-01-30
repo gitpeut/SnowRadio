@@ -1,9 +1,369 @@
-
-
 hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
+/*------------------------------------------------------------------------------*/
+void IRAM_ATTR gTmo(){
+ BaseType_t    pxHighP=0;
+
+ goodbyeCount++;
+ #ifdef USEPIXELS
+  xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
+  if( pxHighP ){
+    portYIELD_FROM_ISR();
+  }
+ #else
+  xTaskNotifyFromISR( gestureTask, 321 ,eSetValueWithOverwrite, &pxHighP); 
+  if( pxHighP ){
+        portYIELD_FROM_ISR()
+  }
+  gmode = gOff;
+ #endif  
+}
+
+/*------------------------------------------------------------------------------*/
+void stopgTimer(){
+
+ if( gTimer != NULL ){
+    timerAlarmDisable( gTimer);
+    timerEnd(gTimer); //timerEnd will also detach interrupt
+    gTimer = NULL;
+ }
+
+} 
+/*------------------------------------------------------------------------------*/
+
+void setgTimer(){ 
+  
+ if( gTimer != NULL ){   
+   timerAttachInterrupt(gTimer, gTmo, true);   
+   timerAlarmEnable(gTimer);  
+   timerRestart( gTimer );
+ }else{
+   gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
+   timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
+   timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
+   timerAlarmEnable(gTimer);                        // turn timer 1 on
+ }
+}
+
+/*------------------------------------------------------------------------------*/
+int getVolume(){
+  int v;
+  
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  v = currentVolume;
+  xSemaphoreGive(volSemaphore);
+
+  return(v);
+}
+/*------------------------------------------------------------------------------*/
+int setVolume( int v){
+
+  //Serial.printf( "Changing volume to %d\n", v); 
+
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  currentVolume = v;
+  vs1053player->setVolume( v );
+  xSemaphoreGive(volSemaphore);
+
+  if (currDisplayScreen == HOME) showVolume(v);
+  
+  save_last_volstat(1);
+  
+  return(v);
+}
+/*------------------------------------------------------------------------------*/
+int getStation(){
+  int s;
+  
+  xSemaphoreTake(staSemaphore, portMAX_DELAY);
+  s = currentStation;
+  xSemaphoreGive(staSemaphore);
+
+  return(s);
+}
+/*------------------------------------------------------------------------------*/
+int setStation(int s, int p){
+  
+  xSemaphoreTake(staSemaphore, portMAX_DELAY);
+  currentStation = s;
+  playingStation = p;
+  xSemaphoreGive(staSemaphore);
+  
+  return(s);
+}
+
+/*------------------------------------------------------------------------------*/
+#ifdef MULTILEVELGESTURES
+void change_volstat(int dir){
+#else
+void change_volstat(int dir, int gmode){
+#endif
+
+int current_volume  = getVolume();
+int current_station = getStation();
+
+  if ( gmode == gVolume ){
+      current_volume += (dir*10); // number of volume increase or decrease
+  
+      if ( current_volume > 100 )current_volume = 100;    
+      if ( current_volume < 0  ) current_volume = 0;    
+  
+      
+       
+       setVolume(current_volume );
+       save_last_volstat(1);
+  }
+  
+  if ( gmode == gStation ){
+      current_station += dir;  
+      
+      Serial.printf( "Changing station\n"); 
+      while(1){
+        if ( current_station < 0 )current_station = STATIONSSIZE - 1;
+        if ( current_station >= STATIONSSIZE )current_station = 0;
+        if ( stations[ current_station].status == 1 ) break; 
+        current_station += dir;
+      }
+      Serial.printf( "Changing station to %d-%s\n", current_station,stations[ current_station].name ); 
+           
+      setStation( current_station, -1 );
+      
+  }
+
+}
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+#ifndef USEPIXELS
+//--------------------------------------------------------------------------
+ void tellPixels( uint32_t command ){
+  ; //do nothing if pixels are not used, or soemthing else if screen is used.
+ }
+
+//--------------------------------------------------------------------------
+
+int toggleMute(){
+
+  if ( vs1053player->getVolume() <  getVolume() ){
+      for ( int curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+      } 
+  }else{
+     for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+     }
+  }
+   
+}
+//--------------------------------------------------------------------------
+
+void show_gesture_on(){
+  uint16_t barcolor = TFT_RED;
+  //vs1053player->displaySpectrum( &barcolor);
+  tft_show_gesture( true );
+  
+}
+
+void show_gesture_off(){
+  uint16_t barcolor = TFT_GREEN;
+  tft_show_gesture( false );
+  //vs1053player->displaySpectrum( &barcolor);
+  
+}
 
 
+//--------------------------------------------------------------------------
+
+#ifndef MULTILEVELGESTURES
+
+// Single level gestures
+  
+  int parse_gestures( uint8_t data){
+  int rc = 0;
+    
+    switch( gmode ){
+      case gOff:
+          switch(data){
+              case GES_CLOCKWISE_FLAG:
+              case GES_COUNT_CLOCKWISE_FLAG:
+                gmode = gVolume;
+                show_gesture_on();
+                log_i("wake gesture sensor, mode to gVolume");
+                setgTimer();
+                break;
+              default:
+                log_i("not listening to this gesture until wakeup");
+                break;  
+          }
+          break;
+      case gVolume:
+          switch(data){
+              case GES_DOWN_FLAG:
+                log_i("lower volume");
+                change_volstat( -1, gVolume );
+                setgTimer();
+                break;
+              case GES_UP_FLAG:
+                log_i("higher volume");
+                change_volstat( 1, gVolume );
+                setgTimer();
+                break;
+              case GES_LEFT_FLAG:
+                log_i("previous station");
+                change_volstat( -1, gStation );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("next station");
+                change_volstat( 1, gStation );
+                setgTimer();
+                break;
+              case GES_FORWARD_FLAG:  
+              case GES_BACKWARD_FLAG:  
+                log_i("toggle mute");
+                stopgTimer();
+                gmode = gOff;
+                toggleMute();
+                break;
+              case GES_CLOCKWISE_FLAG:
+              case GES_COUNT_CLOCKWISE_FLAG:
+                show_gesture_off();
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                break; 
+              default:
+                break;  
+          }
+          break;
+      default:
+            log_i( "Unknown gmode %d\n", gmode);
+            break;
+    }
+
+   return(rc);
+}
+
+#else
+
+// Oranje radio gestures
+
+int parse_gestures( uint8_t data){
+int rc = 0;
+    
+    switch( gmode ){
+      case gOff:
+          switch(data){
+              case GES_UP_FLAG:
+                gmode = gVolume;
+                show_gesture_on();
+                log_i("wake gesture sensor, mode to gVolume");
+                setgTimer();
+                break;
+              default:
+                log_i("not listening to this gesture until wakeup");
+                break;  
+          }
+          break;
+      case gVolume:
+          switch(data){
+              case GES_LEFT_FLAG:
+                log_i("lower volume");
+                change_volstat( -1 );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("higher volume");
+                change_volstat( 1 );
+                setgTimer();
+                break;
+              case GES_CLOCKWISE_FLAG:
+                log_i("mode to gStation");
+                gmode = gStation;
+                setgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                show_gesture_off();
+                break; 
+              default:
+                break;  
+          }
+          break;
+      case gStation:
+          switch(data){
+              case GES_LEFT_FLAG:
+                log_i("previous station");
+                change_volstat( -1 );
+                setgTimer();
+                break;
+              case GES_RIGHT_FLAG:
+                log_i("next station");
+                change_volstat( 1 );
+                setgTimer();
+                break;
+              case GES_CLOCKWISE_FLAG:
+                log_i("scroll mode");
+                gmode = gScroll;
+                setgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening for gestures");
+                stopgTimer();
+                gmode = gOff;
+                show_gesture_off();
+                break; 
+              default:
+                break;  
+          }
+          break;
+       case gScroll:
+          switch(data){
+              case GES_CLOCKWISE_FLAG:
+                log_i("scroll down the list of stations");
+                tft_scrollstation( SCROLLUP );
+                stopgTimer();
+                break;
+               case GES_COUNT_CLOCKWISE_FLAG:
+                log_i("scroll up the list of stations");
+                tft_scrollstation( SCROLLDOWN );
+                stopgTimer();
+                break;
+              case GES_DOWN_FLAG:
+                log_i("stop listening to gestures");
+                
+                xSemaphoreTake( chooseSemaphore, portMAX_DELAY);
+                chosenStation = 2;
+                xSemaphoreGive( chooseSemaphore);
+               
+                stopgTimer();
+                gmode = gOff;
+                show_gesture_off();
+                break; 
+              case GES_UP_FLAG:
+                log_i("Change station to current station displayed");
+                xSemaphoreTake( chooseSemaphore, portMAX_DELAY);
+                chosenStation = 1;
+                xSemaphoreGive( chooseSemaphore);
+                break;   
+              default:
+                break;  
+          }
+          break;
+          default:
+            log_i( "Unknown gmode %d\n", gmode);
+            break;
+    }
+
+   return(rc);
+}
+#endif
+ 
+#else
 
 
 /*------------------------------------------------------------------------------*/
@@ -262,88 +622,7 @@ gstrip.show();
 
 }
 
-/*------------------------------------------------------------------------------*/
-int getVolume(){
-  int v;
-  
-  xSemaphoreTake(volSemaphore, portMAX_DELAY);
-  v = currentVolume;
-  xSemaphoreGive(volSemaphore);
 
-  return(v);
-}
-/*------------------------------------------------------------------------------*/
-int setVolume( int v){
-
-  //Serial.printf( "Changing volume to %d\n", v); 
-
-  xSemaphoreTake(volSemaphore, portMAX_DELAY);
-  currentVolume = v;
-  player.setVolume( v );
-  xSemaphoreGive(volSemaphore);
-
- 
-  showVolume(v);
-  
-  save_last_volstat(1);
-  
-  return(v);
-}
-/*------------------------------------------------------------------------------*/
-int getStation(){
-  int s;
-  
-  xSemaphoreTake(staSemaphore, portMAX_DELAY);
-  s = currentStation;
-  xSemaphoreGive(staSemaphore);
-
-  return(s);
-}
-/*------------------------------------------------------------------------------*/
-int setStation(int s, int p){
-  
-  xSemaphoreTake(staSemaphore, portMAX_DELAY);
-  currentStation = s;
-  playingStation = p;
-  xSemaphoreGive(staSemaphore);
-  
-  return(s);
-}
-
-/*------------------------------------------------------------------------------*/
-void change_volstat(int dir){
-int current_volume  = getVolume();
-int current_station = getStation();
-
-if ( gmode == 1 ){
-    current_volume += (dir*5);
-
-    if ( current_volume > 100 )current_volume = 100;    
-    if ( current_volume < 0  ) current_volume = 0;    
-
-    
-     
-     setVolume(current_volume );
-     save_last_volstat(1);
-}
-
-if ( gmode == 2 ){
-    current_station += dir;  
-    
-    Serial.printf( "Changing station\n"); 
-    while(1){
-      if ( current_station < 0 )current_station = STATIONSSIZE - 1;
-      if ( current_station >= STATIONSSIZE )current_station = 0;
-      if ( stations[ current_station].status == 1 ) break; 
-      current_station += dir;
-    }
-    Serial.printf( "Changing station to %d-%s\n", current_station,stations[ current_station].name ); 
-         
-    setStation( current_station, -1 );
-    
-}
-
-}
 /*------------------------------------------------------------------------------*/
 float myexp(float x) { //exponent approximation
   return (1.0/(1.0-(0.634-1.344*x)*x));
@@ -626,42 +905,6 @@ static uint32_t previous_command=-1;
 }
 
 
-/*------------------------------------------------------------------------------*/
-void IRAM_ATTR gTmo(){
- BaseType_t    pxHighP=0;
-
- goodbyeCount++;
-
- xTaskNotifyFromISR( pixelTask, PIX_BLACK,eSetValueWithOverwrite, &pxHighP); 
- if( pxHighP ){
-    portYIELD_FROM_ISR();
- } 
-}
-
-/*------------------------------------------------------------------------------*/
-void stopgTimer(){
-
- if( gTimer != NULL ){
-    timerAlarmDisable( gTimer);
-    gTimer = NULL;
- }
-
-} 
-/*------------------------------------------------------------------------------*/
-
-void setgTimer(){
-  
- if( gTimer != NULL ){
-    timerAlarmDisable( gTimer);
-    gTimer = NULL;
- }
-
- gTimer = timerBegin(0, 80, true);                // use time 1 to stop command mode ( = anything not zero )
- timerAttachInterrupt(gTimer, gTmo, true);     // let it run endMode when due
- timerAlarmWrite(gTimer, 10000000, false );       // set it to 10 seconds, no repeat 
- timerAlarmEnable(gTimer);                        // turn timer 1 on
-
-}
 
 
 /*------------------------------------------------------------------------------*/
@@ -695,3 +938,4 @@ void initPixels(){
 
    
 }
+#endif

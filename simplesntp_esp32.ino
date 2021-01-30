@@ -1,7 +1,7 @@
 
 #undef SNTP_MAIN
  
-#include <wificredentials.h>
+//#include <wificredentials.h>
 
 // in wificredentials the following are define:
 // char* ntpServers[] = { "nl.pool.ntp.org", "be.pool.ntp.org", "de.pool.ntp.org"};

@@ -96,38 +96,49 @@ void radio( void *param) {
 
 static int connectmillis;
 int   bufbegin=1, rc;
-int   noreads = 0;
+int   noreads = 0, lowqueue=0;
 int   totalbytes=0, threshbytes=5000;
 //uint8_t radioBuffer[32];
 uint8_t radioBuffer[256];
          
   Serial.printf("Radiotask running on core %d\n", xPortGetCoreID()); 
+   
 
-/*
-  TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-  TIMERG0.wdt_feed=1;
-  TIMERG0.wdt_wprotect=0;
-*/
 
   setStation( get_last_volstat(0),-1 );
+  vs1053player->setVolume(0); // fade in at startup
+  
   Serial.printf("Radiotask starting loop\n", xPortGetCoreID()); 
 
 while(1){
+      if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){
+        xSemaphoreTake( updateSemaphore, portMAX_DELAY);
+        xSemaphoreGive( updateSemaphore);
+      }
+    
+    delay(2);
 
-     xSemaphoreTake( updateSemaphore, portMAX_DELAY);
-     xSemaphoreGive( updateSemaphore);
-
+    if ( uxQueueMessagesWaiting(playQueue) < 20 ){
+        lowqueue++; 
+        if ( lowqueue > 30  ){
+           syslog( (char *)"Restart to solve low queue");  
+           ESP.restart(); 
+        }
+    }
+      
     if(radioclient->available() > 0 ){
 
-      if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
-      unavailablecount = 0;   
+      if (unavailablecount){
+        if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
+        Serial.printf("- data available again after %d fruitless poll%s (lowqueue = %d)\n", unavailablecount, (unavailablecount==1)?"":"s", lowqueue);   
+      }
       
+      unavailablecount = 0;
+      if( lowqueue > 0 )lowqueue--; 
       
       int bytesread = 0;
-
-//      bytesread = radioclient->read( &radioBuffer[0], 32 );  
+  
         bytesread = radioclient->read( &radioBuffer[0], 128 );  
-        
         
          if ( contentsize != 0 ){
             stations[ playingStation].position += bytesread;
@@ -156,14 +167,18 @@ while(1){
       }            
      
     }else{ //no bytes available
+      
       if (  millis() > connectmillis )unavailablecount++;
       
-        Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
-        delay(1);
-      
-       if(!radioclient->connected() ){
+        if( unavailablecount > 10 && unavailablecount%10 == 0 ){
+          //Serial.printf("nobytes available, connectmillis %d millis %d connected %d unavailablecount %d\n", connectmillis, millis(), radioclient->connected(), unavailablecount);
+          Serial.print("-");
+        }
+        delay(20);
+        
+        if(!radioclient->connected() ){
                         
-            //Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
+            Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
 
             if ( unavailablecount > MAXUNAVAILABLE ){
               unavailablecount = 0;
@@ -185,40 +200,58 @@ while(1){
               connectmillis = millis() + 5000;
                //reset chunked encoding counters
               reset_chunkstate();
+              lowqueue = 0;
                tellPixels( PIX_DECO );
             }else{
-              if ( rc == 400 ){
+              
+              bool tonextstation=false;
+              
+              Serial.printf( "Failed connecting to station, failed connects %d\n", failed_connects );
+              if ( rc >= 400 ){
                   tellPixels( PIX_BLINKYELLOW );
                   tft_notAvailable( getStation() );                        
+                  tonextstation = true;
                   delay(2000 );
-                  //setStation( 0,-1);
               }else{
                   failed_connects++;
                   delay(100);
                   if ( failed_connects > 3 ) {
                    
                     tellPixels( PIX_BLINKRED );
-                    syslog( (char *)"Reboot after 3 failed connects");
-                    ESP.restart();
+                    syslog( (char *)"to next station after 3 failed connects");
+                    //ESP.restart();
+                    tonextstation = true;
                   }
               }
+              if ( tonextstation ){
+                  int following_station = getStation() + 1;
+                  if ( following_station >= stationCount ) following_station = 0;
+                  setStation( following_station,-1);                
+              }
+              
             }
        }
      
     }
 
 //        Serial.printf("player playptr %d getptr %d endptr %d \n", mp3Playptr, mp3Getptr, mp3Endptr);  
-  
+   
       
-//    if ( getStation() != playingStation && radioclient->connected() || unavailablecount > MAXUNAVAILABLE ){
-    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE ){
-        Serial.printf("playingStation %d != currentStation %d. reconnect...\n", playingStation, getStation() );        
+   if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE  ){
+        Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         radioclient->stop();  
         
         tellPixels( PIX_YELLOW );
- 
+
+        for ( int curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+        }
+        
+        xQueueReset( playQueue);
         xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+        lowqueue = 0;
         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );

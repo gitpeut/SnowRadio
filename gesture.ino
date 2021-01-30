@@ -1,3 +1,4 @@
+#ifdef USEGESTURES
 uint8_t             ledlast_state = 255;
 
 /*--------------------------------------------------------------------*/
@@ -5,13 +6,11 @@ uint8_t             ledlast_state = 255;
 void IRAM_ATTR gesture_found(){
 int started=0;
   
-  if( ! digitalRead( GINTPIN ) ){
-     
      xTaskNotifyFromISR( gestureTask, 1 ,eSetValueWithOverwrite, &started); 
      if( started ){
         portYIELD_FROM_ISR()
      }
-  }
+ 
 }
 
 /*-------------------------------------------------------------------*/
@@ -27,7 +26,7 @@ Serial.printf("Gesture running on core %d\n", xPortGetCoreID());
 Wire.begin( GSDAPIN,GSCLPIN);
 
 pinMode(GINTPIN,INPUT_PULLUP );
-attachInterrupt( GINTPIN, gesture_found, CHANGE);
+attachInterrupt( GINTPIN, gesture_found, FALLING);
 
 delay(3);
 
@@ -46,33 +45,52 @@ for( gerror = 1; gerror; delay(300) ){
 
   
 while(1){
- Serial.println("Gesture read...");
+ log_d("Gesture read pin %d -> %d\n", GINTPIN, digitalRead(GINTPIN));
   
  xTaskNotifyWait(0,0,&notify_value,portMAX_DELAY);
+
+ if ( notify_value == 321 ){
+     log_i("timeout - not listening to gestures anymore");
+     show_gesture_off();
+     stopgTimer();
+     continue;
+ }
+ for(int rtry=0 ; gerror = paj7620ReadReg(0x43, 1, &data) ; rtry++ ){
+  // Read Bank_0_Reg_0x43/0x44 for gesture result.
+  // reset I2C bus if an error is encountered, as per
+  // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-581163709
+  // 
   
- gerror = paj7620ReadReg(0x43, 1, &data );       // Read Bank_0_Reg_0x43/0x44 for gesture result.
+  Wire.begin();
+  if ( rtry > 5 ) break;
+  delay(20);
+ }
+ 
  if ( gerror ) { Serial.println("Error reading register 0x43"); continue;}
  
- Serial.printf("data %02x - ", data);
- 
+ log_v("data %02x - ", data);
+
+#ifndef USEPIXELS
+    parse_gestures(data);
+#else 
     switch (data)                  // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
     {                              // PAJ7620 is installed upside down. updown left and right are flipped
-      case GES_LEFT_FLAG:
+      case GES_RIGHT_FLAG:
           Serial.print("Right\n");
           tellPixels(2);
           state = 1;        
         break;
-      case GES_RIGHT_FLAG:
+      case GES_LEFT_FLAG:
           Serial.print("Left\n");    
           tellPixels(3);
           state = 0;
         break;
-      case GES_UP_FLAG:
+      case GES_DOWN_FLAG:
           Serial.print("Down\n");
           tellPixels(0);
           state = 3;
         break;
-      case GES_DOWN_FLAG:
+      case GES_UP_FLAG:
           Serial.print("Up\n");
           tellPixels(9);     
           state = 2;
@@ -123,9 +141,9 @@ while(1){
           Serial.print("funny gesture\n");
           if ( data == 0xff ){
                 gerror = paj7620ReadReg(0x43, 1, &data);       // Read Bank_0_Reg_0x43/0x44 for gesture result.
-                if ( gerror ) { Serial.println("Error readin regster 0x43"); continue;}
+                if ( gerror ) { Serial.println("Error readin register 0x43"); continue;}
                 gerror = paj7620ReadReg(0x43, 1, &data);       // Read Bank_0_Reg_0x43/0x44 for gesture result.
-                if ( gerror ) { Serial.println("Error readin regster 0x43"); continue;}
+                if ( gerror ) { Serial.println("Error readin register 0x43"); continue;}
           }
           
           state = 9;          
@@ -137,6 +155,7 @@ while(1){
   if ( state != 9 ){
        ledlast_state = state; 
   }
+#endif  
 }
  
 }
@@ -145,8 +164,9 @@ while(1){
 
 int gesture_init(){
 
+#ifdef USEPIXELS  
     initPixels();
-     
+#endif     
 		xTaskCreatePinnedToCore( 
          gesture_process,                                      // Task to handle special functions.
          "Gesture",                                            // name of task.
@@ -158,3 +178,4 @@ int gesture_init(){
                 
 return(0);
 }
+#endif

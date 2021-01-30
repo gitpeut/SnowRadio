@@ -1,17 +1,11 @@
-#define FILESYSTEM SPIFFS
-// You only need to format the filesystem once
-#define FORMAT_FILESYSTEM false
-
-
-#if FILESYSTEM == FFat
+#include <FS.h>
 #include <FFat.h>
-#endif
-#if FILESYSTEM == SPIFFS
 #include <SPIFFS.h>
-#endif
+#include <LITTLEFS.h>
+#include <esp_littlefs.h>
 
 //holds the current upload
-File fsUploadFile;
+fs::File fsUploadFile;
 
 //----------------------------------------------
 
@@ -50,32 +44,23 @@ String getContentType(String filename) {
   
   return "text/plain";
 }
-//----------------------------------------------
 
-bool exists(String path){
-  bool yes = false;
-  File file = FILESYSTEM.open(path, "r");
-  if(!file.isDirectory()){
-    yes = true;
-  }
-  file.close();
-  return yes;
-}
 //----------------------------------------------
 
 bool handleFileRead(String path) {
   Serial.println("handleFileRead: " + path);
   if (path.endsWith("/")) {
-    path += "index.htm";
+    path += "index.html";
   }
   String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
-  if (exists(pathWithGz) || exists(path)) {
-    if (exists(pathWithGz)) {
+  if (RadioFS.exists(pathWithGz) || RadioFS.exists(path)) {
+    if (RadioFS.exists(pathWithGz)) {
       path += ".gz";
     }
-    File file = FILESYSTEM.open(path, "r");
+    File file = RadioFS.open(path, "r");
     server.streamFile(file, contentType);
+    
     file.close();
     return true;
   }
@@ -103,9 +88,9 @@ void handleFileUpload(){
     Serial.print("handleFileUpload Name: "); Serial.println(filename);
 
     //reading_file++;
-    fsUploadFile = SPIFFS.open(filename, "w");
+    fsUploadFile = RadioFS.open(filename, "w");
 
-    if ( fsUploadFile == NULL ){
+    if ( !fsUploadFile  ){
       Serial.print("Couldn't open ");Serial.println( filename );
     }
     
@@ -157,10 +142,10 @@ void handleFileDelete() {
   if (path == "/") {
     return server.send(500, "text/plain", "BAD PATH");
   }
-  if (!exists(path)) {
+  if (!RadioFS.exists(path)) {
     return server.send(404, "text/plain", "FileNotFound");
   }
-  FILESYSTEM.remove(path);
+  RadioFS.remove(path);
   server.send(200, "text/plain", "");
   path = String();
 }
@@ -176,10 +161,10 @@ void handleFileCreate() {
   if (path == "/") {
     return server.send(500, "text/plain", "BAD PATH");
   }
-  if (exists(path)) {
-    return server.send(500, "text/plain", "FILE EXISTS");
+  if (RadioFS.exists(path)) {
+    return server.send(500, "text/plain", "FILE exists");
   }
-  File file = FILESYSTEM.open(path, "w");
+  File file = RadioFS.open(path, "w");
   if (file) {
     file.close();
   } else {
@@ -201,7 +186,7 @@ void handleFileList() {
   Serial.println("handleFileList: " + path);
 
 
-  File root = FILESYSTEM.open(path);
+  File root = RadioFS.open(path);
   path = String();
 
   String output = "[";
@@ -214,8 +199,13 @@ void handleFileList() {
           output += "{\"type\":\"";
           output += (file.isDirectory()) ? "dir" : "file";
           output += "\",\"name\":\"";
-          output += String(file.name()).substring(1);
-          output += "\"}";
+          output += String(file.name()).substring(1) + "\"";
+          if ( !file.isDirectory()){
+            output += ", \"size\": ";
+            output += String(file.size());
+            
+          }
+          output += "}";
           file = root.openNextFile();
       }
   }
@@ -227,24 +217,31 @@ void handleFileList() {
 //----------------------------------------------
 void setupFS(void) {
 
-  if (FORMAT_FILESYSTEM) FILESYSTEM.format();
-  FILESYSTEM.begin();
-  {
-      File root = FILESYSTEM.open("/");
+      switch ( RadioFSNO ){
+        case FSNO_SPIFFS:
+            SPIFFS.begin();
+            break;
+        case FSNO_LITTLEFS:
+            LITTLEFS.begin();
+            break;
+        case FSNO_FFAT:    
+            FFat.begin();
+            break;
+      }
+     
+      File root = RadioFS.open("/");
       File file = root.openNextFile();
       while(file){
           String fileName = file.name();
           size_t fileSize = file.size();
           Serial.printf("FS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
           if ( ! strcmp(  fileName.c_str(), "/syslog.txt" ) && fileSize > 20000 ){
-              FILESYSTEM.remove(fileName);
+              RadioFS.remove(fileName);
               Serial.printf("**************removed syslog.txt as it was over 20k\n" );
           }
           file = root.openNextFile();
       }
       Serial.printf("\n");
-  }
-
   
 }
 
@@ -255,9 +252,10 @@ FILE *log=NULL;
 time_t now;
 now = time(nullptr);
 char  tijd[32];
+char  filename[128];
 
-
-log = fopen( "/spiffs/syslog.txt", "a");
+sprintf( filename, "%s/syslog.txt", RadioMount);
+log = fopen( filename, "a");
 
 if ( log == NULL) {
   Serial.printf("Couldn't open /syslog.txt (errno %d)\n", errno );

@@ -1,15 +1,4 @@
-
-#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
-
-
-TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
-
-TFT_eSprite img  = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-TFT_eSprite bats  = TFT_eSprite(&tft); 
-TFT_eSprite vols  = TFT_eSprite(&tft);  
-TFT_eSprite clocks  = TFT_eSprite(&tft);  
-TFT_eSprite bmp  = TFT_eSprite(&tft);  
-
+#include "tft.h"
 
 #define BATVREF     1.1f
 #define BATPINCOEF  1.95f // tune -6 db
@@ -18,13 +7,15 @@ TFT_eSprite bmp  = TFT_eSprite(&tft);
 
 #define SCROLLPIN 0
 int STATIONSCROLLH=55;
-int tftrotation = 4;
+int tftrotation = 0;
 
 int verysmallfont= 1;
 int smallfont= 2;
 int bigfont=4;
 
 
+
+//
 //----------------------------------------------------------
 void IRAM_ATTR grabTft(){
   //printf("grab TFT\n");
@@ -38,6 +29,38 @@ void IRAM_ATTR releaseTft(){
 //tft.fillRect( 4,12 , 1, 1, TFT_ORANGE ); //flicker kludge, not necessary when using rmt_write_items in sk.h
 xSemaphoreGive( tftSemaphore); 
 //printf("released TFT\n");
+}
+//----------------------------------------------------------
+
+void tft_show_gesture( bool showonscreen ){
+int   w=tft.width(), h=10;
+int   xpos=0,ypos=36;
+uint16_t  gestcolors[2];
+
+
+if ( showonscreen ){
+    gestcolors[0] = TFT_RED;
+    gestcolors[1] = TFT_YELLOW;    
+}else{
+    gestcolors[0] = TFT_BLACK;
+    gestcolors[1] = TFT_BLACK;    
+}
+
+gest.createSprite(w,h);
+gest.fillSprite( gestcolors[0] );
+
+
+gest.drawRoundRect( 0, 0, w , h, 2, gestcolors[1] );//rectangle
+gest.fillRect( 2, 2, w-4, h-4, gestcolors[0] );// inside
+//if (showonscreen)drawBmp( "/tets.bmp", 5,5, &gest); // <--- display image in sprite, provide poiter to sprite. 
+
+
+log_i("display gesture sprite at [%d,%d] on screen w= %d h = %d\n", xpos,ypos, tft.width(), tft.height());
+grabTft();
+  gest.pushSprite( xpos, ypos);
+releaseTft();  
+
+gest.deleteSprite();  
 }
 //----------------------------------------------------------
 
@@ -68,6 +91,7 @@ int read_battery(){
   return(0);  
  
 }
+
 //-------------------------------------------------------------------------------
 void showBattery(){
 int   w=tft.width()/6,h=tft.height()/14;
@@ -297,6 +321,7 @@ releaseTft();
 img.deleteSprite();
 }
 
+
 //---------------------------------------------------------------------
 void tft_scrollstations( void *param ){
 int direction;
@@ -311,7 +336,7 @@ int delaytime;
   stopgTimer();
   
   scrollStation = -1;
-  chosenStation = false;
+  chosenStation = 0;
   begint        = currentStation;
   
   //pinMode( SCROLLPIN,INPUT_PULLUP );
@@ -411,6 +436,7 @@ img.deleteSprite();
 
 if ( tcount < endt ){
    setStation( t, -1 );
+   tft_showstation( t );
    //currentStation = t;
    //delay(4000);
 }else{
@@ -552,14 +578,14 @@ void tft_NoConnect( WiFiManager *wm) {
 //------------------------------------------------------------------------------------------
 // Bodmers BMP image rendering function
 
-void drawBmp(const char *filename, int16_t x, int16_t y) {
+void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite ) {
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
   fs::File bmpFS;
 
   // Open requested file on SD card
-  bmpFS = SPIFFS.open(filename, "r");
+  bmpFS = RadioFS.open(filename, "r");
 
   if (!bmpFS)
   {
@@ -609,7 +635,11 @@ void drawBmp(const char *filename, int16_t x, int16_t y) {
         // Push the pixel row to screen, pushImage will crop the line if needed
         // y is decremented as the BMP image is drawn bottom up
         grabTft();
-        tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        if ( sprite == NULL ){
+          tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        }else{
+          sprite->pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        }
         releaseTft();
       }
       Serial.print("Loaded in "); Serial.print(millis() - startTime);
@@ -682,7 +712,12 @@ void tft_init(){
   int bmpx      = halfwidth - 25;
   int bmpy      = tft.height() * 10 / 50;
   
-  drawBmp("/OranjeRadio24.bmp", bmpx, bmpy );
+//  drawBmp("/OranjeRadio24.bmp", bmpx, bmpy );
+  #ifdef USETOUCH
+  // Use this calibration code in setup():
+    uint16_t calData[5] = { 264, 3533, 367, 3509, 4 };
+    tft.setTouch(calData);
+  #endif  
 
 
   if ( tft.width() > 200 ){
