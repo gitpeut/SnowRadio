@@ -67,7 +67,7 @@ screenPage currDisplayScreen = HOME;
 #include <Update.h>
 #include <Wire.h>
 #include "paj7620.h"
-#include "patches.h"
+
 
 #include "sk.h"
 #include <wificredentials.h>

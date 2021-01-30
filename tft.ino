@@ -1,3 +1,4 @@
+#include "tft.h"
 
 #define BATVREF     1.1f
 #define BATPINCOEF  1.95f // tune -6 db
@@ -14,6 +15,7 @@ int bigfont=4;
 
 
 
+//
 //----------------------------------------------------------
 void IRAM_ATTR grabTft(){
   //printf("grab TFT\n");
@@ -50,6 +52,8 @@ gest.fillSprite( gestcolors[0] );
 
 gest.drawRoundRect( 0, 0, w , h, 2, gestcolors[1] );//rectangle
 gest.fillRect( 2, 2, w-4, h-4, gestcolors[0] );// inside
+//if (showonscreen)drawBmp( "/tets.bmp", 5,5, &gest); // <--- display image in sprite, provide poiter to sprite. 
+
 
 log_i("display gesture sprite at [%d,%d] on screen w= %d h = %d\n", xpos,ypos, tft.width(), tft.height());
 grabTft();
@@ -574,14 +578,14 @@ void tft_NoConnect( WiFiManager *wm) {
 //------------------------------------------------------------------------------------------
 // Bodmers BMP image rendering function
 
-void drawBmp(const char *filename, int16_t x, int16_t y) {
+void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite ) {
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
   fs::File bmpFS;
 
   // Open requested file on SD card
-  bmpFS = SPIFFS.open(filename, "r");
+  bmpFS = RadioFS.open(filename, "r");
 
   if (!bmpFS)
   {
@@ -631,7 +635,11 @@ void drawBmp(const char *filename, int16_t x, int16_t y) {
         // Push the pixel row to screen, pushImage will crop the line if needed
         // y is decremented as the BMP image is drawn bottom up
         grabTft();
-        tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        if ( sprite == NULL ){
+          tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        }else{
+          sprite->pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+        }
         releaseTft();
       }
       Serial.print("Loaded in "); Serial.print(millis() - startTime);
@@ -698,7 +706,7 @@ void tft_init(){
   tft.setRotation( tftrotation );
   tft.fillScreen(TFT_BLACK);
 
-  //drawBmp("/OranjeRadio24.bmp", 55, 15 );
+  drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
   int halfwidth = tft.width() / 2;
   int bmpx      = halfwidth - 25;

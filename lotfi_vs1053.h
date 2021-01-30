@@ -2,7 +2,7 @@
 #define LOTFI_VS1053_H
 
 
-#include "patches.h"
+
 //
 //**************************************************************************************************
 // VS1053 stuff.  Based on maniacbug library.                                                      *
