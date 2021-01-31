@@ -1,8 +1,6 @@
 
-// Gele radio
-// Jose Baars, 2019 - 20121,
-// with the generous support of Aleks-Ale
-//
+// Oranje radio
+// Jose Baars, 2019
 // public domain
 // uses the follwing libraries:
 // wifi manager ( https://github.com/tzapu/WiFiManager.git )
@@ -439,7 +437,7 @@ void setup () {
     // TIMERG0.wdt_wprotect=0;
     // This hack eventually causes indefinite hangs: just run everything on core 1 
     
-    enableCore0WDT(); 
+    //enableCore0WDT(); 
     //enableCore1WDT();
 
     
@@ -459,7 +457,9 @@ void setup () {
                                  VS_DCS_PIN,
                                  VS_DREQ_PIN);
                               
-
+     vs1053player->spectrum_height =  vs1053player->spectrum_height - 20;
+     vs1053player->spectrum_top =  vs1053player->spectrum_top;
+     
      Serial.println("Creating semaphores...");
     
      staSemaphore = xSemaphoreCreateMutex();
@@ -495,17 +495,17 @@ void setup () {
 
      vs1053player->begin();
 
-     char patchname[128];
-     
+// apply patches and plugin.
+// Apparetly after applying a soft reset is mandatory for the
+// plugin to load succesfully.
+// The switch to MP3 includes a soft reset.
+
+     char patchname[128];     
      sprintf( patchname,"%s%s", RadioMount, "/vs1053b-patches.plg");
      vs1053player->patch_VS1053( patchname );
-     
-     
-     Serial.println("Switch to MP3...");
+
+     log_i("Switch to MP3...");
      vs1053player->switchToMp3Mode();
-
-
-     // radiofs
      
      sprintf( patchname,"%s%s", RadioMount, "/spectrum1053b-2.plg");
      vs1053player->patch_VS1053( patchname );

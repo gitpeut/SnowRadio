@@ -225,8 +225,7 @@ void show_gesture_off(){
               case GES_FORWARD_FLAG:  
               case GES_BACKWARD_FLAG:  
                 log_i("toggle mute");
-                stopgTimer();
-                gmode = gOff;
+                setgTimer();
                 toggleMute();
                 break;
               case GES_CLOCKWISE_FLAG:

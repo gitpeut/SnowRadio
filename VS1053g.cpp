@@ -43,7 +43,7 @@ void VS1053g::getBands()
     uint8_t cur = (cur1 * current_volume ) / 30; // big bars
     if ( cur < 0 ) {
       cur = 0;
-    } else if ( cur > ( spectrum_top - 4) ){
+    } else if ( cur > ( spectrum_height - 4) ){
       cur = spectrum_height - 4;
     }
     spectrum[i][0] = cur;
@@ -71,6 +71,7 @@ void VS1053g::displaySpectrum( uint16_t *askcolor ) {
     prevbands = bands;
     if (visual) tft.fillRect (0, spectrum_top, tft.width(), spectrum_height + 1, TFT_BLACK);
   }
+  
   for (uint8_t i = 0; i < bands; i++) // Handle all sections
   {
     if (visual) {
