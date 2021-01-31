@@ -14,13 +14,14 @@ Still a work in progress. Touchscreen is waiting to be implemented
 
 <p />
 
-Gele Radio uses the follwing libraries:
- wifi manager ( https://github.com/tzapu/WiFiManager.git )
- Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )
- ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )
- TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )
- If you want to use LittleFS
- LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )
+Gele Radio uses the following libraries:
+<ul>
+ <li>wifi manager ( https://github.com/tzapu/WiFiManager.git )</li>
+ <li>Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )</li>
+ <li>ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )</li>
+ <li>TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )</li>
+ <li>If you want to use LittleFS, LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )</li>
+ </ul>
 <p />
 
 Grateful use has been made of the spectrum analyzer code of blotfi at
