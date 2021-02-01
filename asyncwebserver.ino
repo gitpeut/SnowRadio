@@ -513,7 +513,7 @@ void FBuffAll ( const char *path ){
       if ( entry.isDirectory()  ){
          FBuffAll( fname );        
       } else{ 
-          if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") ){
+          if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") && !String(fname).endsWith("stations.json")){
             log_i( "add fbuf %s", fname );
             addFBuf( String(fname) );
           }else{
@@ -825,10 +825,10 @@ void startWebServer( void *param ){
     log_w("no PSRAM ");
   }
 
+  fsxserver.serveStatic("/stations.json", RadioFS, "/stations.json");
   fsxserver.on("/favicon.ico", HTTP_GET, handleFileRead);
-  fsxserver.on("/station.json", HTTP_GET, handleFileRead);
   fsxserver.on("/index.html", HTTP_GET, handleFileRead);
-
+  
   fsxserver.on("/fbuf", HTTP_GET, showFBuf );
   fsxserver.on("/list", HTTP_GET, handleFileList);
 
