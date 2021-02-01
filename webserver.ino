@@ -1,5 +1,5 @@
 
-
+#ifndef ASYNCWEB
 #ifdef USESSDP
 /*-----------------------------------------------------------------*/
 void  setupSSDP(){
@@ -162,7 +162,7 @@ if ( server.hasArg("json") ){
 }
 
 if ( ! hasargs ){
-  handleFileRead( "/settings.html" );
+   handleFileRead( "/settings.html" );
 }else{
    handleFileRead( "/settings.html" );
 }
@@ -301,7 +301,6 @@ void handleWebServer( void *param ){
         if(!handleFileRead("/upload.html")) server.send(404, "text/plain", "FileNotFound");
   });
 
-  //server.on("/upload", HTTP_POST, handleFileUpload);
    
   server.on("/upload", HTTP_POST, [](){ handleFileRead("/upload.html"); }, handleFileUpload);
 
@@ -449,3 +448,4 @@ void setupWebServer(){
 
 
 }
+#endif

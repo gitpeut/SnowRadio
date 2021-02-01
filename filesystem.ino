@@ -4,6 +4,8 @@
 #include <LITTLEFS.h>
 #include <esp_littlefs.h>
 
+#ifndef ASYNCWEB
+
 //holds the current upload
 fs::File fsUploadFile;
 
@@ -174,32 +176,6 @@ void handleFileCreate() {
   path = String();
 }
 
-//---------------------------------------------------------------------------
-
-void find_treefiles ( const char *path, int level=0 ){
-    
-    fs::File dir = RadioFS.open( path );     
-    fs::File entry;
-    
-    if ( dir.isDirectory() ){
-      for (int i=0; i < (level*3);++i)Serial.print(" ");
-      Serial.printf( "%s directory\n", path );
-    }else{
-      dir.close();
-      return;
-    }
-           
-    while ( entry = dir.openNextFile() ){                
-      if ( entry.isDirectory()  ){
-         find_treefiles( entry.name(), level+1 );        
-      } else{ 
-         for (int i=0; i < (level*3);++i)Serial.print(" ");
-         Serial.printf( "%s %u\n", entry.name(), entry.size() );         
-      }
-      entry.close();          
-    }    
-    dir.close();
-}
 
 //----------------------------------------------
 
@@ -239,6 +215,35 @@ void handleFileList() {
   output += "]";
   server.send(200, "application/json", output);
   
+}
+
+#endif // ASYNCWEB
+
+//---------------------------------------------------------------------------
+
+void find_treefiles ( const char *path, int level=0 ){
+    
+    fs::File dir = RadioFS.open( path );     
+    fs::File entry;
+    
+    if ( dir.isDirectory() ){
+      for (int i=0; i < (level*3);++i)Serial.print(" ");
+      Serial.printf( "%s directory\n", path );
+    }else{
+      dir.close();
+      return;
+    }
+           
+    while ( entry = dir.openNextFile() ){                
+      if ( entry.isDirectory()  ){
+         find_treefiles( entry.name(), level+1 );        
+      } else{ 
+         for (int i=0; i < (level*3);++i)Serial.print(" ");
+         Serial.printf( "%s %u\n", entry.name(), entry.size() );         
+      }
+      entry.close();          
+    }    
+    dir.close();
 }
 
 //----------------------------------------------

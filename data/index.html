@@ -305,14 +305,16 @@ function refreshlist(){
 function upload_stations ( newstations, changestation ){
 var fd = new FormData();
 
+
 fd.append("changestation", changestation );
-fd.append("filename", "/stations.json");
+fd.append("ESPfilename", "/stations.json");
 
 var blob = new Blob([ newstations ], { type: "application/json"});
-fd.append("blob", blob);
+
+fd.append("/stations.json", blob);
 
 var request = new XMLHttpRequest();
-request.open("POST", "/upload");
+request.open("POST", "/upload?filename=/stations.json");
 request.onreadystatechange = function() {
 			if ( request.readyState == 4 && request.status == 200 ) {
 					setTimeout( refreshlist, 700);

@@ -1,16 +1,17 @@
 #ifdef ASYNCWEB
 
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <esp_wifi.h>
-#include <AsyncTCP.h>
+
+
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
+#include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
+#include <esp_task_wdt.h>
+#include <dirent.h>
 
 AsyncWebServer    fsxserver(80);
 TaskHandle_t      FSXServerTask;
-SemaphoreHandle_t updateSemaphore;
 static const char* updateform PROGMEM= "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 static const char* uploadpage PROGMEM =
   R"(
@@ -37,6 +38,31 @@ static const char* uploadpage PROGMEM =
 </form>
  </html>)";
 
+//------------------------------------------------------------------------------
+size_t fileoffset( const char *fullfilename ){   
+    const char *s;  
+    for ( s= fullfilename + 1; *s && *s != '/' ;++s );
+    if ( *s ){
+      return( s - fullfilename ); 
+    }else{
+      return( 0 );
+    }
+}
+//------------------------------------------------------------------------------------
+ 
+unsigned char h2int(char c)
+{
+    if (c >= '0' && c <='9'){
+        return((unsigned char)c - '0');
+    }
+    if (c >= 'a' && c <='f'){
+        return((unsigned char)c - 'a' + 10);
+    }
+    if (c >= 'A' && c <='F'){
+        return((unsigned char)c - 'A' + 10);
+    }
+    return(0);
+}
 /*-----------------------------------------------------------------*/
 //URL Encode Decode Functions
 //https://circuits4you.com/2019/03/21/esp8266-url-encode-decode-example/
@@ -70,17 +96,9 @@ String urldecode(String str)
    return encodedString;
 }
 
-//------------------------------------------------------------------------------
-size_t fileoffset( const char *fullfilename ){   
-    const char *s;  
-    for ( s= fullfilename + 1; *s != '/';++s );
-    return( s - fullfilename ); 
-}
-
 /*-----------------------------------------------------------------*/
  
-String urlencode(String str)
-{
+String urlencode(String str){
     String encodedString="";
     char c;
     char code0;
@@ -113,6 +131,7 @@ String urlencode(String str)
     return encodedString;
     
 }
+
 //---------------------------------------------------------------------------
 
 String getAContentType(String filename) {
@@ -125,6 +144,8 @@ String getAContentType(String filename) {
     return "text/css";
   } else if (filename.endsWith(".js")) {
     return "application/javascript";
+  } else if (filename.endsWith(".json")) {
+    return "application/json";
   } else if (filename.endsWith(".png")) {
     return "image/png";
   } else if (filename.endsWith(".gif")) {
@@ -155,7 +176,7 @@ String getAContentType(String filename) {
   return "text/plain";
 }
 
- 
+
 /*-----------------------------------------------------------------*/
 void send_json_status(AsyncWebServerRequest *request)
 {
@@ -225,33 +246,24 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
 
 //------------------------------------------------------------------
 
-void handleSettings(){
+void handleSettings(AsyncWebServerRequest *request){
 int hasargs=0;
 int reset_ESP=0;
 
-
-if ( server.hasArg("json") ){
-  String output = "{";
-//nonsense data
-  output += "\"currentStation\" : \"";
-  output += stations[ getStation() ].name;
-  output += "\"";
-
-  output += ",\"currentVolume\" : ";
-  output += getVolume();
-   
-  output += "}" ;
-    
-  server.send(200, "text/json", output);
-     
-}
-
-if ( ! hasargs ){
-  handleFileRead( "/settings.html" );
-}else{
-   handleFileRead( "/settings.html" );
-}
+  if ( request->hasArg("json") ){
+    String output = "{";
+  //nonsense data
+    output += "\"currentStation\" : \"";
+    output += stations[ getStation() ].name;
+    output += "\"";
   
+    output += ",\"currentVolume\" : ";
+    output += getVolume();
+     
+    output += "}" ;
+  }else{
+    request->send( RadioFS, "/settings.html","text/html");  
+  }  
 }
 //------------------------------------------------------------------
 
@@ -305,7 +317,7 @@ void handleAdd( AsyncWebServerRequest *request ){
   }else{
       int idx = request->getParam("idx")->value().toInt();
 
-      rc = add_station(  (char *)request->getParam("name")->value().c_str(), 
+      rc = change_station(  (char *)request->getParam("name")->value().c_str(), 
                 request->getParam("protocol")->value().toInt(),
                 (char *)request->getParam("host")->value().c_str(), 
                 (char *)request->getParam("path")->value().c_str(), 
@@ -356,43 +368,385 @@ void handleSet( AsyncWebServerRequest *request ){
   request->send( return_status, "text/plain", message );   
 }
 
+//------------------------------------------------
+
+void handleFileDelete( AsyncWebServerRequest *request ) {
+  
+  if ( request->params() == 0) {
+    request->send(500, "text/plain", "BAD ARGS for delete");
+    return;
+  }
+  
+  AsyncWebParameter* p = request->getParam(0);
+  String path = p->value();
+
+  path = urldecode( path);
+  log_i("Delete file %s ", path.c_str() );
+
+  if ( path == "/") {
+      request->send(500, "text/plain", "/ is not a valid filename");
+      return;
+  }
+  if ( !RadioFS.exists( path)) {
+    request->send(404, "text/plain", "FileNotFound");
+    return;
+  }
+  if ( RadioFS.remove(path) ){
+    log_i("file %s deleted", path.c_str() );
+  }else{
+    log_i("could not delete %s", path.c_str() );    
+  }
+  request->send(200, "text/plain", "");
+}
+
 //--------------------------------------------------------------------------------
+FBuf *findFBuf( String filename ){
+  
+  for( int i=0; i < FBUFSIZE; ++i ){
+      if ( FBFiles[i].filename == filename ) return (&FBFiles[i]);   
+  }
+
+  return( NULL );
+}
+//--------------------------------------------------------------------------------
+FBuf *newFBuf( String filename ){
+  
+  for( int i=0; i < FBUFSIZE; ++i ){
+      if ( FBFiles[i].filename == "" ) return (&FBFiles[i]);   
+  }
+
+  return( NULL );
+}
+
+
+//--------------------------------------------------------------------------------
+bool delFBuf( String filename ){
+  FBuf *dbuf = findFBuf( filename );
+  if ( dbuf ) {
+    dbuf->filename = "";
+    dbuf->size = 0;
+    free( dbuf->buffer );
+    dbuf->buffer = NULL;
+    return( true );
+  }
+  return( false );
+}
+//--------------------------------------------------------------------------------
+FBuf *addFBuf( String filename ){
+  if( !psramFound() ){
+    log_i( "No PSRAM, no file buffers");
+    return NULL ; 
+  }
+  
+  log_i( "buffering %s", filename.c_str() ); 
+  
+  FBuf *fb = findFBuf( filename );
+  if ( fb ){
+    log_i( "%s already buffered", filename.c_str() );
+    return fb;
+  }
+
+  fb = newFBuf( filename );
+  if ( fb == NULL ) {
+    log_i( "no file buffers left for %s", filename.c_str() );
+    return NULL;
+  }
+     
+  File sourcefile;
+  size_t filesize;
+  
+  sourcefile  = RadioFS.open ( filename, FILE_READ ); 
+  if ( !sourcefile ){ log_i( "Error opening %s for read ", filename.c_str()); return( NULL );}     
+
+  filesize    = sourcefile.size();
+  log_i( "Opened %s for read, filesize %u \n",filename.c_str(), filesize);
+    
+  fb->buffer = (uint8_t *) ps_calloc( filesize ,1 );
+  if ( ! fb->buffer ) {
+    sourcefile.close();
+    return (NULL);
+  }
+  
+  size_t  bytesread = 0, totalbytesread=0;
+  uint8_t *endpsbuffer = fb->buffer;
+   
+      while( sourcefile.available() ){   
+        bytesread = sourcefile.read( endpsbuffer, (filesize - totalbytesread) );
+        if ( bytesread < 0 ){ 
+             sourcefile.close(); 
+             free ( fb->buffer );
+             
+             log_e( "Read returned < 0 while reading file %s ", filename.c_str() ); 
+             return( NULL );
+          }
+          
+          totalbytesread += bytesread;
+          endpsbuffer += bytesread;
+      }
+      sourcefile.close();
+      
+   fb->size       = endpsbuffer - fb->buffer;
+   fb->filename   = filename;
+       
+   return ( fb );   
+
+}
+
+//--------------------------------------------------------------
+
+void FBuffAll ( const char *path ){
+    
+    fs::File dir = RadioFS.open( path );     
+    fs::File entry;
+    
+    if ( dir.isDirectory() ){
+      log_i( "%s directory", path );
+    }else{
+      dir.close();
+      return;
+    }
+           
+    while ( entry = dir.openNextFile() ){                
+      char *fname = strdup( entry.name() );
+      entry.close();
+      
+      if ( entry.isDirectory()  ){
+         FBuffAll( fname );        
+      } else{ 
+          if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") ){
+            log_i( "add fbuf %s", fname );
+            addFBuf( String(fname) );
+          }else{
+            log_i( "%s not buffered, wrong type", fname );         
+          }
+      }
+      free( fname );
+    }    
+    dir.close();
+}
+
+/*-----------------------------------------------------------------*/
+void showFBuf(AsyncWebServerRequest *request)
+{
+  String output = "{ \"bufferedfiles\" : [\r\n";
+  uint32_t   foundcount = 0, totalsize=0;
+  
+  for ( int i=0; i < FBUFSIZE; ++i ){
+
+    if ( FBFiles[i].size != 0 ){ 
+
+      totalsize += FBFiles[i].size;
+      
+      if ( foundcount) output += ",\r\n";
+      foundcount++;
+      
+      output += "   {\"filename\" : \"";
+      output += FBFiles[i].filename; 
+      output += "\"," ;
+      output += "\"size\" : "; 
+      output += FBFiles[i].size; 
+      output += "}" ;
+    }
+  }   
+  
+  output += "],\r\n" ;
+  output += "\"buffercount\" : " ;
+  output += foundcount; 
+  output += ",\r\n" ;
+  output += "\"totalsize\" : " ;
+  output += totalsize; 
+  output += "}\r\n" ;
+    
+  request->send(200, "application/json;charset=UTF-8", output);
+}
+//---------------------------------------------------------------------------
+
+void find_json_tree ( String &output, const char *path, int level=0 ){
+    
+    fs::File dir = RadioFS.open( path );     
+    fs::File entry;
+    
+    if ( dir.isDirectory() ){
+      
+      if ( output.length() > 20 )output += ",\r\n";
+      for (int i=0; i < (level*3);++i)output += " ";
+      output += "{\"filename\" : \"";
+      output += path;
+      output += "\", \"type\" : \"directory\",\"files\" :[";
+            
+    }else{
+      dir.close();
+      return;
+    }
+
+    int fcount = 0;       
+    while ( entry = dir.openNextFile() ){                
+      
+      char  *fname = strdup( entry.name() );
+      size_t fsize = entry.size();
+      
+      entry.close();
+      
+      if ( entry.isDirectory()  ){
+         find_json_tree( output, fname, level+1 );
+         output += "]}";        
+      } else{ 
+         for (int i=0; i < (level*3);++i)Serial.print(" ");
+
+         if ( fcount ){output += ",\r\n";} else{ output += "\r\n";}
+         fcount++;
+          
+         for (int i=0; i < (level*3);++i)output += " ";
+         output += "{\"filename\" : \"";
+         output += fname;
+         output += "\", \"type\" : \"file\",\"size\" :";
+         output += fsize;
+         output += "}"; 
+      }
+      free(fname);
+    }    
+    dir.close();
+    
+    output += "]}";        
+    if ( level )output += ",";        
+
+}
+
+//--------------------------------------------------------------
+void handleFileList(  AsyncWebServerRequest *request ) {
+
+  String output= "{ \"fs\": [\r\n";
+  find_json_tree ( output, "/", 0 );
+  output += "]\r\n}";
+
+  request->send(200, "application/json;charset=UTF-8", output);
+}
+//--------------------------------------------------------------
 
 void handleFileRead(  AsyncWebServerRequest *request ) {
 
   String path = request->url();
   
-  Serial.println("handleFileRead: " + path);
+  log_i("handleFileRead: %s", path.c_str());
   if (path.endsWith("/")) {
     path += "index.html";
   }
   path = urldecode( path);
   
-  fs::FS  *ff = &RadioFS
-
-  String fspath;
+  FBuf *pathbuf = findFBuf( path );
   
-  fspath = path.substring( fileoffset( path.c_str()) );
+  fs::FS  *ff = &RadioFS;
 
   String contentType = getAContentType(path);
-  String pathWithGz = fspath + ".gz";
-  
-  if ( ff->exists(pathWithGz) || ff->exists(fspath)) {
-    if ( ff->exists(pathWithGz)) {
-      fspath += ".gz";
-    }
 
-    if ( request->hasParam("download") )contentType = "application/octet-stream";
-
-    request->send( *ff, fspath, contentType );
-    Serial.printf("File has been streamed\n");
+  if ( !pathbuf ){
     
-    return;
-  }
-  request->send( 404, "text/plain", "FileNotFound"); 
+      String pathWithGz = path + ".gz";
+      
+      if ( ff->exists(pathWithGz) || ff->exists(path)) {
+        if ( ff->exists(pathWithGz)) {
+          path += ".gz";
+        }
+      }else{
+        request->send( 404, "text/plain", "FileNotFound"); 
+      }
+  } 
+    
+  if ( request->hasParam("download") )contentType = "application/octet-stream";
+
+  if ( pathbuf ){
+    AsyncWebServerResponse *response = request->beginResponse_P(200, contentType, pathbuf->buffer, pathbuf->size );
+    request->send(response);
+    log_i("File has been streamed from buffer");
+  }else{
+    request->send( *ff, path, contentType );
+    log_i("File has been streamed from filesystem");
+  }  
+  
+  return;
 }
 
+//---------------------------------------------------------------------------
 
+void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+ 
+  static File fsUploadFile;
+  static String fspath;
+  static int  bcount, bmultiplier;
+  
+  if(!index){
+        String path;       
+        log_i("UploadStart: %s\n", filename.c_str());
+
+        if ( request->hasParam("filename") ){
+           path = request->getParam("filename")->value();                         
+            
+        }else{
+          log_i( "upload request has no param filename" );
+          path = filename;          
+        }
+        
+        if (!path.startsWith("/")) {
+          path = "/" + path;
+        }
+        
+        log_i("handleFileUpload Name %s ", path.c_str() ); 
+        
+        fs::FS  *ff = &RadioFS;
+        
+        if ( path == "/") {
+          request->send(500, "text/plain", "/ is not a valid filename");
+          return;
+        }
+  
+        fspath = path;
+              
+        bcount=0; bmultiplier = 1;
+        fsUploadFile = ff->open( fspath, "w");
+        if ( !fsUploadFile  ){
+              log_e("Error opening file %s %s", fspath.c_str(), (strerror(errno)) );
+              request->send(400, "text/plain", String("Error opening ") + fspath + String(" ") + String ( strerror(errno) ) );
+              return;
+        }
+        
+  }
+  int olderrno = errno;
+  if (fsUploadFile) {
+      if ( fsUploadFile.write( data, len) < len ){
+           fsUploadFile.close();
+           if ( olderrno != errno ){
+            request->send(500, "text/plain", "Error during write : " + String ( strerror(errno) ) );
+            log_e("Error writing file %s %s", fspath.c_str(),strerror(errno) );
+            return;
+           }
+      }
+      delay(2);
+      bcount +=len;
+  }
+
+  if ( final ){
+    if (fsUploadFile) {
+      fsUploadFile.close();
+
+      if ( delFBuf( fspath ) ) addFBuf( fspath );        
+    }
+
+    log_i("Uploaded file %s of %u bytes\n", fspath.c_str(), bcount);
+    fspath = "";
+  }
+}
+
+size_t  update_size = 0;
+//---------------------------------------------------------------------------------------
+void printProgress(size_t progress, size_t size) {
+  static int printstep=0; 
+  size_t percent = (progress*100)/update_size;
+  if ( percent >= printstep ){
+    printstep += 10;
+    Serial.printf(" %u", percent );
+    tft_uploadProgress( percent  );
+  }
+}
 //--------------------------------------------------------------------------
 
 void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
@@ -407,10 +761,10 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
           vs1053player->setVolume( curvol  );
           delay( 5 );
         }
-       
-     
+
        xSemaphoreTake( updateSemaphore, portMAX_DELAY);
-      
+       
+       update_size = request->contentLength();
        tft_ShowUpload( "firmware" );
         
        syslog((char *)"Installing new firmware through webupload" );
@@ -428,15 +782,18 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
   if (Update.write(data, len) != len) {
     Update.printError(Serial);
   }
-  esp_task_wdt_reset();
 
+  delay(2);
+  
   if (final) {
     
     AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
     response->addHeader("Refresh", "20");  
     response->addHeader("Location", "/");
     request->send(response);
-
+    
+    syslog((char *)"Installed new firmware through webupload" );
+    
     xSemaphoreGive( updateSemaphore);
     
     if (!Update.end(true)){
@@ -449,14 +806,7 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
     }
   }
 }
-//---------------------------------------------------------------------------------------
-void printProgress(size_t progress, size_t size) {
-  size_t percent = (progress*1000)/size;
-  if ( (percent%100)  == 0 ){
-    Serial.printf(" %u%%\r", percent/10);
-     tft_uploadProgress( percent/10  );
-  }
-}
+
 
 //------------------------------------------------------------------
 void startWebServer( void *param ){
@@ -464,29 +814,38 @@ void startWebServer( void *param ){
   Serial.printf("Async WebServer sterted from core %d\n", xPortGetCoreID()); 
  
   MDNS.begin( APNAME);
- 
-  fsxserver.on("/", handleRoot); 
+
+  if ( psramFound() ){ 
+    log_w("Adding File buffers");
+    addFBuf( "/stations.json");
+    addFBuf( "/favicon.ico");
+    addFBuf( "/index.html");
+    FBuffAll("/");
+  }else{
+    log_w("no PSRAM ");
+  }
+
+  fsxserver.on("/favicon.ico", HTTP_GET, handleFileRead);
+  fsxserver.on("/station.json", HTTP_GET, handleFileRead);
+  fsxserver.on("/index.html", HTTP_GET, handleFileRead);
+
+  fsxserver.on("/fbuf", HTTP_GET, showFBuf );
   fsxserver.on("/list", HTTP_GET, handleFileList);
-  fsxserver.on("/move", HTTP_POST, handleMove); 
-  fsxserver.on("/rename", HTTP_GET, handleRename);
-  
-  fsxserver.on("/mkdir", HTTP_GET, handleMkdir);
-  fsxserver.on("/delete", HTTP_GET, handleFileDelete);
-  fsxserver.on("/delete", HTTP_POST, handleMultiDelete);
-  
-  fsxserver.on("/upload", HTTP_GET, showUploadform);
-  fsxserver.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){ request->send(200, "text/html", uploadpage); }, handleFileUpload);
 
-  fsxserver.on("/settings", HTTP_GET, send_settings);
-  fsxserver.on("/settings", HTTP_POST, handleSettings);
-  
+  fsxserver.on("/delete", HTTP_GET, handleFileDelete); //usage: .../delete?file=/blurb.bmp
+  fsxserver.on("/upload", HTTP_GET, []( AsyncWebServerRequest *request ) 
+        {request->send(200, "text/html", uploadpage);});
+        
+  fsxserver.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
+    {request->send(200, "text/html", uploadpage); }, handleFileUpload);
+
+  fsxserver.on("/set", HTTP_GET, handleSet );
+  fsxserver.on("/add", HTTP_GET, handleAdd );
+  fsxserver.on("/del", HTTP_GET, handleDel );
   fsxserver.on("/status", HTTP_GET, send_json_status );
-  fsxserver.on("/favicon.ico", send_logo );
-
-  fsxserver.onNotFound( handleFileRead );
 
   fsxserver.on("/reset", HTTP_GET, []( AsyncWebServerRequest *request ) {
-        request->send(200, "text/plain", "Doej!");
+        request->send(200, "text/plain", "Goodbye!");
         delay(20);
         ESP.restart();
   });
@@ -495,14 +854,56 @@ void startWebServer( void *param ){
         request->send( 200, "text/html", updateform );
   });  
   fsxserver.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){ request->send( 200, "text/html",updateform); }, handleUpdate);
- 
+
+  fsxserver.onNotFound( handleFileRead );
+     
   fsxserver.begin();
   Update.onProgress(printProgress);
-  
+
+#ifndef USESSDP
+    MDNS.addService("http", "tcp", 80);
+#else
+    int dossdp= 0;
+#endif
+
+// loop for frequent updates
+
+int     delaytime=10;
+int     timecount=(1000/delaytime), oldmin=987;
+time_t  rawt;
+struct tm tinfo;
+
   while(1){
- //   fsxserver.handleClient();
-    delay(100);
+
+    #ifdef USESSDP
+     ++dossdp;
+     if ( dossdp >= 40 ){
+        SSDPDevice.handleClient(); 
+        dossdp = 0;
+     }
+    #endif   
+    
+    #ifdef USEOTA
+        ArduinoOTA.handle();    
+    #endif
+  
+    --timecount;
+    if ( timecount <= 0  ){
+  
+        time( &rawt );
+        localtime_r( &rawt, &tinfo);
+         
+        if ( oldmin != tinfo.tm_min && currDisplayScreen == HOME ){
+           oldmin = tinfo.tm_min; 
+           showClock(tinfo.tm_hour, tinfo.tm_min);
+           //showBattery();
+           timecount = (1000/delaytime); 
+        }        
+     }
+          
+     delay( delaytime );
   }
+}
   
 //------------------------------------------------------------------
 

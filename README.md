@@ -20,8 +20,9 @@ Gele Radio uses the following libraries:
  <li>Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )</li>
  <li>ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )</li>
  <li>TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )</li>
+ <li>ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )</li>
  <li>If you want to use LittleFS, LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )</li>
- </ul>
+</ul>
 <p />
 
 Grateful use has been made of the spectrum analyzer code of blotfi at

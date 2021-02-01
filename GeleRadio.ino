@@ -9,6 +9,7 @@
 // TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )
 // If you want to use LittleFS
 // LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )
+// ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )
 // Thanks to all the authors 
 //
 
@@ -21,6 +22,7 @@
 #define USEGESTURES 1
 #undef MULTILEVELGESTURES
 #undef USETOUCH
+#define ASYNCWEB
 
 // Which page are we on? Home page = normal use, stnslect is list of stations
 enum screenPage
@@ -31,8 +33,6 @@ enum screenPage
 };
 
 screenPage currDisplayScreen = HOME;
-
-
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -56,7 +56,11 @@ screenPage currDisplayScreen = HOME;
 #ifdef USETLS
 #include <WiFiClientSecure.h>
 #endif
-#include <WebServer.h>
+#ifdef ASYNCWEB
+  #include <ESPAsyncWebServer.h>
+#else
+  #include <WebServer.h>
+#endif
 #ifdef USEOTA
   #include <ArduinoOTA.h>
 #endif
@@ -103,6 +107,15 @@ const char  *RadioMount = "/littlefs";
 //const int   RadioFSNO   = FSNO_FFAT;
 //const char  *RadioMount = "/ffat";
 
+typedef struct{
+  String    filename;
+  size_t    size;  
+  uint8_t   *buffer;
+} FBuf;
+
+#define FBUFSIZE 100
+
+FBuf FBFiles[ FBUFSIZE ];
 
 
 
@@ -146,7 +159,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.0"
+#define APVERSION "V4.1"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t staSemaphore;
@@ -165,7 +178,7 @@ TaskHandle_t      scrollTask;
 TaskHandle_t      touchTask;
 
 
-#define WEBCORE     1
+#define WEBCORE     0
 #define RADIOCORE   1
 #define GESTURECORE 0
 #define PLAYCORE    1
@@ -572,7 +585,11 @@ void setup () {
  
  delay(50); 
  Serial.println("Start WebServer...");
+ #ifndef ASYNCWEB
     setupWebServer();
+ #else
+   setupAsyncWebServer();
+ #endif
  
  Serial.println("Start play task...");  
     play_init();
