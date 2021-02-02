@@ -14,8 +14,10 @@
 #define VS_CS_PIN     5
 #define VS_DCS_PIN    15
 #define VS_DREQ_PIN   22
-#define VS1053_RST    21
-
+#define VS1053_RST    21 // you can also connect this to the ESP32 reset
+//MISO                19
+//SCLK                18
+//MOSI                23
 
 //battery
 #define BATPIN        36

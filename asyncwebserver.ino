@@ -1,7 +1,3 @@
-#ifdef ASYNCWEB
-
-
-
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
@@ -205,6 +201,30 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += "\t\"uptime\" : \"";
   output += uptime;
   output += "\",\r\n";
+
+  output += "\t\"RAMsize\" : ";
+  output += ESP.getHeapSize();
+  output += ",\r\n";
+
+  output += "\t\"RAMused\" : ";
+  output += ( ESP.getHeapSize() - ESP.getFreeHeap() );
+  output += ",\r\n";
+  
+  output += "\t\"RAMfree\" : ";
+  output += ESP.getFreeHeap();
+  output += ",\r\n";
+
+  output += "\t\"PSRAMsize\" : ";
+  output += psramFound()?ESP.getPsramSize():-1;
+  output += ",\r\n";
+
+  output += "\t\"PSRAMused\" : ";
+  output += psramFound()?( ESP.getPsramSize()-ESP.getMaxAllocPsram() ) : -1; 
+  output += ",\r\n";
+
+  output += "\t\"PSRAMfree\" : ";
+  output += psramFound()? ESP.getMaxAllocPsram() : -1; 
+  output += ",\r\n";
 
   //output += "\t\"Battery\" : ";
   //output += batvolt;
@@ -920,4 +940,3 @@ void setupAsyncWebServer(){
 
 
 }
-#endif
