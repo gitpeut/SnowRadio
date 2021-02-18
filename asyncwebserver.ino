@@ -585,13 +585,10 @@ void find_json_tree ( String &output, const char *path, int level=0 ){
     fs::File entry;
     
     if ( dir.isDirectory() ){
-      
-      if ( output.length() > 20 )output += ",\r\n";
       for (int i=0; i < (level*3);++i)output += " ";
       output += "{\"filename\" : \"";
       output += path;
       output += "\", \"type\" : \"directory\",\"files\" :[";
-            
     }else{
       dir.close();
       return;
@@ -599,15 +596,16 @@ void find_json_tree ( String &output, const char *path, int level=0 ){
 
     int fcount = 0;       
     while ( entry = dir.openNextFile() ){                
-      
+
       char  *fname = strdup( entry.name() );
       size_t fsize = entry.size();
+      bool   isdir = entry.isDirectory();
       
       entry.close();
       
-      if ( entry.isDirectory()  ){
+      if ( isdir  ){
+         output += ",\r\n"; 
          find_json_tree( output, fname, level+1 );
-         output += "]}";        
       } else{ 
          for (int i=0; i < (level*3);++i)Serial.print(" ");
 
@@ -626,7 +624,7 @@ void find_json_tree ( String &output, const char *path, int level=0 ){
     dir.close();
     
     output += "]}";        
-    if ( level )output += ",";        
+    if ( level )output += "\r\n";        
 
 }
 

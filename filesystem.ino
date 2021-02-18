@@ -56,7 +56,7 @@ void setupFS(void) {
 //-----------------------------------------------------
 
 int syslog( char *message){
-FILE *log=NULL;
+FILE *slog=NULL;
 time_t now;
 now = time(nullptr);
 char  tijd[32];
@@ -64,31 +64,35 @@ char  filename[128];
 struct stat buf;
 
 sprintf( filename, "%s/syslog.txt", RadioMount);
-log = fopen( filename, "a");
+slog = fopen( filename, "a");
 
-if ( log == NULL) {
-  Serial.printf("Couldn't open /syslog.txt (errno %d)\n", errno );
-  return(-1);
+
+if ( slog == NULL) {
+  log_d("Couldn't open %s (errno %d) for append, trying for write", filename, errno );
+  slog = fopen( filename, "w");
+  if ( slog == NULL) {
+    log_d("Couldn't open %s (errno %d) for write either", filename, errno );
+    return(-1);
+  }
 }
 
-int fd = fileno( log );    
+int fd = fileno( slog );    
 fstat(fd, &buf);
 
 if ( buf.st_size > 20000 ){
-  fclose( log );
+  fclose( slog );
   log_i("remove syslog.txt, as it was larger than 20k");
   remove( filename );
 
-  log = fopen( filename, "w");
+  slog = fopen( filename, "w");
 }
+
 
 sprintf( tijd,"%s", asctime( localtime(&now)) );
 tijd[ strlen(tijd) - 1 ] = 0;
 
-fprintf( log,"%s - %s\n", tijd, message);
-fclose(log);
-
-
+fprintf( slog,"%s - %s\n", tijd, message);
+fclose(slog);
 
 return(0);
 }

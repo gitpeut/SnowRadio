@@ -548,11 +548,11 @@ void setup () {
      Serial.println("Create playQueue...");
      playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
 
-     Serial.println("log boot");    
-     log_boot();
+     
       
      Serial.println("Start File System...");
      setupFS();   
+
 
      Serial.println("TFT init...");
      tft_init();
@@ -593,7 +593,10 @@ void setup () {
 
      Serial.println("Start WiFi en web...");
      getWiFi( APNAME,APPAS);    
-      
+
+     // time is set in getwifi, so valid timestamps in syslog from here, not earlier 
+     Serial.println("log boot");    
+     log_boot();
      
       // to be sure start gestures (I2C) after WIFiManager as per
       // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
