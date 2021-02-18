@@ -1,4 +1,4 @@
-
+ 
 // Oranje radio
 // Jose Baars, 2019
 // public domain
@@ -9,6 +9,7 @@
 // TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )
 // If you want to use LittleFS
 // LittleFS_ESP32 ( https://github.com/lorol/LITTLEFS )
+// AsyncTCP (https://github.com/me-no-dev/AsyncTCP)
 // ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )
 // Thanks to all the authors 
 //
@@ -21,8 +22,8 @@
 #undef USEPIXELS   
 #define USEGESTURES 1
 #undef MULTILEVELGESTURES
-#undef USETOUCH
-#define ASYNCWEB
+#define USETOUCH
+#undef USETOUCH2
 
 // Which page are we on? Home page = normal use, stnslect is list of stations
 enum screenPage
@@ -56,11 +57,8 @@ screenPage currDisplayScreen = HOME;
 #ifdef USETLS
 #include <WiFiClientSecure.h>
 #endif
-#ifdef ASYNCWEB
-  #include <ESPAsyncWebServer.h>
-#else
-  #include <WebServer.h>
-#endif
+#include <ESPAsyncWebServer.h>
+
 #ifdef USEOTA
   #include <ArduinoOTA.h>
 #endif
@@ -159,9 +157,10 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.1"
+#define APVERSION "V4.4"
 #define APPAS     "oranjeboven"
 
+SemaphoreHandle_t wifiSemaphore;
 SemaphoreHandle_t staSemaphore;
 SemaphoreHandle_t volSemaphore;
 SemaphoreHandle_t tftSemaphore;
@@ -180,14 +179,14 @@ TaskHandle_t      touchTask;
 
 #define WEBCORE     0
 #define RADIOCORE   1
-#define GESTURECORE 0
+#define GESTURECORE 1
 #define PLAYCORE    1
 #define TOUCHCORE   1
 
 
 #define PIXELTASKPRIO     3
-#define GESTURETASKPRIO   6
-#define TOUCHTASKPRIO     7
+#define GESTURETASKPRIO   4
+#define TOUCHTASKPRIO     5
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5
 #define WEBSERVERTASKPRIO 2
@@ -371,51 +370,96 @@ void initOTA( char *apname, char *appass){
 #endif
 
 /*-----------------------------------------------------------*/
+//from https://github.com/espressif/arduino-esp32/issues/2501
+void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+    switch (event) {
+    case SYSTEM_EVENT_STA_STOP:
+        syslog( (char *)"STA_STOP event, trying to reconnect" );
+        getWiFi( APNAME,APPAS); 
+        break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+        xSemaphoreTake( wifiSemaphore, 0);
+        switch (info.disconnected.reason) {
+        case WIFI_REASON_NOT_AUTHED:
+        case WIFI_REASON_AUTH_FAIL:
+            WiFi.reconnect();
+            break;
+        }
+        break;
+    case SYSTEM_EVENT_STA_GOT_IP:
+    case SYSTEM_EVENT_AP_STACONNECTED:
+        xSemaphoreGive( wifiSemaphore );
+        break;
+    default:
+        break;
+    }
+}
+
+/*-----------------------------------------------------------*/
 
 void getWiFi( const char *apname, const char *appass){
-    
-    //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
-    WiFiManager wm;
-
-   // Workaround for esp32 failing to set hostname as found here: https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
-   // for some reason it does not work here,although it does in th Basic example
+    wifiSemaphore = xSemaphoreCreateBinary();
    
-   Serial.printf("1-config 0 and set hostname to %s\n", apname);
- 
-    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    WiFi.disconnect( false );
     WiFi.setHostname( apname );
+    WiFi.onEvent(onEvent);
+   
+    WiFi.begin();
     
-    wm.setHostname( apname );// This only partially works in setting the mDNS hostname 
-    
-    wm.setAPCallback( tft_NoConnect );
-    wm.setConnectTimeout(20);
-    
-    //reset settings - wipe credentials for testing
-    //wm.resetSettings();
-
-    // Automatically connect using saved credentials,
-    // if connection fails, it starts an access point with the specified name ( apname ),
-    // if empty will auto generate SSID, if password is blank it will be anonymous AP (wm.autoConnect())
-    // then goes into a blocking loop awaiting configuration and will return success result
-
-    bool res;
-    res = wm.autoConnect( apname, appass ); // anonymous ap
-
-    if(!res) {
-        tellPixels( PIX_RED );
-
-        Serial.println("Failed to connect");
-        ESP.restart();
-    } 
-    else {
-        //if you get here you have connected to the WiFi    
-        Serial.println("Wifi CONNECTED");
-
-         ntp_setup( true );
-         tellPixels( PIX_BLINKBLUE );
-
+    if (xSemaphoreTake( wifiSemaphore, 10000)) {
+        log_i("Connected: %s\n", WiFi.localIP().toString().c_str());
+    }  else {
+        log_i("Timed out waiting for connection\n");
     }
+
+    /*for ( int trycount=10; WiFi.status()!= WL_CONNECTED && trycount >=0 ; --trycount ){     
+      WiFi.begin();
+      log_i("WiFi.begin try #%d", trycount );
+      delay( 120 * trycount);
+    }
+    */
     
+    if ( WiFi.status()!= WL_CONNECTED ){  
+      //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
+      WiFiManager wm;
+      WiFi.disconnect( false );
+     // Workaround for esp32 failing to set hostname as found here: https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
+     // for some reason it does not work here,although it does in th Basic example
+     
+     Serial.printf("1-config 0 and set hostname to %s\n", apname);
+   
+      WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+      WiFi.setHostname( apname );
+      
+      wm.setHostname( apname );// This only partially works in setting the mDNS hostname 
+      
+      wm.setAPCallback( tft_NoConnect );
+      wm.setConnectTimeout(60);
+      //reset settings - wipe credentials for testing
+      //wm.resetSettings();
+  
+      // Automatically connect using saved credentials,
+      // if connection fails, it starts an access point with the specified name ( apname ),
+      // if empty will auto generate SSID, if password is blank it will be anonymous AP (wm.autoConnect())
+      // then goes into a blocking loop awaiting configuration and will return success result
+  
+      bool res;
+      res = wm.autoConnect( apname, appass ); // anonymous ap
+  
+      if(!res) {
+          tellPixels( PIX_RED );
+  
+          Serial.println("Failed to connect");
+          ESP.restart();
+      }
+    }   
+
+  //if you get here you have connected to the WiFi    
+   Serial.println("Wifi CONNECTED");
+
+   ntp_setup( true );
+   tellPixels( PIX_BLINKBLUE );
+  
   Serial.print("IP address = ");
   Serial.println(WiFi.localIP());
 #ifdef USEOTA
@@ -448,7 +492,7 @@ void setup () {
     // TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     // TIMERG0.wdt_feed=1;
     // TIMERG0.wdt_wprotect=0;
-    // This hack eventually causes indefinite hangs: just run everything on core 1 
+    // This hack eventually causes indefinite hangs: just run most tasks on core 1 
     
     //enableCore0WDT(); 
     //enableCore1WDT();
@@ -464,14 +508,17 @@ void setup () {
     digitalWrite( VS1053_RST , LOW);
     delay( 200);
     digitalWrite( VS1053_RST , HIGH);
-
+    delay(200);
     
     vs1053player = new VS1053g ( VS_CS_PIN,       // Make instance of player
                                  VS_DCS_PIN,
                                  VS_DREQ_PIN);
-                              
-     vs1053player->spectrum_height =  vs1053player->spectrum_height - 20;
-     vs1053player->spectrum_top =  vs1053player->spectrum_top;
+
+     // position and colors for the spectrum analyzer
+     vs1053player->spectrum_height    = TFTSPECTRUMH;
+     vs1053player->spectrum_top       = TFTSPECTRUMT;
+     vs1053player->setSpectrumBarColor(TFT_REALGOLD);
+     vs1053player->setSpectrumPeakColor(TFT_WHITE);
      
      Serial.println("Creating semaphores...");
     
@@ -500,12 +547,17 @@ void setup () {
     
      Serial.println("Create playQueue...");
      playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
+
+     Serial.println("log boot");    
+     log_boot();
       
      Serial.println("Start File System...");
      setupFS();   
 
-     Serial.println("player begin...");
+     Serial.println("TFT init...");
+     tft_init();
 
+     Serial.println("player begin...");
      vs1053player->begin();
 
 // apply patches and plugin.
@@ -514,17 +566,15 @@ void setup () {
 // The switch to MP3 includes a soft reset.
 
      char patchname[128];     
-     sprintf( patchname,"%s%s", RadioMount, "/vs1053b-patches.plg");
+     sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patches.plg");
      vs1053player->patch_VS1053( patchname );
 
-     log_i("Switch to MP3...");
+     delay(200); 
+     log_i("Switch to MP3.../Soft reset");
      vs1053player->switchToMp3Mode();
      
-     sprintf( patchname,"%s%s", RadioMount, "/spectrum1053b-2.plg");
+     sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
      vs1053player->patch_VS1053( patchname );
-     
-     //patch_VS1053( "/spiffs/vs1053b-patch270-flac.plg",  0 );
-     //patch_VS1053( "/spiffs/vs1053b-flac-latm.plg",  0 );
      
        
      #ifdef USEPIXELS
@@ -542,12 +592,9 @@ void setup () {
      stationsInit();
 
      Serial.println("Start WiFi en web...");
-          
      getWiFi( APNAME,APPAS);    
       
-     Serial.println("log boot");    
-     log_boot();
-
+     
       // to be sure start gestures (I2C) after WIFiManager as per
       // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
       
@@ -580,16 +627,11 @@ void setup () {
     }
       
    
- Serial.println("TFT init...");
-    tft_init();
+ 
  
  delay(50); 
  Serial.println("Start WebServer...");
- #ifndef ASYNCWEB
-    setupWebServer();
- #else
-   setupAsyncWebServer();
- #endif
+ setupAsyncWebServer();
  
  Serial.println("Start play task...");  
     play_init();
@@ -598,6 +640,8 @@ void setup () {
  Serial.println("setup done...");    
 
 
+ delay(10000);
+ 
 
 }
 

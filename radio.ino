@@ -21,7 +21,7 @@ void reset_chunkstate(){
 //---------------------------------------------------------------------------
 
 void filter_buffer ( uint8_t *rBuffer, int bytecount ){
-uint8_t     *r,*f;  
+uint8_t     *r;  
 static char hexstring[16], sendbuffer[32];
 
 if ( ! stationChunked ){
@@ -96,20 +96,20 @@ if ( stationChunked ){
 void radio( void *param) {
 
 static int connectmillis;
-int   bufbegin=1, rc;
+int   rc;
 int   noreads = 0, lowqueue=0;
-int   totalbytes=0, threshbytes=5000;
+int   totalbytes=0;
 //uint8_t radioBuffer[32];
 uint8_t radioBuffer[256];
          
-  Serial.printf("Radiotask running on core %d\n", xPortGetCoreID()); 
+  log_i("Radiotask running on core %d", xPortGetCoreID()); 
    
 
 
   setStation( get_last_volstat(0),-1 );
   vs1053player->setVolume(0); // fade in at startup
   
-  Serial.printf("Radiotask starting loop\n", xPortGetCoreID()); 
+  log_i("Radiotask starting loop"); 
 
 while(1){
       if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){

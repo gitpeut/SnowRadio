@@ -1,4 +1,4 @@
-#ifdef USETOUCH
+#ifdef USETOUCH2
 
 // There are 10 bytes (5 integers @ 2 bytes each) for TFT calibration
 #define totCalibrationBytes 10
@@ -10,11 +10,11 @@ TFT_eSPI_Button muteBtn, listBtn, Back ;
 
 touch_setup(){
 
-   // Black icon, no text
+   // Black icon, no text                       //x   y     w   h  outline     fill       textcolor  label      textsize
      touchbutton[BUTTON_MUTE].initButtonUL(&tft, 100, 140, 60, 60, TFT_YELLOW, TFT_BLACK, TFT_WHITE, (char *)"", 1);
-     touchbutton[BUTTON_LIST].initButtonUL(&tft, 35, 140, 60, 60, TFT_YELLOW, TFT_BLACK, TFT_WHITE, (char *)"", 1);
+     touchbutton[BUTTON_LIST].initButtonUL(&tft, 35,  140, 60, 60, TFT_YELLOW, TFT_BLACK, TFT_WHITE, (char *)"", 1);
      
-     tft.setFreeFont(&FreeSans9pt7b);
+     tft.setFreeFont(&indicator);
   
      drawMuteButton(false);
      drawMuteBitmap(false);

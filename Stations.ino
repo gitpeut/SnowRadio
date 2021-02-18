@@ -132,7 +132,7 @@ stations = (Station *) gr_calloc( STATIONSSIZE,sizeof(Station) );
 int read_header( int stationIdx){
 char  line[1024];
 char  *s = line,*t, lastchar='x';
-int   rc=0,http_status=0;
+int   http_status=0;
 bool  acceptrange=false;
 
 Serial.printf("Reading header\n");
@@ -143,7 +143,7 @@ stationClose   = true;
 for(;;){
   //read a line
   for(line[0] = 0, s = line, lastchar=0; s - line < 1024; ++s ){ 
-    rc = radioclient->read( (uint8_t *)s, 1 );
+    radioclient->read( (uint8_t *)s, 1 );
    
     if ( *s == '\n' && lastchar == '\r' ){
       *(s-1) = 0;
@@ -502,7 +502,7 @@ int     fill_stations_from_file( char *fileBuffer, size_t bufferlen){
 char    *s=fileBuffer;
 int     mode=0;
 char    searchstring[32];
-char    *target, *source;
+char    *source;
 int     stationidx=0, targetcount=0;
 
 sprintf( searchstring,"\"name\"");
@@ -589,6 +589,7 @@ for(; *s; ++s ){
 Serial.printf("\nFound %d stations\n", stationidx);
 stationCount = stationidx;
 
+return( stationidx );
 }
 
 //-----------------------------------------------------
@@ -608,7 +609,7 @@ if( stat( filename,&sStat) < 0){
   return(-3);
 }
 
-Serial.printf("Size of %s\t%d bytes\n",filename, sStat.st_size);
+Serial.printf("Size of %s\t%ld bytes\n",filename, sStat.st_size);
 
 readBuffer = (char *)gr_calloc( 1, sStat.st_size+4 );
 if ( readBuffer == NULL ){

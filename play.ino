@@ -102,7 +102,7 @@ int play_init(){
     xTaskCreatePinnedToCore( 
          play,                                      // Task to handle special functions.
          "Player",                                            // name of task.
-         2048,                                                 // Stack size of task
+         4*1024,                                                 // Stack size of task
          NULL,                                                 // parameter of the task
          PLAYTASKPRIO,                                                    // priority of the task
          &playTask,                                          // Task handle to keep track of created task 

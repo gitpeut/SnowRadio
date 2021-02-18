@@ -99,7 +99,6 @@ String urlencode(String str){
     char c;
     char code0;
     char code1;
-    char code2;
     for (int i =0; i < str.length(); i++){
       c=str.charAt(i);
       if (c == ' '){
@@ -116,11 +115,10 @@ String urlencode(String str){
         if (c > 9){
             code0=c - 10 + 'A';
         }
-        code2='\0';
         encodedString+='%';
         encodedString+=code0;
         encodedString+=code1;
-        //encodedString+=code2;
+        
       }
       yield();
     }
@@ -179,7 +177,7 @@ void send_json_status(AsyncWebServerRequest *request)
 char uptime[32];
 int sec = millis() / 1000;
 int upsec,upminute,uphr,updays;
-int retval=0;
+
  
 upminute = (sec / 60) % 60;
 uphr     = (sec / (60*60)) % 24;
@@ -267,8 +265,7 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
 //------------------------------------------------------------------
 
 void handleSettings(AsyncWebServerRequest *request){
-int hasargs=0;
-int reset_ESP=0;
+
 
   if ( request->hasArg("json") ){
     String output = "{";
@@ -288,7 +285,7 @@ int reset_ESP=0;
 //------------------------------------------------------------------
 
 void handleDel( AsyncWebServerRequest *request ){
-  int   i, return_status = 400,rc;
+  int   return_status = 400,rc;
   char  message[80];
   
   if ( !request->hasParam("name") || !request->hasParam("index")   ){
@@ -302,14 +299,14 @@ void handleDel( AsyncWebServerRequest *request ){
                      request->getParam("index")->value().toInt() ); 
 
   if ( rc ){
-        sprintf( message, "Error: Station \"%s\" with index %d not found", request->getParam("name")->value().c_str(), request->getParam("index")->value().toInt()  );
+        sprintf( message, "Error: Station \"%s\" with index %ld not found", request->getParam("name")->value().c_str(), request->getParam("index")->value().toInt()  );
         Serial.println( message );
 
   }else{
     save_stations();                
     return_status = 200;
     read_stations();
-    sprintf( message,"Deleted station %s", server.arg("name") );      
+    sprintf( message,"Deleted station %s", server.arg("name").c_str() );      
   }
   
   request->send( return_status, "text/plain", message);
@@ -351,7 +348,7 @@ void handleAdd( AsyncWebServerRequest *request ){
     
     save_stations();                
     return_status = 200;
-    sprintf( message,"Added station %s", server.arg("name") );      
+    sprintf( message,"Added station %s", server.arg("name").c_str() );      
   }
   
   request->send( return_status, "text/plain", message);
@@ -487,7 +484,8 @@ FBuf *addFBuf( String filename ){
     return (NULL);
   }
   
-  size_t  bytesread = 0, totalbytesread=0;
+  size_t   totalbytesread=0;
+  int      bytesread = 0;
   uint8_t *endpsbuffer = fb->buffer;
    
       while( sourcefile.available() ){   
@@ -692,7 +690,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
  
   static File fsUploadFile;
   static String fspath;
-  static int  bcount, bmultiplier;
+  static int  bcount;
   
   if(!index){
         String path;       
@@ -721,7 +719,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
   
         fspath = path;
               
-        bcount=0; bmultiplier = 1;
+        bcount=0;
         fsUploadFile = ff->open( fspath, "w");
         if ( !fsUploadFile  ){
               log_e("Error opening file %s %s", fspath.c_str(), (strerror(errno)) );
@@ -886,9 +884,11 @@ void startWebServer( void *param ){
     int dossdp= 0;
 #endif
 
+setVolume( get_last_volstat(1) );
+  
 // loop for frequent updates
 
-int     delaytime=10;
+int     delaytime= 60;
 int     timecount=(1000/delaytime), oldmin=987;
 time_t  rawt;
 struct tm tinfo;
@@ -915,8 +915,8 @@ struct tm tinfo;
          
         if ( oldmin != tinfo.tm_min && currDisplayScreen == HOME ){
            oldmin = tinfo.tm_min; 
-           showClock(tinfo.tm_hour, tinfo.tm_min);
-           //showBattery();
+           showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_year + 1900 );
+           //showBattery(); //Now in show clock
            timecount = (1000/delaytime); 
         }        
      }

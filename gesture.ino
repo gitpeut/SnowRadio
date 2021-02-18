@@ -17,9 +17,8 @@ int started=0;
 
 void gesture_process( void *param){
 
-uint8_t   data = 0, data1 = 0, gerror;
+uint8_t   data = 0, gerror;
 uint32_t  notify_value=0;
-uint8_t   state=99; 
 
 Serial.printf("Gesture running on core %d\n", xPortGetCoreID()); 
 
@@ -55,7 +54,7 @@ while(1){
      stopgTimer();
      continue;
  }
- for(int rtry=0 ; gerror = paj7620ReadReg(0x43, 1, &data) ; rtry++ ){
+ for(int rtry=0 ; (gerror = paj7620ReadReg(0x43, 1, &data) ) ; rtry++ ){
   // Read Bank_0_Reg_0x43/0x44 for gesture result.
   // reset I2C bus if an error is encountered, as per
   // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-581163709
@@ -73,6 +72,9 @@ while(1){
 #ifndef USEPIXELS
     parse_gestures(data);
 #else 
+    uint8_t   data1 = 0;
+    uint8_t   state = 99; 
+
     switch (data)                  // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
     {                              // PAJ7620 is installed upside down. updown left and right are flipped
       case GES_RIGHT_FLAG:

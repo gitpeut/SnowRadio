@@ -4,6 +4,8 @@
 #include <sys/stat.h>
 #include <VS1053.h>
 #include <TFT_eSPI.h>
+
+
 extern TFT_eSPI tft;
 
 class VS1053g: public VS1053{
@@ -22,6 +24,9 @@ private:
   int read_VS1053_plg( const char *filename );
   int write_VS1053_binfile( unsigned short *pluginv, size_t valuecount, const char *bin_filename );
   
+  uint16_t    spectrum_barcolor   = TFT_GOLD;   
+  uint16_t    spectrum_peakcolor  = TFT_WHITE;   
+   
 public:
    VS1053g( uint8_t _cs_pin, uint8_t _dcs_pin, uint8_t _dreq_pin);
  
@@ -43,10 +48,12 @@ public:
                                // [0] current height [1] previous height [2] peak value
   
   uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
-  uint8_t     spectrum_height = 70; //высота графика = Spectrum graph height   
-  
+  uint8_t     spectrum_height = 70; //высота графика = Spectrum graph height
+ 
   void getBands();
-  void displaySpectrum( uint16_t *askcolor=NULL);
+  void displaySpectrum();
+  uint16_t setSpectrumBarColor( uint16_t newbarcolor);
+  uint16_t setSpectrumPeakColor( uint16_t newpeakcolor);
 
 };
 

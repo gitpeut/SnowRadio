@@ -40,7 +40,7 @@ void VS1053g::getBands()
     /* current value in bits 5..0, normally 0..31
       peak value in bits 11..6, normally 0..31 */
     uint8_t cur1 = val & 31;
-    uint8_t cur = (cur1 * current_volume ) / 30; // big bars
+    int8_t cur = (cur1 * current_volume ) / 30; // big bars
     if ( cur < 0 ) {
       cur = 0;
     } else if ( cur > ( spectrum_height - 4) ){
@@ -51,16 +51,25 @@ void VS1053g::getBands()
 
 }
 
+uint16_t VS1053g::setSpectrumBarColor( uint16_t newbarcolor){
+  uint16_t oldcolor = spectrum_barcolor;
+  
+  spectrum_barcolor  = newbarcolor;
+  return( oldcolor );
+}
+
+uint16_t VS1053g::setSpectrumPeakColor( uint16_t newpeakcolor){
+  uint16_t oldcolor = spectrum_peakcolor;
+  
+  spectrum_peakcolor  = newpeakcolor;
+  return( oldcolor );
+}
+
+
 //----------------------------------------------------------------------------------
 
-void VS1053g::displaySpectrum( uint16_t *askcolor ) {
-
-  static uint16_t barcolor=TFT_GREEN;
-  if ( askcolor != NULL ) {
-    barcolor = *askcolor;
-    return;
-  }
-  
+void VS1053g::displaySpectrum() {
+ 
   if (bands <= 0 || bands > 14)  return;
       
   uint8_t   bar_width = tft.width() / bands - 2;
@@ -76,7 +85,7 @@ void VS1053g::displaySpectrum( uint16_t *askcolor ) {
   {
     if (visual) {
       if (spectrum[i][0] > spectrum[i][1]) {
-        tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], barcolor );
+        tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
         tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
       } else {
         tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
@@ -89,7 +98,7 @@ void VS1053g::displaySpectrum( uint16_t *askcolor ) {
       spectrum[i][2] = spectrum[i][0];
     }
     if (visual) { 
-      tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][2] - 3, bar_width, 2, TFT_WHITE );
+      tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
     }
     
     spectrum[i][1] = spectrum[i][0];
@@ -154,7 +163,7 @@ void VS1053g::write_VS1053_registers( unsigned short *pluginr, size_t valuecount
 // read saved bin file and write registers to vs1053
 
 int VS1053g::read_VS1053_bin( const char *bin_filename){
-size_t  size, readnumber, shortsize;    
+int   size,readnumber, shortsize;    
 FILE *binfile;
 unsigned short *pluginv; 
 

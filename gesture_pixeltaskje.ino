@@ -1,4 +1,5 @@
-
+#include "tft.h"
+#include "touch.h"
 
 hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
@@ -110,8 +111,9 @@ int current_station = getStation();
       if ( current_volume > 100 )current_volume = 100;    
       if ( current_volume < 0  ) current_volume = 0;    
   
-      
-       
+      #ifdef USETOUCH
+       touchbutton[BUTTON_MUTE].draw();
+      #endif 
        setVolume(current_volume );
        save_last_volstat(1);
   }
@@ -145,34 +147,42 @@ int current_station = getStation();
 //--------------------------------------------------------------------------
 
 int toggleMute(){
+int curvol;
 
   if ( vs1053player->getVolume() <  getVolume() ){
-      for ( int curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
+      for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );         
       } 
+      #ifdef USETOUCH
+        touchbutton[BUTTON_MUTE].draw(false);
+      #endif
   }else{
-     for ( int curvol = getVolume(); curvol; --curvol ){
+     for ( curvol = getVolume(); curvol; --curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );         
      }
+     #ifdef USETOUCH
+        touchbutton[BUTTON_MUTE].draw( true, "R");
+     #endif
+
   }
-   
+  return( curvol ); 
 }
 //--------------------------------------------------------------------------
 
+//static uint16_t previous_barcolor;
+
 void show_gesture_on(){
-  uint16_t barcolor = TFT_RED;
-  //vs1053player->displaySpectrum( &barcolor);
+  //previous_barcolor = vs1053player->setSpectrumBarColor(TFT_RED);
   tft_show_gesture( true );
   
 }
 
 void show_gesture_off(){
-  uint16_t barcolor = TFT_GREEN;
+
   tft_show_gesture( false );
-  //vs1053player->displaySpectrum( &barcolor);
-  
+  //vs1053player->setSpectrumBarColor( previous_barcolor);
 }
 
 
