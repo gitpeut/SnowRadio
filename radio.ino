@@ -112,10 +112,21 @@ uint8_t radioBuffer[256];
   log_i("Radiotask starting loop"); 
 
 while(1){
-      if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){
+    //log_i("read %d bytes", totalbytes);
+    if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){
         xSemaphoreTake( updateSemaphore, portMAX_DELAY);
         xSemaphoreGive( updateSemaphore);
-      }
+    }
+    if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
+        log_d("waiting for radio semaphore");
+        
+        if( radioclient->connected() ) radioclient->stop();
+        xSemaphoreTake( radioSemaphore, portMAX_DELAY);
+        xSemaphoreGive( radioSemaphore);
+        stationsConnect( getStation());
+        
+        log_d("finished waiting for radio semaphore");
+    }
     
     delay(2);
 
@@ -123,6 +134,7 @@ while(1){
         lowqueue++; 
         if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
            syslog( (char *)"Restart to solve low queue");  
+                    
            ESP.restart(); 
         }
     }
@@ -155,6 +167,7 @@ while(1){
          }else{
             noreads = 0;
             filter_buffer( &radioBuffer[0], bytesread );
+            
          }
       
       if ( ( errno != EWOULDBLOCK && errno != EINPROGRESS ) ||  noreads > 5 ) {
@@ -255,7 +268,7 @@ while(1){
         lowqueue = 0;
         
         if ( unavailablecount > MAXUNAVAILABLE ){
-            Serial.printf("errno %d unavailble more than %d. reconnect...\n", errno, MAXUNAVAILABLE );
+            Serial.printf("errno %d unavailable more than %d. reconnect...\n", errno, MAXUNAVAILABLE );
             syslog( (char *)"reconnect after data has been unavailable.");           
             disconnectcount++;
         }else{

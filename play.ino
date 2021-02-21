@@ -18,7 +18,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
     }
     if ( qfillcount > 800 ){
       unavailablecount =  MAXUNAVAILABLE + 1;
-      Serial.printf ( "Queue does not fill up, reconnect" );
+      Serial.printf ( "Queue does not fill up, reconnect\n" );
     }
     delay(40);
   }
@@ -47,7 +47,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
             --bandcounter;
             if ( ! bandcounter ){
 
-              if ( currDisplayScreen == HOME ){
+              if ( currDisplayScreen == RADIO ){
                 vs1053player->getBands();
                 
                 delay(10); // please the task watchdog

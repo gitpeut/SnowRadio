@@ -5,6 +5,8 @@
 #include "soc/timer_group_reg.h"
 #include <esp_task_wdt.h>
 #include <dirent.h>
+#include "tft.h"
+#include "weather.h"
 
 AsyncWebServer    fsxserver(80);
 TaskHandle_t      FSXServerTask;
@@ -455,17 +457,17 @@ FBuf *addFBuf( String filename ){
     return NULL ; 
   }
   
-  log_i( "buffering %s", filename.c_str() ); 
+  //log_i( "buffering %s", filename.c_str() ); 
   
   FBuf *fb = findFBuf( filename );
   if ( fb ){
-    log_i( "%s already buffered", filename.c_str() );
+    //log_i( "%s already buffered", filename.c_str() );
     return fb;
   }
 
   fb = newFBuf( filename );
   if ( fb == NULL ) {
-    log_i( "no file buffers left for %s", filename.c_str() );
+    log_e( "no file buffers left for %s", filename.c_str() );
     return NULL;
   }
      
@@ -473,10 +475,10 @@ FBuf *addFBuf( String filename ){
   size_t filesize;
   
   sourcefile  = RadioFS.open ( filename, FILE_READ ); 
-  if ( !sourcefile ){ log_i( "Error opening %s for read ", filename.c_str()); return( NULL );}     
+  if ( !sourcefile ){ log_e( "Error opening %s for read ", filename.c_str()); return( NULL );}     
 
   filesize    = sourcefile.size();
-  log_i( "Opened %s for read, filesize %u \n",filename.c_str(), filesize);
+  //log_i( "Opened %s for read, filesize %u \n",filename.c_str(), filesize);
     
   fb->buffer = (uint8_t *) ps_calloc( filesize ,1 );
   if ( ! fb->buffer ) {
@@ -510,38 +512,49 @@ FBuf *addFBuf( String filename ){
 
 }
 
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 void FBuffAll ( const char *path ){
     
     fs::File dir = RadioFS.open( path );     
     fs::File entry;
     
-    if ( dir.isDirectory() ){
-      log_i( "%s directory", path );
-    }else{
+    if ( !dir.isDirectory() ){
       dir.close();
       return;
     }
-           
+
+    char  *fname;
+    bool   isdir;
+
     while ( entry = dir.openNextFile() ){                
-      char *fname = strdup( entry.name() );
+
+      fname = ps_strdup( entry.name() );
+      isdir = entry.isDirectory();
+      
       entry.close();
       
-      if ( entry.isDirectory()  ){
-         FBuffAll( fname );        
-      } else{ 
-          if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") && !String(fname).endsWith("stations.json")){
-            log_i( "add fbuf %s", fname );
-            addFBuf( String(fname) );
-          }else{
-            log_i( "%s not buffered, wrong type", fname );         
-          }
+      if ( isdir  ){
+         FBuffAll(fname);
+      }else{
+         if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") && !String(fname).endsWith("stations.json")){
+            //log_i( "add fbuf %s", fname );
+            if ( strcasecmp( (fname + strlen(fname) - 4), ".bmp" ) ){
+              addFBuf( String(fname) );
+            }else{
+              drawBmp( fname, 0, 0, NULL, false);
+            }
+         }else{
+            //log_i( "%s not buffered, wrong type", fname );         
+         }          
       }
-      free( fname );
+      free(fname);
     }    
     dir.close();
+    
+
 }
+
 
 /*-----------------------------------------------------------------*/
 void showFBuf(AsyncWebServerRequest *request)
@@ -831,15 +844,7 @@ void startWebServer( void *param ){
  
   MDNS.begin( APNAME);
 
-  if ( psramFound() ){ 
-    log_w("Adding File buffers");
-    addFBuf( "/stations.json");
-    addFBuf( "/favicon.ico");
-    addFBuf( "/index.html");
-    FBuffAll("/");
-  }else{
-    log_w("no PSRAM ");
-  }
+  
 
   fsxserver.serveStatic("/stations.json", RadioFS, "/stations.json");
   fsxserver.on("/favicon.ico", HTTP_GET, handleFileRead);
@@ -886,13 +891,16 @@ setVolume( get_last_volstat(1) );
   
 // loop for frequent updates
 
-int     delaytime= 60;
-int     timecount=(1000/delaytime), oldmin=987;
+int     delaytime = 60;
+int     timecount = (1000/delaytime), oldmin=987;
+int     weathercount = 0;  // open weather, every hour, but also at start
 time_t  rawt;
 struct tm tinfo;
 
   while(1){
-
+    
+    
+    
     #ifdef USESSDP
      ++dossdp;
      if ( dossdp >= 40 ){
@@ -910,13 +918,23 @@ struct tm tinfo;
   
         time( &rawt );
         localtime_r( &rawt, &tinfo);
-         
-        if ( oldmin != tinfo.tm_min && currDisplayScreen == HOME ){
+
+        
+        if ( oldmin != tinfo.tm_min && currDisplayScreen != STNSELECT ){
            oldmin = tinfo.tm_min; 
-           showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_year + 1900 );
+           showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
            //showBattery(); //Now in show clock
            timecount = (1000/delaytime); 
-        }        
+        }
+     }
+     --weathercount;
+     
+     if ( weathercount <= 0  ){
+        if( getWeather() ){
+          weathercount = ((1*3600*1000) /delaytime); // every hour
+        }else{
+          weathercount = ( 20                                                          * 1000 ) / delaytime; 
+        }
      }
           
      delay( delaytime );

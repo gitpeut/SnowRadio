@@ -15,7 +15,11 @@
 //
 
 /*define or undefine */
-
+#define USEOWM // to enable Open weathermap owm_key, 
+               // owm_id (city id), owm_lang (language),
+               //owm_unit (metric, imperial) in wificredentials.h
+               // should be defined as const char *, e.g.
+               // const char* owm_unit = "metric";
 #undef USESSDP
 #undef USEOTA
 #define USETLS 1
@@ -25,15 +29,18 @@
 #define USETOUCH
 #undef USETOUCH2
 
+
 // Which page are we on? Home page = normal use, stnslect is list of stations
+
 enum screenPage
 {
-  HOME,
-  STNSELECT
-  // This will be expanded as I develop a menu structure
+  RADIO,
+  STNSELECT,
+  POWEROFF,
+  BLUETOOTH,
+  LINEIN
 };
-
-screenPage currDisplayScreen = HOME;
+screenPage currDisplayScreen = RADIO;
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -167,6 +174,7 @@ SemaphoreHandle_t tftSemaphore;
 SemaphoreHandle_t updateSemaphore;
 SemaphoreHandle_t scrollSemaphore;
 SemaphoreHandle_t chooseSemaphore;
+SemaphoreHandle_t radioSemaphore;
 
 TaskHandle_t      gestureTask;   
 TaskHandle_t      pixelTask;   
@@ -528,6 +536,8 @@ void setup () {
      updateSemaphore = xSemaphoreCreateMutex();
      scrollSemaphore = xSemaphoreCreateMutex();
      chooseSemaphore = xSemaphoreCreateMutex();
+     radioSemaphore = xSemaphoreCreateMutex();
+     
       
      Serial.println("Take sta semaphore...");
      xSemaphoreTake(staSemaphore, 10);
@@ -545,6 +555,10 @@ void setup () {
      xSemaphoreTake(updateSemaphore, 10);
      xSemaphoreGive(updateSemaphore);
     
+     Serial.println("Take radio semaphore...");
+     xSemaphoreTake(radioSemaphore, 10);
+     xSemaphoreGive(radioSemaphore);
+
      Serial.println("Create playQueue...");
      playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
 
@@ -553,7 +567,16 @@ void setup () {
      Serial.println("Start File System...");
      setupFS();   
 
-
+      if ( psramFound() ){ 
+        log_w("Adding File buffers");
+        addFBuf( "/stations.json");
+        addFBuf( "/favicon.ico");
+        addFBuf( "/index.html");
+        FBuffAll("/");
+      }else{
+        log_w("no PSRAM ");
+      }
+  
      Serial.println("TFT init...");
      tft_init();
 
@@ -619,6 +642,7 @@ void setup () {
     
 
     delay(300);
+
     
     Serial.println("Test VS1053 chip...");
     while(1){ 

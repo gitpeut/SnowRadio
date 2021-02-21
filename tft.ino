@@ -1,5 +1,5 @@
 #include "tft.h"
-
+#include "touch.h"
 #define BATVREF     1.1f
 #define BATPINCOEF  1.95f // tune -6 db
 #define BATDIV      5.54f // (1M + 220k )/220k
@@ -8,15 +8,17 @@
 #define SCROLLPIN 0
 int station_scroll_h=TFTSTATIONH;
 
+
 //change rotation if necessary
 //depends on you set up your display.
-int tftrotation = 2;
+int tftrotation = TFT_ROTATION;
 
 int verysmallfont= 1;
 int smallfont= 2;
 int bigfont=4;
 int segmentfont = CLOCK_FONT;
 
+std::vector<bmpFile *> bmpCache;
 
 
 //
@@ -102,7 +104,7 @@ void showBattery(){
  
     bats.createSprite(32,32);
     bats.setFreeFont( &indicator );
-    bats.setTextColor( TFT_WHITE, TFT_BLACK ); 
+    bats.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
     bats.fillSprite(TFT_BLACK);          
     bats.drawString( batstring , 0,0 );
 
@@ -127,7 +129,7 @@ void showVolume( int percentage ){
  
     vols.createSprite(32,32);
     vols.setFreeFont( &indicator );
-    vols.setTextColor( TFT_WHITE, TFT_BLACK ); 
+    vols.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
     vols.fillSprite(TFT_BLACK);          
     vols.drawString( volstring ,0 ,0 );
 
@@ -143,7 +145,7 @@ void showVolume( int percentage ){
 
 
 //--------------------------------------------------------------------------------------------------------
-void showClock ( int hour, int min, int date, int mon, int yy ){
+void showClock ( int hour, int min, int date,int mon, int wday, int yy ){
 int     spritey =  TFTCLOCKT;
 int     clockx, datex, clockw, datew, spritew, spritex;                                                     
 int     spriteh = TFTCLOCKH;
@@ -152,7 +154,7 @@ char    tijd[8], datestring[32];
 sprintf(tijd,"%02d:%02d", hour, min);   
 clockw = tft.textWidth( tijd, segmentfont );
 
-sprintf( datestring,"%d %s %d", date, monthnames[mon], yy);   
+sprintf( datestring,"%s %d %s %d", daynames[ wday], date, monthnames[mon], yy);   
 datew = tft.textWidth( datestring, bigfont );
 
 
@@ -174,10 +176,10 @@ clocks.createSprite(  spritew, spriteh );
 clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
 clocks.fillSprite(TFT_BLACK);
 
-clocks.drawString( tijd, clockx, 2, segmentfont); 
+clocks.drawString( tijd, clockx, 2, segmentfont);
+ 
+clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
 clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 4, bigfont); 
-
-
 
 grabTft();
 clocks.pushSprite( spritex, spritey );
@@ -215,7 +217,7 @@ int   xpos = 0, ypos=2;
 char  *t, *s = stations[stationIdx].name;
 char  topline[64], bottomline[64];
 
-
+if ( currDisplayScreen != RADIO ) return;
 
 img.createSprite(tft.width(), station_scroll_h );
 img.setTextColor( TFT_WHITE, TFT_BLACK ); 
@@ -521,86 +523,135 @@ log_d("tftnoconnect");
  tellPixels( PIX_RED );
 
 }
+//------------------------------------------------------------------------------------------
+bmpFile *findBmpInCache( char *bmpfile ){
+  for ( auto &bf : bmpCache ){
+    if ( strcmp( bf->name, bmpfile ) == 0 ) return ( bf );
+  }
+  return( NULL );
+}
 
 //------------------------------------------------------------------------------------------
-// Bodmers BMP image rendering function
+// Bodmers BMP image rendering function with (PS)RAM caching
 
-void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite ) {
+void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bool show  ) {
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
-  fs::File bmpFS;
-
-  // Open requested file on SD card
-  bmpFS = RadioFS.open(filename, "r");
-
-  if (!bmpFS)
-  {
-    Serial.print("File not found");
-    return;
-  }
-
-  uint32_t seekOffset;
-  uint16_t w, h, row;
-  uint8_t  r, g, b;
-
   uint32_t startTime = millis();
-
-  if (read16(bmpFS) == 0x4D42)
-  {
-    read32(bmpFS);
-    read32(bmpFS);
-    seekOffset = read32(bmpFS);
-    read32(bmpFS);
-    w = read32(bmpFS);
-    h = read32(bmpFS);
-
-    if ((read16(bmpFS) == 1) && (read16(bmpFS) == 24) && (read32(bmpFS) == 0))
+  bmpFile *cachedbmp = findBmpInCache( (char *) filename );
+  
+  if ( cachedbmp == NULL ){
+    log_i( "%s not found in cache", filename); 
+    
+    fs::File bmpFS; 
+    bmpFS = RadioFS.open(filename, "r");
+    
+    if (!bmpFS)
     {
-      y += h - 1;
-
-      tft.setSwapBytes(true);
-      bmpFS.seek(seekOffset);
-
-      uint16_t padding = (4 - ((w * 3) & 3)) & 3;
-      uint8_t lineBuffer[w * 3 + padding];
-
-      for (row = 0; row < h; row++) {
-        
-        bmpFS.read(lineBuffer, sizeof(lineBuffer));
-        uint8_t*  bptr = lineBuffer;
-        uint16_t* tptr = (uint16_t*)lineBuffer;
-        // Convert 24 to 16 bit colours
-        for (uint16_t col = 0; col < w; col++)
-        {
-          b = *bptr++;
-          g = *bptr++;
-          r = *bptr++;
-          *tptr++ = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-        }
-
-        // Push the pixel row to screen, pushImage will crop the line if needed
-        // y is decremented as the BMP image is drawn bottom up
-        grabTft();
-        if ( sprite == NULL ){
-          tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
-        }else{
-          sprite->pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
-        }
-        releaseTft();
-      }
-      Serial.print("Loaded in "); Serial.print(millis() - startTime);
-      Serial.println(" ms");
+      log_e("File not found");
+      return;
     }
-    else Serial.println("BMP format not recognized.");
+   
+    uint32_t seekOffset;
+    uint16_t w, h, row;
+    uint8_t  r, g, b;
+    int      dataoffset;
+     
+    
+    if (read16(bmpFS) == 0x4D42)
+    {
+      read32(bmpFS);
+      read32(bmpFS);
+      seekOffset = read32(bmpFS);
+      read32(bmpFS);
+      w = read32(bmpFS);
+      h = read32(bmpFS);
+      
+      if ((read16(bmpFS) == 1) && (read16(bmpFS) == 24) && (read32(bmpFS) == 0))
+      {
+        cachedbmp = (bmpFile *)gr_calloc( sizeof(bmpFile),1); 
+        if ( cachedbmp == NULL ){
+          log_e("No memory for bmpcache");
+          return;
+        }else{
+          cachedbmp->name = ps_strdup( filename );
+          cachedbmp->w = w;
+          cachedbmp->h = h;
+        }
+        
+        y += h - 1;
+          
+        tft.setSwapBytes(true);
+        bmpFS.seek(seekOffset);
+    
+        uint16_t  padding = (4 - ((w * 3) & 3)) & 3;
+        int       linesize = w * 3 + padding;
+        uint8_t  *lineBuffer = (uint8_t *) gr_calloc( linesize, sizeof(uint8_t) );
+       
+        cachedbmp->data = (uint8_t *)gr_calloc( (w*2)*h, sizeof( uint8_t) );
+        dataoffset      = ( (w*2) * h ) - (w*2);
+
+        for (row = 0; row < h; row++) {
+          
+          bmpFS.read(lineBuffer, linesize);
+          uint8_t*  bptr = lineBuffer;
+          uint16_t* tptr = (uint16_t*)lineBuffer;
+          // Convert 24 to 16 bit colours
+          for (uint16_t col = 0; col < w; col++)
+          {
+            b = *bptr++;
+            g = *bptr++;
+            r = *bptr++;
+            *tptr++ = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+          }
+    
+          if ( show ){
+            // Push the pixel row to screen, pushImage will crop the line if needed
+            // y is decremented as the BMP image is drawn bottom up
+            grabTft();
+            if ( sprite == NULL ){
+              tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+            }else{
+              sprite->pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
+            }
+            releaseTft();
+          }
+          //for( int i =0; i < (w*2) ; ++i )cachedbmp->data[dataoffset + i] = lineBuffer[i];
+          memcpy(  cachedbmp->data + dataoffset , lineBuffer, (w*2) ); 
+          dataoffset -= (w*2);
+      
+        }
+        
+        log_d("Image read %sin %u ms", show?"and rendered ":"", millis() - startTime);
+  
+        bmpCache.push_back( cachedbmp );
+        free( lineBuffer );
+      }
+      else log_e("BMP format not recognized.");
+    }
+    bmpFS.close();
+    tft.setSwapBytes( false );// handy when proper colors are expected afterwards :-)jb
+  }else{
+     log_i( "%s found in cache", filename);
+
+     if ( show){
+       tft.setSwapBytes(true);   
+       grabTft();
+            if ( sprite == NULL ){
+              tft.pushImage( x, y, cachedbmp->w, cachedbmp->h, (uint16_t *)cachedbmp->data);
+            }else{
+              sprite->pushImage( x, y, cachedbmp->w, cachedbmp->h, (uint16_t *)cachedbmp->data);
+            }
+       releaseTft();       
+       tft.setSwapBytes( false );
+
+       log_d("Image rendered from cache in %u ms", millis() - startTime);
+    }      
   }
-  bmpFS.close();
-  tft.setSwapBytes( false );// handy when proper colors are expected afterwards :-)jb
 }
 
-// These read 16- and 32-bit types from the SD card file.
-// BMP data is stored little-endian, Arduino is little-endian too.
-// May need to reverse subscript order if porting elsewhere.
+//------------------------------------------------------
 
 uint16_t read16(fs::File &f) {
   uint16_t result;
@@ -608,6 +659,7 @@ uint16_t read16(fs::File &f) {
   ((uint8_t *)&result)[1] = f.read(); // MSB
   return result;
 }
+//------------------------------------------------------
 
 uint32_t read32(fs::File &f) {
   uint32_t result;
@@ -656,7 +708,7 @@ void tft_init(){
   #ifdef USETOUCH    
     touch_init();    
   #endif  
-
+ 
   delay(200);
 
   log_i("tft initialized");

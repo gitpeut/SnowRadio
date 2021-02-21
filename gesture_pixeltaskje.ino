@@ -68,7 +68,7 @@ int setVolume( int v){
   vs1053player->setVolume( v );
   xSemaphoreGive(volSemaphore);
 
-  if (currDisplayScreen == HOME) showVolume(v);
+  if ( currDisplayScreen != STNSELECT ) showVolume(v);
   
   save_last_volstat(1);
   
@@ -102,23 +102,28 @@ void change_volstat(int dir){
 void change_volstat(int dir, int gmode){
 #endif
 
-int current_volume  = getVolume();
-int current_station = getStation();
+int current_volume;  
+int current_station;
 
   if ( gmode == gVolume ){
+    
+      current_volume  = getVolume();
+      
       current_volume += (dir*10); // number of volume increase or decrease
   
       if ( current_volume > 100 )current_volume = 100;    
       if ( current_volume < 0  ) current_volume = 0;    
   
       #ifdef USETOUCH
-       touchbutton[BUTTON_MUTE].draw();
+       if ( currDisplayScreen == RADIO )touchbutton[BUTTON_MUTE].draw();
       #endif 
        setVolume(current_volume );
        save_last_volstat(1);
   }
   
   if ( gmode == gStation ){
+    
+      current_station = getStation();
       current_station += dir;  
       
       Serial.printf( "Changing station\n"); 
@@ -146,26 +151,47 @@ int current_station = getStation();
 
 //--------------------------------------------------------------------------
 
+void toggleStop( bool nostop ){
+  int curvol;
+  
+    if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){ 
+        for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+        }
+    }else{     
+      for ( curvol = getVolume(); curvol; --curvol ){
+          vs1053player->setVolume( curvol  );
+          delay( 5 );         
+      }
+    } 
+  
+}
+//--------------------------------------------------------------------------
+
 int toggleMute(){
 int curvol;
 
   if ( vs1053player->getVolume() <  getVolume() ){
+      
       for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );         
       } 
+      
       #ifdef USETOUCH
-        touchbutton[BUTTON_MUTE].draw(false);
+        if ( currDisplayScreen == RADIO) touchbutton[BUTTON_MUTE].draw(false);
       #endif
+  
   }else{
+     #ifdef USETOUCH
+        touchbutton[BUTTON_MUTE].draw( true );
+     #endif
+
      for ( curvol = getVolume(); curvol; --curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );         
      }
-     #ifdef USETOUCH
-        touchbutton[BUTTON_MUTE].draw( true, "R");
-     #endif
-
   }
   return( curvol ); 
 }
