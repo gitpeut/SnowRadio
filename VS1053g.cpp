@@ -1,5 +1,6 @@
 #include "VS1053g.h"
 
+
 //----------------------------------------------------------------------------------
 
 VS1053g::VS1053g( uint8_t _cs_ping, uint8_t _dcs_ping, uint8_t _dreq_ping) : VS1053 (_cs_ping, _dcs_ping, _dreq_ping) { 
@@ -17,8 +18,7 @@ VS1053g::VS1053g( uint8_t _cs_ping, uint8_t _dcs_ping, uint8_t _dreq_ping) : VS1
   for (int i = 0; i < 14; i++) {
     spectrum[i][1] = 0; // dato precedente // lotfi
     spectrum[i][2] = 0; // picco grafico (non da Vs1053)
-  }
-  
+  } 
 }
 
 //----------------------------------------------------------------------------------
@@ -68,46 +68,6 @@ uint16_t VS1053g::setSpectrumPeakColor( uint16_t newpeakcolor){
 
 //----------------------------------------------------------------------------------
 
-void VS1053g::displaySpectrum() {
- 
-  if (bands <= 0 || bands > 14)  return;
-      
-  uint8_t   bar_width = tft.width() / bands - 2;
-  uint16_t  barx = 2; // start location of the first bar
-  boolean   visual = true; //paint to display
-  
-  if (bands != prevbands) {
-    prevbands = bands;
-    if (visual) tft.fillRect (0, spectrum_top, tft.width(), spectrum_height + 1, TFT_BLACK);
-  }
-  
-  for (uint8_t i = 0; i < bands; i++) // Handle all sections
-  {
-    if (visual) {
-      if (spectrum[i][0] > spectrum[i][1]) {
-        tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
-        tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-      } else {
-        tft.fillRect (barx, spectrum_top, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-      }  
-    }
-    if (spectrum[i][2] > 0) { 
-      spectrum[i][2]--;
-    }
-    if (spectrum[i][0] > spectrum[i][2]) {
-      spectrum[i][2] = spectrum[i][0];
-    }
-    if (visual) { 
-      tft.fillRect (barx, spectrum_top + spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
-    }
-    
-    spectrum[i][1] = spectrum[i][0];
-    barx += bar_width + 2;
-  }
-}
-
-
-//-----------------------------------------------------
 int VS1053g::VS1053_file_size( const char *filename){
 struct stat buf;
 FILE *binfile;
@@ -125,6 +85,57 @@ FILE *binfile;
 
 return( buf.st_size );    
 
+}
+
+//----------------------------------------------------------------------------------
+
+void VS1053g::displaySpectrum() {
+ 
+  if (bands <= 0 || bands > 14)  return;
+      
+  uint8_t   bar_width = tft.width() / bands - 2;
+  uint16_t  barx = 2; // start location of the first bar
+  boolean   visual = true; //paint to display
+
+  if ( ! spectrum_sprite.created() ){
+    spectrum_sprite.createSprite( tft.width(), spectrum_height );  
+  }
+  
+  if (bands != prevbands) {
+    prevbands = bands;
+    if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
+  }
+  
+  for (uint8_t i = 0; i < bands; i++) // Handle all sections
+  {
+    if (visual) {
+      if (spectrum[i][0] > spectrum[i][1]) {
+        spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
+        spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+      } else {
+        spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+      }  
+    }
+    if (spectrum[i][2] > 0) { 
+      spectrum[i][2]--;
+    }
+    if (spectrum[i][0] > spectrum[i][2]) {
+      spectrum[i][2] = spectrum[i][0];
+    }
+    if (visual) { 
+      spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
+    }
+    
+    spectrum[i][1] = spectrum[i][0];
+    barx += bar_width + 2;
+  }
+  
+  if ( currDisplayScreen == RADIO && xSemaphoreGetMutexHolder( tftSemaphore ) == NULL){
+     if ( xSemaphoreTake( tftSemaphore, 10 ) == pdTRUE ){
+      spectrum_sprite.pushSprite( 0, spectrum_top);
+      releaseTft();  
+    }  
+  }
 }
 
 

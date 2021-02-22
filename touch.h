@@ -31,7 +31,7 @@ class RadioButton : public TFT_eSPI_Button {
       if ( longname == NULL )longname = symbol;
      
       xSemaphoreTake( tftSemaphore, portMAX_DELAY);
-      tft.setFreeFont( &STATION_FONT );        
+      //tft.setFreeFont( STATION_FONT );        
       drawButton( invert, longname);
       xSemaphoreGive( tftSemaphore );
       

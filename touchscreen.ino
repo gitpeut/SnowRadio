@@ -2,7 +2,7 @@
 #include "fonts.h"
 #include "tft.h"
 #include "touch.h"
-#include "weather.h"
+#include "owm.h"
 
 RadioButton touchbutton [ TOUCHBUTTONCOUNT  ] ;
 
@@ -178,8 +178,12 @@ int       stationidx;
 
       for ( int i = 0; i < 8 ; ++i ){
           if ( stationidx >= stationCount )stationidx = 0;
-          
-          touchbutton[ startbutton + i ].set_symbol( stations[ stationidx ].name );       
+          char *last = stations[ stationidx ].name;
+          if ( strlen( last) > 18 ) {
+             while( *last && *last != ' ') ++last;
+             if ( *last ) ++last; 
+          }
+          touchbutton[ startbutton + i ].set_symbol( last );       
           touchbutton[ startbutton + i ].stationidx = stationidx; 
 
           ++stationidx;
@@ -225,18 +229,18 @@ void drawStationScreen(){
   releaseTft();
   
   tft.setTextColor( TFT_WHITE );
-  tft.setFreeFont(v29);                 // FreeSansBold9pt8b  
+  //tft.setFreeFont(  LIST_FONT ); 
+  tft.setTextFont( bigfont);                
+  
 }
 //--------------------------------------------------------------------
 void drawRadioScreen(){ 
   time_t  rawt;
   struct tm tinfo;
 
-  delay(20);
-
-  
   grabTft();
-  tft.fillScreen(TFT_BLACK);
+    delay(20);
+    tft.fillScreen(TFT_BLACK);
   releaseTft();
     
   delay(20);
@@ -265,11 +269,12 @@ void drawScreen( screenPage newscreen){
     }
   }
 
+    
+  currDisplayScreen = newscreen;                  
+
   if ( newscreen != RADIO && newscreen != STNSELECT ){
      drawWeather();     
   }
-    
-  currDisplayScreen = newscreen;                  
 
 // make sure screens are displayed after setting currDisplayScreen
 // screen functions call functions that test this.

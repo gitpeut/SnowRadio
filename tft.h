@@ -1,6 +1,7 @@
 #ifndef TFT_H
 #define TFT_H
 
+#include <TFT_eSPI.h>
 
 #define TFT_OLDREALGOLD       0xC676 //0xE5EC
     
@@ -15,7 +16,10 @@
 // symbol font for volume, battery and buttons
 #include "fonts.h"
 //freefont for stations
-#define STATION_FONT FreeMonoBold12pt7b
+#define STATION_FONT  &FreeMonoBold12pt7b
+//freefont for stationlist
+#define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
+#define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
@@ -24,13 +28,17 @@
  
 #define CLOCK_FONT 7
 
-#ifdef MONTHNAMES_EN
-const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
-const char *daynames[] = {"Su","Mo","Tu","We","Th", "Fr","Sa"};
-#else
-const char *monthnames[] = {"januari","februari","maart","april","may","juni","juli","augustus","september","october","november","december"};
-const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
-#endif
+// Which page are we on? Home page = normal use, stnslect is list of stations
+enum screenPage
+{
+  RADIO,
+  STNSELECT,
+  POWEROFF,
+  BLUETOOTH,
+  LINEIN
+};
+
+
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
@@ -46,6 +54,7 @@ typedef struct{
 
 #include <vector>
 extern std::vector<bmpFile*> bmpCache;
+extern SemaphoreHandle_t tftSemaphore;
 
 // to display image in sprite, provide poiter to sprite. 
 // to display on screen, omit this argument or fill it with NULL );
@@ -57,15 +66,11 @@ extern std::vector<bmpFile*> bmpCache;
 //  drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
 #define TFTINDICH 32                             //height
-#define TFTINDICT 61                             //top
+#define TFTINDICT 51                             //top
 #define TFTINDICB (TFTINDICT + TFTINDICH )       //bottom 83
 
-#define TFTDAYH  10                                //height
-#define TFTDAYT  51                                //top     
-#define TFTDAYB (TFTDAYT + TFTDAYH)                //bottom  94
-
 #define TFTCLOCKH 80                                //height
-#define TFTCLOCKT (TFTDAYB + 1)                   //top     
+#define TFTCLOCKT (TFTINDICB + 1)                   //top     
 #define TFTCLOCKB (TFTCLOCKT + TFTCLOCKH)           //bottom 175
 
 #define TFTSPECTRUMH 50                             // height

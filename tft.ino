@@ -1,5 +1,8 @@
 #include "tft.h"
 #include "touch.h"
+
+
+
 #define BATVREF     1.1f
 #define BATPINCOEF  1.95f // tune -6 db
 #define BATDIV      5.54f // (1M + 220k )/220k
@@ -43,6 +46,8 @@ int   w=32;
 int   h=TFTINDICH;
 int   xpos=33 + (BUTOFFSET*2),ypos=TFTINDICT;
 char  geststring[4];
+
+   if ( currDisplayScreen != RADIO) return;
 
    gest.createSprite(w,h);
    gest.fillSprite(TFT_BLACK);          
@@ -179,7 +184,7 @@ clocks.fillSprite(TFT_BLACK);
 clocks.drawString( tijd, clockx, 2, segmentfont);
  
 clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 4, bigfont); 
+clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 6, bigfont); 
 
 grabTft();
 clocks.pushSprite( spritex, spritey );
@@ -223,8 +228,7 @@ img.createSprite(tft.width(), station_scroll_h );
 img.setTextColor( TFT_WHITE, TFT_BLACK ); 
 
 img.fillSprite(TFT_BLACK);
-img.setFreeFont( &STATION_FONT );
-
+img.setFreeFont( STATION_FONT );
 
 int wholew = img.textWidth( stations[stationIdx].name, GFXFF );
 //int h = img.fontHeight(GFXFF);

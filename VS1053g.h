@@ -3,16 +3,14 @@
 
 #include <sys/stat.h>
 #include <VS1053.h>
-#include <TFT_eSPI.h>
-
+#include "tft.h"  // include definitions for TFT_eSPI lib and screenPage
 
 extern TFT_eSPI tft;
+extern screenPage currDisplayScreen;
 
 class VS1053g: public VS1053{
 private:
 
-
- 
   void *(*g_calloc)(size_t num, size_t size);
   void *(*g_malloc)( size_t size);
  
@@ -25,11 +23,12 @@ private:
   int write_VS1053_binfile( unsigned short *pluginv, size_t valuecount, const char *bin_filename );
   
   uint16_t    spectrum_barcolor   = TFT_GOLD;   
-  uint16_t    spectrum_peakcolor  = TFT_WHITE;   
-   
+  uint16_t    spectrum_peakcolor  = TFT_WHITE;
+
 public:
    VS1053g( uint8_t _cs_pin, uint8_t _dcs_pin, uint8_t _dreq_pin);
- 
+
+   
 // allows for unedited raw .plg files to be uploaded to SPIFFS
 // and to be read and patch VS1053. After the .plg file has been 
 // read, a .plg.bin is written and the plg file is deleted.
@@ -49,7 +48,8 @@ public:
   
   uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
   uint8_t     spectrum_height = 70; //высота графика = Spectrum graph height
- 
+  TFT_eSprite spectrum_sprite = TFT_eSprite(&tft);    
+  
   void getBands();
   void displaySpectrum();
   uint16_t setSpectrumBarColor( uint16_t newbarcolor);

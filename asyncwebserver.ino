@@ -6,7 +6,7 @@
 #include <esp_task_wdt.h>
 #include <dirent.h>
 #include "tft.h"
-#include "weather.h"
+#include "owm.h"
 
 AsyncWebServer    fsxserver(80);
 TaskHandle_t      FSXServerTask;
@@ -927,15 +927,20 @@ struct tm tinfo;
            timecount = (1000/delaytime); 
         }
      }
+
+     #ifdef USEOWM
+
      --weathercount;
      
      if ( weathercount <= 0  ){
         if( getWeather() ){
-          weathercount = ((1*3600*1000) /delaytime); // every hour
+          weathercount = ((10*60*1000) /delaytime); // every 10 minutes
         }else{
-          weathercount = ( 20                                                          * 1000 ) / delaytime; 
+          weathercount = ( 20 * 1000 ) / delaytime; 
         }
      }
+     
+     #endif  
           
      delay( delaytime );
   }

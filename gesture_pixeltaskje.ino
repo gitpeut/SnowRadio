@@ -1,4 +1,3 @@
-#include "tft.h"
 #include "touch.h"
 
 hw_timer_t       *gTimer = NULL;
@@ -185,7 +184,7 @@ int curvol;
   
   }else{
      #ifdef USETOUCH
-        touchbutton[BUTTON_MUTE].draw( true );
+        if ( currDisplayScreen == RADIO)touchbutton[BUTTON_MUTE].draw( true );
      #endif
 
      for ( curvol = getVolume(); curvol; --curvol ){

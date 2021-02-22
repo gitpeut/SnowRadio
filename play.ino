@@ -46,21 +46,13 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
             
             --bandcounter;
             if ( ! bandcounter ){
-
-              if ( currDisplayScreen == RADIO ){
-                vs1053player->getBands();
+                
+                vs1053player->getBands();                
                 
                 delay(10); // please the task watchdog
-                
-                if ( xSemaphoreGetMutexHolder( updateSemaphore ) == NULL ){
-                  xSemaphoreTake( tftSemaphore, 50 );
-                  vs1053player->displaySpectrum();
-                  xSemaphoreGive( tftSemaphore);
-                }
-              }             
-    
-              //delay(10); // please the task watchdog
-              bandcounter = GETBANDFREQ;         
+                vs1053player->displaySpectrum();
+
+                bandcounter = GETBANDFREQ;         
             }
 
             if ( skipstartsound ){

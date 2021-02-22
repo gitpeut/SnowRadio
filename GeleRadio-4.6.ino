@@ -30,17 +30,13 @@
 #undef USETOUCH2
 
 
-// Which page are we on? Home page = normal use, stnslect is list of stations
-
-enum screenPage
-{
-  RADIO,
-  STNSELECT,
-  POWEROFF,
-  BLUETOOTH,
-  LINEIN
-};
-screenPage currDisplayScreen = RADIO;
+#ifdef MONTHNAMES_EN
+const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
+const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
+#else
+const char *monthnames[] = {"januari","februari","maart","april","may","juni","juli","augustus","september","october","november","december"};
+const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
+#endif
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -90,6 +86,9 @@ screenPage currDisplayScreen = RADIO;
 #include "sk.h"
 #include "0pins.h"
 #include "tft.h"
+#include "owm.h"
+
+screenPage currDisplayScreen = RADIO;
 
 enum FSnumber{
   FSNO_SPIFFS,
@@ -148,6 +147,7 @@ TFT_eSprite clocks  = TFT_eSprite(&tft);
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
 TFT_eSprite gest    = TFT_eSprite(&tft); 
 
+
 //TFT_eSprite spa  = TFT_eSprite(&tft);
 
 //hangdetection
@@ -164,7 +164,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.4"
+#define APVERSION "V4.6"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -259,6 +259,7 @@ int currentVolume=65;
 
 bool stationChunked = false;
 bool stationClose   = false;
+
 
 /*------------------------------------------------------*/
 // https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/ResetReason/ResetReason.ino
@@ -528,6 +529,8 @@ void setup () {
      vs1053player->setSpectrumBarColor(TFT_REALGOLD);
      vs1053player->setSpectrumPeakColor(TFT_WHITE);
      
+
+     
      Serial.println("Creating semaphores...");
     
      staSemaphore = xSemaphoreCreateMutex();
@@ -580,9 +583,10 @@ void setup () {
      Serial.println("TFT init...");
      tft_init();
 
+      
      Serial.println("player begin...");
      vs1053player->begin();
-
+     
 // apply patches and plugin.
 // Apparetly after applying a soft reset is mandatory for the
 // plugin to load succesfully.
@@ -621,8 +625,8 @@ void setup () {
      Serial.println("log boot");    
      log_boot();
      
-      // to be sure start gestures (I2C) after WIFiManager as per
-      // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
+     // to be sure start gestures (I2C) after WIFiManager as per
+     // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
       
       #ifdef USEGESTURES
        Serial.println("Start gestures...");    
@@ -653,8 +657,6 @@ void setup () {
       delay(500);
     }
       
-   
- 
  
  delay(50); 
  Serial.println("Start WebServer...");
