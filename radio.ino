@@ -93,6 +93,21 @@ if ( stationChunked ){
 
 //--------------------------------------------------------------------
 
+void disconnect_radioclient(){
+
+  radioclient->stop();  
+  tellPixels( PIX_YELLOW );
+  
+  for ( int curvol = getVolume(); curvol; --curvol ){
+    vs1053player->setVolume( curvol  );
+    delay( 5 );         
+  }
+  
+  xQueueReset( playQueue); //empty queue
+  xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+}
+//--------------------------------------------------------------------
+
 void radio( void *param) {
 
 static int connectmillis;
@@ -133,9 +148,12 @@ while(1){
     if ( uxQueueMessagesWaiting(playQueue) < 20 ){
         lowqueue++; 
         if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
-           syslog( (char *)"Restart to solve low queue");  
+           syslog( (char *)"Reconnect to solve low queue");  
                     
-           ESP.restart(); 
+           //ESP.restart(); // soft restart is disruptive and
+                            //will sometimes cause hangs 
+            disconnect_radioclient();                
+            lowqueue = 0;    
         }
     }
       
@@ -254,17 +272,8 @@ while(1){
    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE  ){
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
-        radioclient->stop();  
-        
-        tellPixels( PIX_YELLOW );
 
-        for ( int curvol = getVolume(); curvol; --curvol ){
-          vs1053player->setVolume( curvol  );
-          delay( 5 );         
-        }
-        
-        xQueueReset( playQueue); //empty queue
-        xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+        disconnect_radioclient();
         lowqueue = 0;
         
         if ( unavailablecount > MAXUNAVAILABLE ){
