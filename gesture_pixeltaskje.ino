@@ -2,6 +2,8 @@
 
 hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
+bool              MuteActive = false;
+
 /*------------------------------------------------------------------------------*/
 void IRAM_ATTR gTmo(){
  BaseType_t    pxHighP=0;
@@ -60,15 +62,16 @@ int getVolume(){
 /*------------------------------------------------------------------------------*/
 int setVolume( int v){
 
-  //Serial.printf( "Changing volume to %d\n", v); 
+  log_d( "Changing volume to %d\n", v); 
 
   xSemaphoreTake(volSemaphore, portMAX_DELAY);
-  currentVolume = v;
-  vs1053player->setVolume( v );
+    currentVolume = v;
+    vs1053player->setVolume( v );    
   xSemaphoreGive(volSemaphore);
 
-  if ( currDisplayScreen != STNSELECT ) showVolume(v);
-  
+  if ( currDisplayScreen != STNSELECT && currDisplayScreen != POWEROFF ) showVolume(v);
+  if ( MuteActive )toggleMute();  
+ 
   save_last_volstat(1);
   
   return(v);
@@ -168,31 +171,44 @@ void toggleStop( bool nostop ){
 }
 //--------------------------------------------------------------------------
 
-int toggleMute(){
+void toggleMute(){
 int curvol;
+  if ( MuteActive ){
+    
+        if ( currDisplayScreen == RADIO ) {
 
-  if ( vs1053player->getVolume() <  getVolume() ){
+          skipstartsound=SKIPSTART;
+
+          //for ( curvol = 0 ; curvol <= getVolume(); ++curvol ){
+          //  vs1053player->setVolume( curvol  );
+          //  delay( 5 );         
+          //} 
+        }
       
-      for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
-          vs1053player->setVolume( curvol  );
-          delay( 5 );         
-      } 
-      
-      #ifdef USETOUCH
-        if ( currDisplayScreen == RADIO) touchbutton[BUTTON_MUTE].draw(false);
-      #endif
-  
+        #ifdef USETOUCH
+          if ( currDisplayScreen != POWEROFF )touchbutton[BUTTON_MUTE].draw( false );
+        #endif
+        
+        MuteActive = false;
+          
   }else{
-     #ifdef USETOUCH
-        if ( currDisplayScreen == RADIO)touchbutton[BUTTON_MUTE].draw( true );
-     #endif
+        #ifdef USETOUCH
+          if ( currDisplayScreen != POWEROFF )touchbutton[BUTTON_MUTE].draw( true );
+        #endif
 
-     for ( curvol = getVolume(); curvol; --curvol ){
-          vs1053player->setVolume( curvol  );
-          delay( 5 );         
-     }
+        if ( currDisplayScreen == RADIO ) {
+          
+          
+          for ( curvol = getVolume(); curvol; --curvol ){
+            vs1053player->setVolume( curvol  );
+            delay( 5 );         
+          }
+        
+        }      
+        
+        MuteActive = true;
   }
-  return( curvol ); 
+  return; 
 }
 //--------------------------------------------------------------------------
 

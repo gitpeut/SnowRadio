@@ -301,9 +301,8 @@ void handleDel( AsyncWebServerRequest *request ){
                      request->getParam("index")->value().toInt() ); 
 
   if ( rc ){
-        sprintf( message, "Error: Station \"%s\" with index %ld not found", request->getParam("name")->value().c_str(), request->getParam("index")->value().toInt()  );
-        Serial.println( message );
-
+    sprintf( message, "Error: Station \"%s\" with index %ld not found", request->getParam("name")->value().c_str(), request->getParam("index")->value().toInt()  );
+    Serial.println( message );
   }else{
     save_stations();                
     return_status = 200;
@@ -386,210 +385,6 @@ void handleSet( AsyncWebServerRequest *request ){
   
   request->send( return_status, "text/plain", message );   
 }
-
-//------------------------------------------------
-
-void handleFileDelete( AsyncWebServerRequest *request ) {
-  
-  if ( request->params() == 0) {
-    request->send(500, "text/plain", "BAD ARGS for delete");
-    return;
-  }
-  
-  AsyncWebParameter* p = request->getParam(0);
-  String path = p->value();
-
-  path = urldecode( path);
-  log_i("Delete file %s ", path.c_str() );
-
-  if ( path == "/") {
-      request->send(500, "text/plain", "/ is not a valid filename");
-      return;
-  }
-  if ( !RadioFS.exists( path)) {
-    request->send(404, "text/plain", "FileNotFound");
-    return;
-  }
-  if ( RadioFS.remove(path) ){
-    log_i("file %s deleted", path.c_str() );
-  }else{
-    log_i("could not delete %s", path.c_str() );    
-  }
-  request->send(200, "text/plain", "");
-}
-
-//--------------------------------------------------------------------------------
-FBuf *findFBuf( String filename ){
-  
-  for( int i=0; i < FBUFSIZE; ++i ){
-      if ( FBFiles[i].filename == filename ) return (&FBFiles[i]);   
-  }
-
-  return( NULL );
-}
-//--------------------------------------------------------------------------------
-FBuf *newFBuf( String filename ){
-  
-  for( int i=0; i < FBUFSIZE; ++i ){
-      if ( FBFiles[i].filename == "" ) return (&FBFiles[i]);   
-  }
-
-  return( NULL );
-}
-
-
-//--------------------------------------------------------------------------------
-bool delFBuf( String filename ){
-  FBuf *dbuf = findFBuf( filename );
-  if ( dbuf ) {
-    dbuf->filename = "";
-    dbuf->size = 0;
-    free( dbuf->buffer );
-    dbuf->buffer = NULL;
-    return( true );
-  }
-  return( false );
-}
-//--------------------------------------------------------------------------------
-FBuf *addFBuf( String filename ){
-  if( !psramFound() ){
-    log_i( "No PSRAM, no file buffers");
-    return NULL ; 
-  }
-  
-  //log_i( "buffering %s", filename.c_str() ); 
-  
-  FBuf *fb = findFBuf( filename );
-  if ( fb ){
-    //log_i( "%s already buffered", filename.c_str() );
-    return fb;
-  }
-
-  fb = newFBuf( filename );
-  if ( fb == NULL ) {
-    log_e( "no file buffers left for %s", filename.c_str() );
-    return NULL;
-  }
-     
-  File sourcefile;
-  size_t filesize;
-  
-  sourcefile  = RadioFS.open ( filename, FILE_READ ); 
-  if ( !sourcefile ){ log_e( "Error opening %s for read ", filename.c_str()); return( NULL );}     
-
-  filesize    = sourcefile.size();
-  //log_i( "Opened %s for read, filesize %u \n",filename.c_str(), filesize);
-    
-  fb->buffer = (uint8_t *) ps_calloc( filesize ,1 );
-  if ( ! fb->buffer ) {
-    sourcefile.close();
-    return (NULL);
-  }
-  
-  size_t   totalbytesread=0;
-  int      bytesread = 0;
-  uint8_t *endpsbuffer = fb->buffer;
-   
-      while( sourcefile.available() ){   
-        bytesread = sourcefile.read( endpsbuffer, (filesize - totalbytesread) );
-        if ( bytesread < 0 ){ 
-             sourcefile.close(); 
-             free ( fb->buffer );
-             
-             log_e( "Read returned < 0 while reading file %s ", filename.c_str() ); 
-             return( NULL );
-          }
-          
-          totalbytesread += bytesread;
-          endpsbuffer += bytesread;
-      }
-      sourcefile.close();
-      
-   fb->size       = endpsbuffer - fb->buffer;
-   fb->filename   = filename;
-       
-   return ( fb );   
-
-}
-
-//---------------------------------------------------------------------------
-
-void FBuffAll ( const char *path ){
-    
-    fs::File dir = RadioFS.open( path );     
-    fs::File entry;
-    
-    if ( !dir.isDirectory() ){
-      dir.close();
-      return;
-    }
-
-    char  *fname;
-    bool   isdir;
-
-    while ( entry = dir.openNextFile() ){                
-
-      fname = ps_strdup( entry.name() );
-      isdir = entry.isDirectory();
-      
-      entry.close();
-      
-      if ( isdir  ){
-         FBuffAll(fname);
-      }else{
-         if ( !String(fname).endsWith(".bin") && !String(fname).endsWith(".plg") && !String(fname).endsWith(".txt") && !String(fname).endsWith("stations.json")){
-            //log_i( "add fbuf %s", fname );
-            if ( strcasecmp( (fname + strlen(fname) - 4), ".bmp" ) ){
-              addFBuf( String(fname) );
-            }else{
-              drawBmp( fname, 0, 0, NULL, false);
-            }
-         }else{
-            //log_i( "%s not buffered, wrong type", fname );         
-         }          
-      }
-      free(fname);
-    }    
-    dir.close();
-    
-
-}
-
-
-/*-----------------------------------------------------------------*/
-void showFBuf(AsyncWebServerRequest *request)
-{
-  String output = "{ \"bufferedfiles\" : [\r\n";
-  uint32_t   foundcount = 0, totalsize=0;
-  
-  for ( int i=0; i < FBUFSIZE; ++i ){
-
-    if ( FBFiles[i].size != 0 ){ 
-
-      totalsize += FBFiles[i].size;
-      
-      if ( foundcount) output += ",\r\n";
-      foundcount++;
-      
-      output += "   {\"filename\" : \"";
-      output += FBFiles[i].filename; 
-      output += "\"," ;
-      output += "\"size\" : "; 
-      output += FBFiles[i].size; 
-      output += "}" ;
-    }
-  }   
-  
-  output += "],\r\n" ;
-  output += "\"buffercount\" : " ;
-  output += foundcount; 
-  output += ",\r\n" ;
-  output += "\"totalsize\" : " ;
-  output += totalsize; 
-  output += "}\r\n" ;
-    
-  request->send(200, "application/json;charset=UTF-8", output);
-}
 //---------------------------------------------------------------------------
 
 void find_json_tree ( String &output, const char *path, int level=0 ){
@@ -640,6 +435,86 @@ void find_json_tree ( String &output, const char *path, int level=0 ){
     if ( level )output += "\r\n";        
 
 }
+
+//---------------------------------------------------------------------------
+
+void find_treefiles ( const char *path, int level=0 ){
+    
+    fs::File dir = RadioFS.open( path );     
+    fs::File entry;
+    
+    if ( dir.isDirectory() ){
+      for (int i=0; i < (level*3);++i)Serial.print(" ");
+      Serial.printf( "%s directory\n", path );
+    }else{
+      dir.close();
+      return;
+    }
+           
+    while ( entry = dir.openNextFile() ){                
+      if ( entry.isDirectory()  ){
+         find_treefiles( entry.name(), level+1 );        
+      } else{ 
+         for (int i=0; i < (level*3);++i)Serial.print(" ");
+         Serial.printf( "%s %u\n", entry.name(), entry.size() );         
+      }
+      entry.close();          
+    }    
+    dir.close();
+}
+
+//----------------------------------------------
+void setupFS(void) {
+
+      switch ( RadioFSNO ){
+        case FSNO_SPIFFS:
+            SPIFFS.begin();
+            break;
+        case FSNO_LITTLEFS:
+            LITTLEFS.begin();
+            break;
+        case FSNO_FFAT:    
+            FFat.begin();
+            break;
+      }
+
+
+      find_treefiles ( "/" );
+
+  
+}
+
+//------------------------------------------------
+
+void handleFileDelete( AsyncWebServerRequest *request ) {
+  
+  if ( request->params() == 0) {
+    request->send(500, "text/plain", "BAD ARGS for delete");
+    return;
+  }
+  
+  AsyncWebParameter* p = request->getParam(0);
+  String path = p->value();
+
+  path = urldecode( path);
+  log_i("Delete file %s ", path.c_str() );
+
+  if ( path == "/") {
+      request->send(500, "text/plain", "/ is not a valid filename");
+      return;
+  }
+  if ( !RadioFS.exists( path)) {
+    request->send(404, "text/plain", "FileNotFound");
+    return;
+  }
+  if ( RadioFS.remove(path) ){
+    log_i("file %s deleted", path.c_str() );
+  }else{
+    log_i("could not delete %s", path.c_str() );    
+  }
+  request->send(200, "text/plain", "");
+}
+
 
 //--------------------------------------------------------------
 void handleFileList(  AsyncWebServerRequest *request ) {
@@ -840,7 +715,7 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
 //------------------------------------------------------------------
 void startWebServer( void *param ){
  
-  Serial.printf("Async WebServer sterted from core %d\n", xPortGetCoreID()); 
+  Serial.printf("Async WebServer started from core %d\n", xPortGetCoreID()); 
  
   MDNS.begin( APNAME);
 
@@ -922,8 +797,9 @@ struct tm tinfo;
         
         if ( oldmin != tinfo.tm_min && currDisplayScreen != STNSELECT ){
            oldmin = tinfo.tm_min; 
+           
            showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
-           //showBattery(); //Now in show clock
+           
            timecount = (1000/delaytime); 
         }
      }

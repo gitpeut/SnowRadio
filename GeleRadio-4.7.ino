@@ -29,8 +29,12 @@
 #define USETOUCH
 #undef USETOUCH2
 
-
-#ifdef MONTHNAMES_EN
+//#define MONTHNAMES_RU
+// Cyrillic characters must be supported by the font chosen
+#ifdef MONTHNAMES_RU
+const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
+const char *daynames[]   = {"ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"};
+#elif MONTHNAMES_EN
 const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
 #else
@@ -150,6 +154,12 @@ TFT_eSprite gest    = TFT_eSprite(&tft);
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
 
+//play soft fade and spectrum parameters
+
+#define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
+#define SKIPSTART 350
+uint32_t skipstartsound=SKIPSTART;
+
 //hangdetection
 #define MAXUNAVAILABLE 50000
 #define RESTART_AFTER_LOWQ_COUNT 100
@@ -164,7 +174,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.6"
+#define APVERSION "V4.7"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -175,6 +185,7 @@ SemaphoreHandle_t updateSemaphore;
 SemaphoreHandle_t scrollSemaphore;
 SemaphoreHandle_t chooseSemaphore;
 SemaphoreHandle_t radioSemaphore;
+SemaphoreHandle_t clockSemaphore;
 
 TaskHandle_t      gestureTask;   
 TaskHandle_t      pixelTask;   
@@ -413,7 +424,7 @@ void getWiFi( const char *apname, const char *appass){
     WiFi.setHostname( apname );
     WiFi.onEvent(onEvent);
    
-    WiFi.begin();
+    WiFi.begin(wifiSsid, wifiPassword );
     
     if (xSemaphoreTake( wifiSemaphore, 10000)) {
         log_i("Connected: %s\n", WiFi.localIP().toString().c_str());
@@ -540,7 +551,7 @@ void setup () {
      scrollSemaphore = xSemaphoreCreateMutex();
      chooseSemaphore = xSemaphoreCreateMutex();
      radioSemaphore = xSemaphoreCreateMutex();
-     
+     clockSemaphore = xSemaphoreCreateMutex();
       
      Serial.println("Take sta semaphore...");
      xSemaphoreTake(staSemaphore, 10);
@@ -561,6 +572,10 @@ void setup () {
      Serial.println("Take radio semaphore...");
      xSemaphoreTake(radioSemaphore, 10);
      xSemaphoreGive(radioSemaphore);
+
+     Serial.println("Take clock semaphore...");
+     xSemaphoreTake( clockSemaphore, 10);
+     xSemaphoreGive( clockSemaphore);
 
      Serial.println("Create playQueue...");
      playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
@@ -667,7 +682,7 @@ void setup () {
  Serial.println("Start radio task...");    
     radio_init();
  Serial.println("setup done...");    
-
+ 
 
  delay(10000);
  

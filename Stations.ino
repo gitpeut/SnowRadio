@@ -374,7 +374,7 @@ int get_last_volstat(int volstat){
 FILE *last=NULL;
 char  buffer[8];
 char  filename[128];
-int   idx;
+int   idx, readlen;
 
 switch( volstat ){
   case 0:
@@ -383,21 +383,31 @@ switch( volstat ){
   case 1:
     sprintf( filename, "%s/last_volume.txt", RadioMount);
     break;
+  case 2:
+    sprintf( filename, "%s/last_mode.txt", RadioMount);
+    break;
 }
 
 last = fopen( filename, "r"); 
 if ( last == NULL) {
   Serial.printf("Couldn't open %s/last_%s.txt\n", RadioMount, volstat?"volume":"station" );
   
-  return( volstat?65:0);
+  return( volstat==1?65:0);
 }
-fread( buffer,1, 8, last );
+readlen = fread( buffer,1, 8, last );
+buffer[readlen] = 0;
 fclose(last);
 
 idx = atoi( buffer);
 
+log_d("get_last_volstat read %s from %s, toint is %d", buffer, filename,idx);
+  
 if ( volstat == 0 ){
   if ( idx <0 || idx >= stationCount ) idx = 0;
+}
+
+if ( volstat == 2 ){
+    if ( idx >= 4 )idx = 0;
 }
 
 return( idx );
@@ -416,12 +426,15 @@ switch( volstat ){
   case 1:
     sprintf( filename, "%s/last_volume.txt", RadioMount);
     break;
+  case 2:
+    sprintf( filename, "%s/last_mode.txt", RadioMount);
+    break;
 }
 
 last = fopen( filename, "w");
 
 if ( last == NULL) {
-  Serial.printf("Couldn't open /last_%s.txt\n", volstat?"volume":"station" );
+  log_e("Couldn't open %s\n", filename );
   return(-1);
 }
 
@@ -432,6 +445,11 @@ switch( volstat ){
   case 1:
     fprintf(last, "%d", getVolume() );
     break;
+  case 2:
+    log_d("writing %d to last mode", currDisplayScreen );
+    fprintf(last, "%d", currDisplayScreen );
+    break;
+  
 }
 
 fclose(last);

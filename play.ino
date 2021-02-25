@@ -1,36 +1,41 @@
 
-#define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
-#define SKIPSTART 350
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
+uint32_t  bandcounter=GETBANDFREQ, VSlow=0; 
 
   Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
 
   vs1053player->startSong();
 
   int qfillcount = 0;
-  while ( uxQueueMessagesWaiting(playQueue) <  (PLAYQUEUESIZE/2) ) {    
+  int qminimumcount = (PLAYQUEUESIZE/2);
+  while ( uxQueueMessagesWaiting(playQueue) <  qminimumcount  ) {    
     qfillcount++;
+    if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ) qminimumcount = 0;
     if ( qfillcount%10 == 0 ){
       log_i ( "Waiting for Queue to fill up, %d messages in playQueue", uxQueueMessagesWaiting( playQueue ) );
     }
     if ( qfillcount > 800 ){
       unavailablecount =  MAXUNAVAILABLE + 1;
-      Serial.printf ( "Queue does not fill up, reconnect\n" );
+      log_d( "Queue does not fill up, reconnect" );
     }
     delay(40);
   }
-  Serial.printf ( "Queueu filled up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
-  
+  if ( qminimumcount ){
+    log_i ( "Queueu filled up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
+  }else{
+    log_i ( "Radio inactive, waiting for messages");
+  }
     while(1){
       
       xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
 
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){
         
+        vs1053player->setVolume(0);
         skipstartsound = SKIPSTART;
+
         vs1053player->stopSong();
         delay(5);
         vs1053player->startSong();
@@ -41,7 +46,11 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( VS_DREQ_PIN ) ){
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
-            vs1053player->playChunk(playBuffer, 32  );
+            if ( !MuteActive ) {
+              vs1053player->playChunk(playBuffer, 32  );
+            }else{
+              delay(3);
+            }
             //xSemaphoreGive( tftSemaphore);
             
             --bandcounter;
@@ -60,7 +69,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0, skipstartsound=SKIPSTART;
                   vs1053player->setVolume( (getVolume() - (skipstartsound/4) + 1) );                                  
                 }
                 if ( skipstartsound == 1 ) {
-                  //Serial.println("** end fade in **");
+                  log_d("** end fade in **");
                   vs1053player->setVolume( getVolume());
                 }
                 --skipstartsound;

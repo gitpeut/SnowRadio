@@ -11,6 +11,7 @@
 #define TFT_REALGOLD       TFT_MY_GOLD
 #define TFT_ROTATION       2
 
+// --- fonts ---
 //just to make it resemble the examples
 #define GFXFF 1
 // symbol font for volume, battery and buttons
@@ -20,6 +21,7 @@
 //freefont for stationlist
 #define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
 #define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
+#define DATE_FONT     &FreeSansBold10pt8b
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed

@@ -39,8 +39,43 @@ void IRAM_ATTR releaseTft(){
 xSemaphoreGive( tftSemaphore); 
 //printf("released TFT\n");
 }
-//----------------------------------------------------------
 
+
+//----------------------------------------------------------
+#ifdef MONTHNAMES_RU
+
+char *utf8torus(const char *source, char *target){
+    unsigned char *s  = (unsigned char *) source;
+    unsigned char *t  = (unsigned char *) target;
+    bool after208 = false;
+    
+    while (*s){
+        switch( *s ){
+            case 208:
+                after208 = true;
+                break;
+            case 209:
+                after208 = false;
+                break;
+            default:
+                // fix for mistake in font
+                *t = *s;
+                if (  after208 && *t == 129 ) *t=192;
+                if ( !after208 && *t == 145 ) *t=193;
+                ++t;
+                break;        
+            }
+            ++s;            
+    }
+    *t = 0;    
+    return( target );
+}
+#else
+  char *utf8torus(const char *source, char *target){
+    return( (char *)source );
+  }
+#endif
+//-----------------------------------------------------
 void tft_show_gesture( bool showonscreen ){
 int   w=32;
 int   h=TFTINDICH;
@@ -154,37 +189,45 @@ void showClock ( int hour, int min, int date,int mon, int wday, int yy ){
 int     spritey =  TFTCLOCKT;
 int     clockx, datex, clockw, datew, spritew, spritex;                                                     
 int     spriteh = TFTCLOCKH;
-char    tijd[8], datestring[32];
+char    tijd[8], datestring[64];
+char    tmpday[16], tmpmon[ 32 ];
+
+if ( xSemaphoreTake( clockSemaphore, 10) != pdTRUE) return;
 
 sprintf(tijd,"%02d:%02d", hour, min);   
 clockw = tft.textWidth( tijd, segmentfont );
 
-sprintf( datestring,"%s %d %s %d", daynames[ wday], date, monthnames[mon], yy);   
-datew = tft.textWidth( datestring, bigfont );
+sprintf( datestring,"%s %d %s %d", utf8torus( daynames[wday], tmpday ), date, utf8torus(monthnames[mon], tmpmon), yy);   
 
+clocks.setFreeFont( DATE_FONT );    
+datew = clocks.textWidth( datestring, 1 );
 
-if (datew > clockw){
-  spritew = datew + 2;
-  datex   = 1;
-  clockx  = (spritew-clockw)/2;  
-}else{
-  spritew = clockw + 2;
-  clockx  = 1;
-  datex   = (spritew-datew)/2;    
-}
+spritew = tft.width();
+datex   = ( spritew - datew )/2;
+clockx  = ( spritew - clockw )/2;
 
 spritex = (tft.width() - spritew)/2;
 
 //log_d("spriteh %d spritey %d spritex %d clockw = %d clockx = %d, datew %d, datex %d", spriteh, spritey, spritex, clockw, clockx, datew, datex);
 
-clocks.createSprite(  spritew, spriteh );
+if ( !clocks.created() )clocks.createSprite(  spritew, spriteh );
+
 clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
 clocks.fillSprite(TFT_BLACK);
-
+// time
 clocks.drawString( tijd, clockx, 2, segmentfont);
- 
-clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 6, bigfont); 
+
+// date 
+clocks.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
+
+int labelh  = clocks.fontHeight(1)-1 ;
+int labelw  = 230;
+int labelx  = (spritew - labelw)/2;
+int labely  = tft.fontHeight( segmentfont) + 6;
+
+clocks.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
+clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 6 ); 
+
 
 grabTft();
 clocks.pushSprite( spritex, spritey );
@@ -193,7 +236,9 @@ releaseTft();
 clocks.deleteSprite();
 
 showBattery();
-showVolume( getVolume() );
+if ( currDisplayScreen == RADIO )showVolume( getVolume() );
+
+xSemaphoreGive( clockSemaphore );
 
 }
 
@@ -529,6 +574,7 @@ log_d("tftnoconnect");
 }
 //------------------------------------------------------------------------------------------
 bmpFile *findBmpInCache( char *bmpfile ){
+    
   for ( auto &bf : bmpCache ){
     if ( strcmp( bf->name, bmpfile ) == 0 ) return ( bf );
   }

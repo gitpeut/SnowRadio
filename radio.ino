@@ -95,12 +95,12 @@ if ( stationChunked ){
 
 void disconnect_radioclient(){
 
-  radioclient->stop();  
+  if ( radioclient->connected() ) radioclient->stop();  
   tellPixels( PIX_YELLOW );
   
   for ( int curvol = getVolume(); curvol; --curvol ){
     vs1053player->setVolume( curvol  );
-    delay( 5 );         
+    delay( 7 );         
   }
   
   xQueueReset( playQueue); //empty queue
@@ -118,12 +118,10 @@ int   totalbytes=0;
 uint8_t radioBuffer[256];
          
   log_i("Radiotask running on core %d", xPortGetCoreID()); 
-   
-
 
   setStation( get_last_volstat(0),-1 );
   vs1053player->setVolume(0); // fade in at startup
-  
+     
   log_i("Radiotask starting loop"); 
 
 while(1){
@@ -135,12 +133,14 @@ while(1){
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
         log_d("waiting for radio semaphore");
         
-        if( radioclient->connected() ) radioclient->stop();
+        playingStation = -1;
+        
         xSemaphoreTake( radioSemaphore, portMAX_DELAY);
         xSemaphoreGive( radioSemaphore);
-        stationsConnect( getStation());
+
         
-        log_d("finished waiting for radio semaphore");
+        skipstartsound = SKIPSTART*3;
+
     }
     
     delay(2);

@@ -6,6 +6,7 @@
 
 RadioButton touchbutton [ TOUCHBUTTONCOUNT  ] ;
 
+
 //------------------------------------------------------------------------------------------
 // from Bodmer's example.
 
@@ -119,7 +120,8 @@ int listbuttonxo = ( tft.width() - 3*listbuttonw ) /4;
   int butoffset = BUTOFFSET; 
 
   log_i( "ram free before buttons %d",ESP.getFreeHeap()  );
-  
+
+  /*
   touchbutton[BUTTON_AV].init( butoffset,                  topt, (char *)"",BUTW,BUTH, (char*)"/buttons/avin.bmp", (char*)"/buttons/avinPressed.bmp" ); 
   touchbutton[BUTTON_BLUETOOTH].init( 1*BUTW +2*butoffset, topt, (char *)"",BUTW,BUTH, (char*)"/buttons/btooth.bmp",  (char*)"/buttons/btoothPressed.bmp" );
   touchbutton[BUTTON_RADIO].init( 2*BUTW +3*butoffset,     topt, (char *)"",BUTW,BUTH, (char*)"/buttons/radio.bmp", (char*)"/buttons/radioPressed.bmp" );   
@@ -131,6 +133,20 @@ int listbuttonxo = ( tft.width() - 3*listbuttonw ) /4;
   touchbutton[BUTTON_PREV].init( 1*BUTW + 2*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/PrevStn.bmp", (char*)"/buttons/PrevStnPressed.bmp");
   touchbutton[BUTTON_NEXT].init( 2*BUTW + 3*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/NextStn.bmp", (char*)"/buttons/NextStnPressed.bmp");
   touchbutton[BUTTON_LIST].init( 3*BUTW + 4*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/list.bmp" );
+  */
+
+  touchbutton[BUTTON_AV].init( butoffset,                  topt, (char *)"0",BUTW,BUTH ); 
+  touchbutton[BUTTON_BLUETOOTH].init( 1*BUTW +2*butoffset, topt, (char *)"1",BUTW,BUTH );
+  touchbutton[BUTTON_RADIO].init( 2*BUTW +3*butoffset,     topt, (char *)"2",BUTW,BUTH );   
+  touchbutton[BUTTON_STOP].init( 3*BUTW + 4*butoffset,     topt, (char *)"3",BUTW,BUTH );
+   
+  
+  touchbutton[BUTTON_MUTE].init( butoffset,                bott, (char *)"7",BUTW,BUTH, (char *)"8" );
+
+  touchbutton[BUTTON_PREV].init( 1*BUTW + 2*butoffset,     bott, (char *)"4",BUTW,BUTH );
+  touchbutton[BUTTON_NEXT].init( 2*BUTW + 3*butoffset,     bott, (char *)"6",BUTW,BUTH );
+  touchbutton[BUTTON_LIST].init( 3*BUTW + 4*butoffset,     bott, (char *)"5",BUTW,BUTH );
+
   
   touchbutton[BUTTON_ITEM0].init( topt, topt, (char *)"", itemw, itemh);
   touchbutton[BUTTON_ITEM1].init( topt, 2*topt + 1*itemh, (char *)"", itemw, itemh);
@@ -141,9 +157,9 @@ int listbuttonxo = ( tft.width() - 3*listbuttonw ) /4;
   touchbutton[BUTTON_ITEM6].init( topt, 7*topt + 6*itemh, (char *)"", itemw, itemh);
   touchbutton[BUTTON_ITEM7].init( topt, 8*topt + 7*itemh, (char *)"", itemw, itemh);
   
-  touchbutton[BUTTON_LEFTLIST].init(  listbuttonxo,                   11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, (char*)"/buttons/leftList.bmp",(char*)"/buttons/leftListPressed.bmp");
-  touchbutton[BUTTON_QUITLIST].init(  1*listbuttonw + 2*listbuttonxo, 11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, (char*)"/buttons/backList.bmp");
-  touchbutton[BUTTON_RIGHTLIST].init( 2*listbuttonw + 3*listbuttonxo, 11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, (char*)"/buttons/rightList.bmp",(char*)"/buttons/rightListPressed.bmp");
+  touchbutton[BUTTON_LEFTLIST].init(  listbuttonxo,                   11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, NULL,(char*)"/buttons/leftList.bmp",(char*)"/buttons/leftListPressed.bmp");
+  touchbutton[BUTTON_QUITLIST].init(  1*listbuttonw + 2*listbuttonxo, 11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, NULL,(char*)"/buttons/backList.bmp");
+  touchbutton[BUTTON_RIGHTLIST].init( 2*listbuttonw + 3*listbuttonxo, 11*topt + 8*itemh, (char *)"", listbuttonw, listbuttonh, NULL,(char*)"/buttons/rightList.bmp",(char*)"/buttons/rightListPressed.bmp");
     
   log_i( "ram free after buttons %d",ESP.getFreeHeap());
     
@@ -155,9 +171,12 @@ log_i("touch button setup done");
 
 //--------------------------------------------------------------------
 void draw_buttons( int startidx ){
-int       startbutton, endbutton;
-int       stationidx;  
-  
+
+  int   startbutton, endbutton;
+  int   stationidx;  
+  int   playing_button = -1;
+
+
   if ( currDisplayScreen == RADIO ){
       startbutton = BUTTON_AV;
       endbutton   = BUTTON_ITEM0;
@@ -165,7 +184,8 @@ int       stationidx;
 
   if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT  ){
       startbutton = BUTTON_AV;
-      endbutton   = BUTTON_MUTE;
+      endbutton   = BUTTON_PREV;
+      if ( currDisplayScreen == POWEROFF) endbutton = BUTTON_MUTE;
   }
 
   if ( currDisplayScreen == STNSELECT ){
@@ -175,30 +195,40 @@ int       stationidx;
       //int playing_station = getStation();
       
       stationidx  = startidx;
-
+      int playing_station = getStation();
+      
       for ( int i = 0; i < 8 ; ++i ){
           if ( stationidx >= stationCount )stationidx = 0;
           char *last = stations[ stationidx ].name;
-          if ( strlen( last) > 18 ) {
+          if ( strlen( last) > 18 ) { //omit the first word of the station name
              while( *last && *last != ' ') ++last;
              if ( *last ) ++last; 
           }
-          touchbutton[ startbutton + i ].set_symbol( last );       
+          touchbutton[ startbutton + i ].set_symbol_normal( last );
+
+          if ( stationidx == playing_station ){
+             playing_button = startbutton + i;  
+             log_d("playing buttton = %d", playing_button);           
+          }
+                  
           touchbutton[ startbutton + i ].stationidx = stationidx; 
 
           ++stationidx;
       }
       
   }
-
   
   for ( int i = startbutton ; i < endbutton; ++i ){
       log_i( "draw button %d", i);
-      touchbutton[i].draw(); 
-      delay(2); // give others a chance and avoid taskwatchdog
+      if ( i == BUTTON_MUTE ){
+        touchbutton[i].draw( MuteActive ); 
+      }else{
+          touchbutton[i].draw( ( i == playing_button)?true: false );
+      }
+      delay(20); // give others a chance and avoid taskwatchdog
       log_i( "end draw button %d", i);
   }
-  
+
   switch( currDisplayScreen ){
     case RADIO:
         touchbutton[BUTTON_RADIO].draw( true );
@@ -221,16 +251,15 @@ int       stationidx;
 
 //--------------------------------------------------------------------
 void drawStationScreen(){
-  
-  delay(20);
-  
+   
   grabTft();
   tft.fillScreen(TFT_DARKCYAN);
   releaseTft();
   
   tft.setTextColor( TFT_WHITE );
   //tft.setFreeFont(  LIST_FONT ); 
-  tft.setTextFont( bigfont);                
+  tft.setTextFont( bigfont);     
+ 
   
 }
 //--------------------------------------------------------------------
@@ -239,20 +268,59 @@ void drawRadioScreen(){
   struct tm tinfo;
 
   grabTft();
-    delay(20);
     tft.fillScreen(TFT_BLACK);
   releaseTft();
     
-  delay(20);
-
   if ( millis() > 20000 ){
     time( &rawt );
     localtime_r( &rawt, &tinfo);
+   
     showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
     tft_showstation( getStation() );
   }  
+
+  
 }
+
 //--------------------------------------------------------------------
+
+void drawMode(){
+
+  if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT )return;
+
+  char  modetext[32];
+
+  switch( currDisplayScreen ){
+        case POWEROFF:
+            strcpy( modetext, "POWER OFF");       
+            break;
+        case LINEIN:
+            strcpy( modetext, "LINE IN");
+            break;
+        case BLUETOOTH:      
+            strcpy( modetext, "BLUETOOTH");
+            break;                  
+        default: 
+            return;
+  }
+    
+    tft.setFreeFont( DATE_FONT );  
+    tft.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
+
+    int txtw    = tft.textWidth( modetext, 1 );
+    int txtx    = tft.width() - txtw - 20 ; 
+
+    int labelh  = tft.fontHeight(1)-1 ;
+    int labelw  = txtw + 20;
+    int labelx  = txtx - 10; 
+    int labely  = tft.height() -  tft.fontHeight(1) - 4;
+
+    tft.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
+    tft.drawString( modetext, txtx, labely + 1 ); 
+
+}
+
+//--------------------------------------------------------------
 
 void drawScreen( screenPage newscreen){ 
 
@@ -260,24 +328,26 @@ void drawScreen( screenPage newscreen){
   if ( newscreen == RADIO || newscreen == STNSELECT){
     log_i("releasing radio semaphore, if needed");
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
-     xSemaphoreGive( radioSemaphore);
-     log_i("released radio semaphore");
+     xSemaphoreGive( radioSemaphore);     
+     log_i("released radio semaphore %s", MuteActive?"mute is active":"mute is NOT active" );
     }
   }else{                   
-    if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){
+    
+    if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){  
      xSemaphoreTake(radioSemaphore, portMAX_DELAY);
     }
   }
-
     
   currDisplayScreen = newscreen;                  
 
-  if ( newscreen != RADIO && newscreen != STNSELECT ){
-     drawWeather();     
-  }
-
 // make sure screens are displayed after setting currDisplayScreen
 // screen functions call functions that test this.
+
+  if ( newscreen != RADIO && newscreen != STNSELECT ){
+     drawWeather();     
+     if ( newscreen != POWEROFF )tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
+ 
+  }
 
   if ( newscreen == STNSELECT ){
     drawStationScreen();
@@ -288,6 +358,10 @@ void drawScreen( screenPage newscreen){
   }
 
   draw_buttons(0);
+
+  drawMode();  
+  if ( currDisplayScreen != POWEROFF )save_last_volstat(2);
+  
   toggleStop();
 
 }
@@ -308,8 +382,16 @@ void touch_process( void *param){
   pinMode( TOUCH_IRQ, INPUT_PULLUP);
   
   touch_setup();
+  
+  // if last mode was not radio init the other mode
+  screenPage lastmode = (screenPage)get_last_volstat(2);
+  lastmode = RADIO;
+  log_d ("last mode is %d, forcing RADIO", lastmode);
+
+  while ( !stationCount) delay(50);
+  
   log_i("drawing screen");
-  drawScreen( currDisplayScreen );
+  drawScreen( lastmode );
   log_i("finished drawing screen");
     
   while(1){
@@ -370,6 +452,7 @@ void touch_process( void *param){
              change_volstat( 1, gStation );
              break;
         case BUTTON_MUTE:
+             log_d("mute - toggle from %d",  MuteActive );
              noreset = true; 
              toggleMute();
              break;
@@ -392,6 +475,8 @@ void touch_process( void *param){
         case BUTTON_ITEM6:
         case BUTTON_ITEM7:
              setStation( touchbutton[button_pressed].stationidx , -1 ); 
+             draw_buttons( touchbutton[ BUTTON_ITEM0].stationidx );
+             noreset = true;
              break; 
         case BUTTON_QUITLIST:
              newScreen = RADIO; 
@@ -437,7 +522,7 @@ int touch_init(){
     xTaskCreatePinnedToCore( 
          touch_process,                                      // Task to handle special functions.
          "Touch",                                            // name of task.
-         4*1024,                                          // Stack size of task
+         8*1024,                                          // Stack size of task
          NULL,                                               // parameter of the task
          TOUCHTASKPRIO,                                      // priority of the task
          &touchTask,                                         // Task handle to keep track of created task 
