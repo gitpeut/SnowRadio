@@ -47,7 +47,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( VS_DREQ_PIN ) ){
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
-            if ( !MuteActive && currDisplayScreen == RADIO) {
+            if ( !MuteActive && currDisplayScreen < POWEROFF ) {
               vs1053player->playChunk(playBuffer, 32  );
             }else{
               delay(3);
