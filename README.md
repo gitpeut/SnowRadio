@@ -16,7 +16,7 @@ Still a work in progress. Touchscreen is waiting to be implemented
 
 Gele Radio uses the following libraries:
 <ul>
- <li>wifi manager ( https://github.com/tzapu/WiFiManager.git )</li>
+ <li>ArduinoJson version >= 6.17.3( https://github.com/bblanchon/ArduinoJson.git )</li>
  <li>Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )</li>
  <li>ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )</li>
  <li>TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )</li>

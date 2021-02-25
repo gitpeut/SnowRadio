@@ -34,7 +34,22 @@
 
   TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
   
-  
+struct SpiRamAllocator {
+  void* allocate(size_t size) {
+    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+  }
+
+  void deallocate(void* pointer) {
+    heap_caps_free(pointer);
+  }
+
+  void* reallocate(void* ptr, size_t new_size) {
+    return heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM);
+  }
+}; 
+using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
+
+
 //------------------------------------------------------------------------------
 
 void print_owmdata(){
@@ -92,17 +107,24 @@ bool getWeather(){
   }  
   owmclient.stop();                                      //stop client
 
+/*
   for( eresult = result; *eresult; ++eresult ){
     if ( *eresult == '[' || *eresult == ']') *eresult = ' ';
   }
-  
+ */ 
   Serial.println( result );
+
+  DeserializationError error;
   
-  StaticJsonDocument<1024> root;
-  
-  
-  if ( deserializeJson( root, result ) ){
-        log_e("openweathermap deserialize failed");
+//    SpiRamJsonDocument root(10*1024);
+//    error = deserializeJson( root, result );
+//    works, but should be conditional  
+
+  StaticJsonDocument<2048> root;
+  error = deserializeJson( root, result );
+
+  if ( error  ){
+        log_e("openweathermap deserialize failed: %s", error.c_str());
         free( result );     
         return( false );
   }
@@ -117,10 +139,21 @@ bool getWeather(){
   owmdata.windspeed   = root["wind"]["speed"];
   owmdata.feelslike   = root["main"]["feels_like"];
 
-  owmdata.description  = ps_strdup( root["weather"]["description"] );
   owmdata.city         = ps_strdup( root["name"] );
-  
-  switch( atoi( root["weather"]["icon"] ) ){
+  char  iconname[32];
+
+  strcpy( iconname, "9999");
+    
+  if ( root["weather"]["description"]){  
+    owmdata.description  = ps_strdup( root["weather"]["description"] );
+    strcpy( iconname, root["weather"]["icon"] );
+  }else if ( root["weather"][0]["description"] ){
+    owmdata.description  = ps_strdup( root["weather"][0]["description"] );    
+    strcpy( iconname, root["weather"][0]["icon"] );
+  }
+      
+ 
+  switch( atoi( iconname ) ){
        case 1:
           owmdata.iconfilename = ps_strdup( "/weather_icon/sunny.bmp");
           break;
@@ -226,11 +259,11 @@ void fillWeatherSprite(){
   sprintf( scratch, "%2.0f", owmdata.temperature );
   //sprintf( scratch, "%2.0f", -52.0, 248);
   weather_sprite.drawString(scratch, labelw + 2*labelo, txt1t );
-  endv[vtemp] = weather_sprite.textWidth( scratch, 4 )+ labelw + 2*labelo - 10;
+  endv[vtemp] = weather_sprite.textWidth( scratch, 4 )+ labelw + 2*labelo;
       
   sprintf( scratch, "%2.0f", owmdata.feelslike);
   weather_sprite.drawString(scratch, 2*labelw + 3*labelo, txt1t );
-  endv[vfeel] = weather_sprite.textWidth( scratch, 4 ) + 2*labelw + 3*labelo - 10;
+  endv[vfeel] = weather_sprite.textWidth( scratch, 4 ) + 2*labelw + 3*labelo;
   
   
   weather_sprite.setTextSize(1);  
