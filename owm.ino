@@ -163,15 +163,17 @@ return( true );
 void drawWeather(){
     if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT ){
        if ( xSemaphoreTake( tftSemaphore, 1000 ) == pdTRUE ){
-        weather_sprite.pushSprite( 0, weathert );
-        releaseTft();  
+          if ( owmdata.iconfilename != NULL ){
+            weather_sprite.pushSprite( 0, weathert );
+            releaseTft();  
+            drawBmp( owmdata.iconfilename,labelo, weathert + label1t - 1 );
+          }else{
+            weather_sprite.pushSprite( 0, weathert );
+            releaseTft();
+          }  
           // drawing 24bit colorbmp's to sprites gives weird colors
           // also, drawmp does it's own grabtft/releasetft, this hangs when nested
-          //  drawBmp( owmdata.iconfilename,labelo, label1t - 1, &weather_sprite);
-
-        if ( owmdata.iconfilename != NULL ){
-          drawBmp( owmdata.iconfilename,labelo, weathert + label1t - 1 );
-        }        
+          // drawBmp( owmdata.iconfilename,labelo, label1t - 1, &weather_sprite);               
        }else{
             log_w("Couldn't take tft semaphore in time to draw weather");
        }
@@ -209,12 +211,24 @@ void fillWeatherSprite(){
   int   txt2t = weatherh - 22 ;//- (( weatherh - label2t) - weather_sprite.fontHeight())/2; 
   char  scratch[32];
 
-  sprintf( scratch, "%2.0f%c", owmdata.temperature, 248);
-  //sprintf( scratch, "%2.0f%c", -52.0, 248);
+// if no data has been collected yet, display an empty black rectangle
+  if ( owmdata.city == NULL ) {
+      
+    weather_sprite.setTextSize(1);  
+    sprintf( scratch, "No weather data");
+    weather_sprite.drawString(scratch, 5, txt1t );
+  
+    return;
+  }
+  
+
+  
+  sprintf( scratch, "%2.0f", owmdata.temperature );
+  //sprintf( scratch, "%2.0f", -52.0, 248);
   weather_sprite.drawString(scratch, labelw + 2*labelo, txt1t );
   endv[vtemp] = weather_sprite.textWidth( scratch, 4 )+ labelw + 2*labelo - 10;
       
-  sprintf( scratch, "%2.0f%c", owmdata.feelslike, 248);
+  sprintf( scratch, "%2.0f", owmdata.feelslike);
   weather_sprite.drawString(scratch, 2*labelw + 3*labelo, txt1t );
   endv[vfeel] = weather_sprite.textWidth( scratch, 4 ) + 2*labelw + 3*labelo - 10;
   

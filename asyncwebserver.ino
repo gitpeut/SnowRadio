@@ -763,17 +763,20 @@ void startWebServer( void *param ){
 #endif
 
 
-// loop for frequent updates
+  // loop for frequent updates
+  
+  int     delaytime = 60;
+  int     timecount = (1000/delaytime), oldmin=987;
+  int     weathercount = 0;  // open weather, every hour, but also at start
+  time_t  rawt;
+  struct tm tinfo;
 
-int     delaytime = 60;
-int     timecount = (1000/delaytime), oldmin=987;
-int     weathercount = 0;  // open weather, every hour, but also at start
-time_t  rawt;
-struct tm tinfo;
-
+ #ifdef USEOWM
+  // initialize weather sprite
+  fillWeatherSprite();
+ #endif
+  
   while(1){
-    
-    
     
     #ifdef USESSDP
      ++dossdp;
