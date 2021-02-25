@@ -98,7 +98,7 @@ void disconnect_radioclient(){
   if ( radioclient->connected() ) radioclient->stop();  
   tellPixels( PIX_YELLOW );
   
-  for ( int curvol = getVolume(); curvol; --curvol ){
+  for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
     vs1053player->setVolume( curvol  );
     delay( 7 );         
   }
@@ -134,12 +134,10 @@ while(1){
         log_d("waiting for radio semaphore");
         
         playingStation = -1;
-        
-        xSemaphoreTake( radioSemaphore, portMAX_DELAY);
-        xSemaphoreGive( radioSemaphore);
+        log_d("volume when stopping radiotask to %d", vs1053player->getVolume()); 
 
-        
-        skipstartsound = SKIPSTART*3;
+        xSemaphoreTake( radioSemaphore, portMAX_DELAY);
+        xSemaphoreGive( radioSemaphore);        
 
     }
     
@@ -149,11 +147,8 @@ while(1){
         lowqueue++; 
         if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
            syslog( (char *)"Reconnect to solve low queue");  
-                    
-           //ESP.restart(); // soft restart is disruptive and
-                            //will sometimes cause hangs 
-            disconnect_radioclient();                
-            lowqueue = 0;    
+           disconnect_radioclient();                
+           lowqueue = 0;    
         }
     }
       

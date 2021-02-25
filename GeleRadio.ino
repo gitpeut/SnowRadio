@@ -597,10 +597,21 @@ void setup () {
   
      Serial.println("TFT init...");
      tft_init();
-
-      
+          
+   
      Serial.println("player begin...");
+     
      vs1053player->begin();
+
+      Serial.println("Test VS1053 chip...");
+      while(1){ 
+        bool   isconnected = vs1053player->isChipConnected();
+        Serial.printf( " Chip connected ? %s \n", isconnected?"true":"false: wait a bit");
+        if ( isconnected ) break;
+        
+        delay(500);
+      }
+
      
 // apply patches and plugin.
 // Apparetly after applying a soft reset is mandatory for the
@@ -618,7 +629,9 @@ void setup () {
      sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
      vs1053player->patch_VS1053( patchname );
      
-       
+     currentVolume = get_last_volstat(1);
+     vs1053player->setVolume(0);
+    
      #ifdef USEPIXELS
 
        Serial.println("Start pixeltask...");    
@@ -661,19 +674,7 @@ void setup () {
     
 
     delay(300);
-
-    
-    Serial.println("Test VS1053 chip...");
-    while(1){ 
-      bool   isconnected = vs1053player->isChipConnected();
-      Serial.printf( " Chip connected ? %s \n", isconnected?"true":"false: wait a bit");
-      if ( isconnected ) break;
-      //player.begin();
-      delay(500);
-    }
-      
- 
- delay(50); 
+     
  Serial.println("Start WebServer...");
  setupAsyncWebServer();
  

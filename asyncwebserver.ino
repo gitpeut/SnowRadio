@@ -661,7 +661,7 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
   
     Serial.println("Update firmware");
 
-        for ( int curvol = getVolume(); curvol; --curvol ){
+        for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );
         }
@@ -762,8 +762,7 @@ void startWebServer( void *param ){
     int dossdp= 0;
 #endif
 
-setVolume( get_last_volstat(1) );
-  
+
 // loop for frequent updates
 
 int     delaytime = 60;

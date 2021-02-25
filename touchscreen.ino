@@ -332,7 +332,13 @@ void drawScreen( screenPage newscreen){
      log_i("released radio semaphore %s", MuteActive?"mute is active":"mute is NOT active" );
     }
   }else{                   
-    
+
+    log_d("volume when switching to %d: %d", newscreen, vs1053player->getVolume()); 
+    for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
+      vs1053player->setVolume( curvol  );
+      delay( 3 );         
+    }
+  
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){  
      xSemaphoreTake(radioSemaphore, portMAX_DELAY);
     }

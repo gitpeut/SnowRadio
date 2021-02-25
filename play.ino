@@ -5,7 +5,7 @@ uint8_t   playBuffer[32];
 uint32_t  bandcounter=GETBANDFREQ, VSlow=0; 
 
   Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
-
+  
   vs1053player->startSong();
 
   int qfillcount = 0;
@@ -32,7 +32,8 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
       xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
 
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){
-        
+
+
         vs1053player->setVolume(0);
         skipstartsound = SKIPSTART;
 
@@ -46,7 +47,7 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( VS_DREQ_PIN ) ){
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
-            if ( !MuteActive ) {
+            if ( !MuteActive && currDisplayScreen == RADIO) {
               vs1053player->playChunk(playBuffer, 32  );
             }else{
               delay(3);
