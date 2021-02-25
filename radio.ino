@@ -131,10 +131,11 @@ while(1){
         xSemaphoreGive( updateSemaphore);
     }
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
-        log_d("waiting for radio semaphore");
-        
+        vs1053player->stopSong();
+
+        log_d("waiting for radio semaphore");        
         playingStation = -1;
-        log_d("volume when stopping radiotask to %d", vs1053player->getVolume()); 
+        log_d("volume when stopping radiotask %d", vs1053player->getVolume()); 
 
         xSemaphoreTake( radioSemaphore, portMAX_DELAY);
         xSemaphoreGive( radioSemaphore);        
