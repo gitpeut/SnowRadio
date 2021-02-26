@@ -354,7 +354,13 @@ void drawScreen( screenPage newscreen){
 #ifdef USEOWM
      drawWeather();     
 #endif
-     if ( newscreen != POWEROFF )tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
+     if ( newscreen != POWEROFF ){
+      tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
+     }
+     
+     if ( newscreen == POWEROFF ){
+      if ( MuteActive ) toggleMute();
+     }
  
   }
 
@@ -470,7 +476,8 @@ void touch_process( void *param){
         case BUTTON_STOP:
              log_i("stop");
              if ( currDisplayScreen == POWEROFF ){
-              newScreen = previousScreen;
+              newScreen = previousScreen; // leave here to prevent compiler whining 'not used'
+              newScreen = RADIO; // force to RADIO after poweron
              }else{
               previousScreen = currDisplayScreen; // could be RADIO, it's a matterof taste
               newScreen = POWEROFF;
