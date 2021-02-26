@@ -213,7 +213,7 @@ int     spriteh = TFTCLOCKH;
 char    tijd[8], datestring[64];
 char    tmpday[16], tmpmon[ 32 ];
 
-if ( xSemaphoreTake( clockSemaphore, 10) != pdTRUE) return;
+if ( xSemaphoreTake( clockSemaphore, 50) != pdTRUE) return;
 
 sprintf(tijd,"%02d:%02d", hour, min);   
 clockw = tft.textWidth( tijd, segmentfont );
@@ -284,11 +284,14 @@ int started=0;
 //---------------------------------------------------------------------
 void tft_showstation( int stationIdx){
 
-int   xpos = 0, ypos=2;
+int   xpos = 0, ypos=7;
 char  *t, *s = stations[stationIdx].name;
 char  topline[64], bottomline[64];
 
 if ( currDisplayScreen != RADIO ) return;
+if ( xSemaphoreTake( stationSemaphore, 50) != pdTRUE) return;
+
+
 
 img.createSprite(tft.width(), station_scroll_h );
 img.setTextColor( TFT_WHITE, TFT_BLACK ); 
@@ -314,8 +317,7 @@ if ( wholew >= tft.width() ){
    *t =  0;
 
    int linew = img.textWidth( topline, GFXFF );
-   xpos = (tft.width() - linew)/2; 
-   
+   xpos = (tft.width() - linew)/2;    
    img.drawString( topline, xpos, ypos, GFXFF);
 
    ypos += img.fontHeight( GFXFF);
@@ -335,6 +337,7 @@ img.pushSprite( 0, TFTSTATIONT );
 releaseTft();
 
 img.deleteSprite();
+xSemaphoreGive( stationSemaphore );
 }
 
 
@@ -763,10 +766,6 @@ void tft_init(){
   digitalWrite( TFT_RST , LOW);
   delay( 10);
   digitalWrite( TFT_RST , HIGH);
-
-  pinMode( TFT_LED , OUTPUT);
-  tft_backlight( 0 );
-
 
 // read battery
 //  pinMode(BATPIN, INPUT);

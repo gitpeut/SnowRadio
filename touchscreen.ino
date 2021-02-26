@@ -263,7 +263,6 @@ void drawStationScreen(){
   releaseTft();
   
   tft.setTextColor( TFT_WHITE );
-  //tft.setFreeFont(  LIST_FONT ); 
   tft.setTextFont( bigfont);     
  
   
@@ -277,13 +276,11 @@ void drawRadioScreen(){
     tft.fillScreen(TFT_BLACK);
   releaseTft();
     
-  if ( millis() > 20000 ){
     time( &rawt );
     localtime_r( &rawt, &tinfo);
-   
-    showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
-    tft_showstation( getStation() );
-  }  
+       
+    if ( tinfo.tm_year > 100 )showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
+    if ( playingStation >= 0 )tft_showstation( getStation() );
 
   
 }
@@ -329,7 +326,8 @@ void drawMode(){
 //--------------------------------------------------------------
 
 void drawScreen( screenPage newscreen){ 
-
+  int playing_station;
+  int stationidx = 0;
 
   if ( newscreen == RADIO || newscreen == STNSELECT){
     log_i("releasing radio semaphore, if needed");
@@ -365,14 +363,19 @@ void drawScreen( screenPage newscreen){
   }
 
   if ( newscreen == STNSELECT ){
+
+    playing_station = getStation();
+    stationidx      = playing_station - 3;
+    if ( stationidx <=  0 ) stationidx = stationCount  + stationidx;
+    
     drawStationScreen();
   }
 
   if ( newscreen == RADIO ){
     drawRadioScreen();
   }
-
-  draw_buttons(0);
+  
+  draw_buttons( stationidx );
 
   drawMode();  
   if ( currDisplayScreen != POWEROFF )save_last_volstat(2);
