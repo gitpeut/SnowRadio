@@ -162,7 +162,7 @@ TFT_eSprite gest    = TFT_eSprite(&tft);
 //play soft fade and spectrum parameters
 
 #define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
-#define SKIPSTART 350
+#define SKIPSTART 450
 uint32_t skipstartsound=SKIPSTART;
 bool ModeChange = false;
 
@@ -180,7 +180,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.8"
+#define APVERSION "V4.9"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -192,6 +192,8 @@ SemaphoreHandle_t scrollSemaphore;
 SemaphoreHandle_t chooseSemaphore;
 SemaphoreHandle_t radioSemaphore;
 SemaphoreHandle_t clockSemaphore;
+SemaphoreHandle_t stationSemaphore;
+
 
 TaskHandle_t      gestureTask;   
 TaskHandle_t      pixelTask;   
@@ -395,98 +397,6 @@ void initOTA( char *apname, char *appass){
 
 #endif
 
-/*
-//from https://github.com/espressif/arduino-esp32/issues/2501
-void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
-    switch (event) {
-    case SYSTEM_EVENT_STA_STOP:
-        syslog( (char *)"STA_STOP event, trying to reconnect" );
-        getWiFi( APNAME,APPAS); 
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        xSemaphoreTake( wifiSemaphore, 0);
-        switch (info.disconnected.reason) {
-        case WIFI_REASON_NOT_AUTHED:
-        case WIFI_REASON_AUTH_FAIL:
-            WiFi.reconnect();
-            break;
-        }
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-    case SYSTEM_EVENT_AP_STACONNECTED:
-        xSemaphoreGive( wifiSemaphore );
-        break;
-    default:
-        break;
-    }
-}
-
-
-void getWiFi( const char *apname, const char *appass){
-    wifiSemaphore = xSemaphoreCreateBinary();
-   
-    WiFi.disconnect( false );
-    WiFi.setHostname( apname );
-    WiFi.onEvent(onEvent);
-   
-    WiFi.begin(wifiSsid, wifiPassword );
-    
-    if (xSemaphoreTake( wifiSemaphore, 10000)) {
-        log_i("Connected: %s\n", WiFi.localIP().toString().c_str());
-    }  else {
-        log_i("Timed out waiting for connection\n");
-    }
-
-    
-    if ( WiFi.status()!= WL_CONNECTED ){  
-      //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
-      WiFiManager wm;
-      WiFi.disconnect( false );
-     // Workaround for esp32 failing to set hostname as found here: https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
-     // for some reason it does not work here,although it does in th Basic example
-     
-     Serial.printf("1-config 0 and set hostname to %s\n", apname);
-   
-      WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-      WiFi.setHostname( apname );
-      
-      wm.setHostname( apname );// This only partially works in setting the mDNS hostname 
-      
-      wm.setAPCallback( tft_NoConnect );
-      wm.setConnectTimeout(60);
-      //reset settings - wipe credentials for testing
-      //wm.resetSettings();
-  
-      // Automatically connect using saved credentials,
-      // if connection fails, it starts an access point with the specified name ( apname ),
-      // if empty will auto generate SSID, if password is blank it will be anonymous AP (wm.autoConnect())
-      // then goes into a blocking loop awaiting configuration and will return success result
-  
-      bool res;
-      res = wm.autoConnect( apname, appass ); // anonymous ap
-  
-      if(!res) {
-          tellPixels( PIX_RED );
-  
-          Serial.println("Failed to connect");
-          ESP.restart();
-      }
-    }   
-
-  //if you get here you have connected to the WiFi    
-   Serial.println("Wifi CONNECTED");
-
-   ntp_setup( true );
-   tellPixels( PIX_BLINKBLUE );
-  
-  Serial.print("IP address = ");
-  Serial.println(WiFi.localIP());
-#ifdef USEOTA
-  initOTA( apname, appass );
-#endif
-
-}
-*/
 
 //----------------------------------------------------------------
 
@@ -523,6 +433,7 @@ void initSemaphores(){
      chooseSemaphore = xSemaphoreCreateMutex();
      radioSemaphore = xSemaphoreCreateMutex();
      clockSemaphore = xSemaphoreCreateMutex();
+     stationSemaphore = xSemaphoreCreateMutex();
       
      Serial.println("Take sta semaphore...");
      xSemaphoreTake(staSemaphore, 10);
@@ -547,6 +458,10 @@ void initSemaphores(){
      Serial.println("Take clock semaphore...");
      xSemaphoreTake( clockSemaphore, 10);
      xSemaphoreGive( clockSemaphore);
+
+     Serial.println("Take station semaphore...");
+     xSemaphoreTake( stationSemaphore, 10);
+     xSemaphoreGive( stationSemaphore);
 
 }
 

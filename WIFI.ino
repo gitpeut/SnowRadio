@@ -111,7 +111,7 @@ void runWiFi( void *param){
   //deleteFile(multifs, "/netpass");
 
   file2netp();
-  displaynetp();
+  //displaynetp();
 
   //add2netp( ssid , password ); // add wifi and password in wificredentials 
     
@@ -262,7 +262,7 @@ for ( int i = 0; i < plaincount; ++i ){
     ++n;
 }
 log_i("read the following networks from file");
-displaynetp();
+//displaynetp();
 
 esp_aes_free( &ctx );
 free( cryptbuf );
@@ -272,7 +272,7 @@ free( plainbuf );
 
 
 //----debug--------------------------------------------------------------------------
-
+/*
 void displaynetp(){
   int count=0;
   log_i("Display netpass");
@@ -283,6 +283,7 @@ void displaynetp(){
   log_i("Found %d networks\n", count);
   
 }
+*/
 
 //----debug-----------------------------------------------------------------------------
 /*void deleteFile(fs::FS &fs, const char * path){

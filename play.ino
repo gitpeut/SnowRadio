@@ -2,9 +2,12 @@
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
+uint8_t   emptyBuffer[32];
 uint32_t  bandcounter=GETBANDFREQ, VSlow=0; 
-int       oldvolume=0;
+int       setvolume = getVolume();
   Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
+  
+  for ( int i=0; i < 32;++i) emptyBuffer[i]=0;
   
   vs1053player->startSong();
 
@@ -12,21 +15,27 @@ int       oldvolume=0;
   int qminimumcount = (PLAYQUEUESIZE/2);
   while ( uxQueueMessagesWaiting(playQueue) <  qminimumcount  ) {    
     qfillcount++;
+    
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ) qminimumcount = 0;
+    
     if ( qfillcount%10 == 0 ){
       log_i ( "Waiting for Queue to fill up, %d messages in playQueue", uxQueueMessagesWaiting( playQueue ) );
     }
+    
     if ( qfillcount > 800 ){
       unavailablecount =  MAXUNAVAILABLE + 1;
       log_d( "Queue does not fill up, reconnect" );
     }
+    
     delay(40);
   }
+  
   if ( qminimumcount ){
     log_i ( "Queueu filled up, %d messages in playQueue\n", uxQueueMessagesWaiting( playQueue ) );
   }else{
     log_i ( "Radio inactive, waiting for messages");
   }
+  
     while(1){
       
       xQueueReceive(playQueue, &playBuffer[0], portMAX_DELAY);
@@ -38,7 +47,8 @@ int       oldvolume=0;
         vs1053player->stopSong();
 
         skipstartsound = SKIPSTART;
-        oldvolume=0;
+        
+        setvolume = getVolume();        
         ModeChange = false; 
           
         delay(5);
@@ -49,13 +59,12 @@ int       oldvolume=0;
       
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( VS_DREQ_PIN ) ){
-            //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
+            
             if ( !MuteActive && !ModeChange ) {
               vs1053player->playChunk(playBuffer, 32  );
             }else{
-              delay(3);
+              vs1053player->playChunk(emptyBuffer, 32  );
             }
-            //xSemaphoreGive( tftSemaphore);
             
             --bandcounter;
             if ( ! bandcounter ){
@@ -70,12 +79,12 @@ int       oldvolume=0;
 
             if ( skipstartsound ){
                 
-                if ( skipstartsound <= (getVolume()*4) ){ 
-                  int newvolume = (getVolume() - (skipstartsound/4) + 1);
-
-                  if( (newvolume - 2) > oldvolume )vs1053player->setVolume( newvolume );
-                  oldvolume = newvolume;                                  
+                if ( skipstartsound < 200 ){ 
+                  int newvolume = ( setvolume - (skipstartsound/2) + 1);
+                  int divider = 16;
+                  if ( (newvolume & divider) )vs1053player->setVolume( newvolume );
                 }
+
                 if ( skipstartsound == 1 ) {
                   log_d("** end fade in **");
                   vs1053player->setVolume( getVolume());

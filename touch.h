@@ -33,7 +33,7 @@ class RadioButton : public TFT_eSPI_Button {
     }
           
     void draw( bool invert=false, char *longname = NULL){
-
+   
       if ( longname == NULL ){
         if ( invert && symbol_invert != NULL){
           longname = symbol_invert;
@@ -68,8 +68,6 @@ class RadioButton : public TFT_eSPI_Button {
         log_i ( "drawing %s", bmp_invert); 
         drawBmp( bmp_invert, x, y );  
       }
-      
-                       
     }
 
     void init( int argx, int argy, char *argsymbol_normal, int arg_butw = BUTW, int arg_buth = BUTH, char *argsymbol_invert = NULL, char *argbmp_normal=NULL, char *argbmp_invert=NULL ){
@@ -90,6 +88,7 @@ class RadioButton : public TFT_eSPI_Button {
                                        // in the middle of the label ("datum"). y offset tuned to font 4 = bigfont    
     }
 
+   
     int x;
     int y;
     int butw;
