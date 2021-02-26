@@ -89,14 +89,20 @@ int what_button(){
   
   log_d("%d - touch (%s) at %u,%u", touch_count++, pressed?"pressed":"not pressed", touch_x,touch_y);
 
-  if ( currDisplayScreen == RADIO ){
-    startbutton = 0;
-    endbutton   = 8;
+    if ( currDisplayScreen == RADIO ){
+      startbutton = BUTTON_AV;
+      endbutton   = BUTTON_ITEM0;
   }
 
-  if ( currDisplayScreen == STNSELECT ){
-    startbutton = 8;
-    endbutton   = 19;
+  if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT  ){
+      startbutton = BUTTON_AV;
+      endbutton   = BUTTON_PREV;
+      if ( currDisplayScreen == POWEROFF) endbutton = BUTTON_MUTE;
+  }
+
+  if ( currDisplayScreen == STNSELECT  ){
+      startbutton = BUTTON_ITEM0;
+      endbutton   = BUTTON_DOWN;
   }
   
   if ( pressed ){
@@ -424,10 +430,12 @@ void touch_process( void *param){
         
       switch( button_pressed ){
         case BUTTON_DOWN:
+             break;// not used 
              log_i("T lower volume");
              change_volstat( -1, gVolume );
              break; 
         case BUTTON_UP:
+             break;// not used  
              log_i("T increase volume");
              change_volstat( 1, gVolume );
              break;
