@@ -9,14 +9,13 @@ files to your SPIFFS/LittleFS/FFat flash disk.
 An effort has been made to maximize use of PSRAM, if available.
 <p />
 
-
-Still a work in progress. Touchscreen is waiting to be implemented
+Still a work in progress. 
 
 <p />
 
 Gele Radio uses the following libraries:
 <ul>
- <li>ArduinoJson version >= 6.17.3( https://github.com/bblanchon/ArduinoJson.git )</li>
+ <li>ArduinoJSON ( https://github.com/bblanchon/ArduinoJson.git )</li>
  <li>Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )</li>
  <li>ESP_VS1053 ( https://github.com/baldram/ESP_VS1053_Library )</li>
  <li>TFT_eSPI ( https://github.com/Bodmer/TFT_eSPI )</li>
