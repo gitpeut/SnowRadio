@@ -104,7 +104,8 @@ void disconnect_radioclient(){
   }
   
   xQueueReset( playQueue); //empty queue
-  xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+  vs1053player->stopSong();
+  
 }
 //--------------------------------------------------------------------
 
@@ -131,12 +132,21 @@ while(1){
         xSemaphoreGive( updateSemaphore);
     }
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
+
+        vs1053player->setVolume(0);
+          
+        ModeChange = true;
+        
+        //disconnect_radioclient();
+        vs1053player->setVolume(0);
         vs1053player->stopSong();
 
         log_d("waiting for radio semaphore");        
+        
         playingStation = -1;
         log_d("volume when stopping radiotask %d", vs1053player->getVolume()); 
 
+       
         xSemaphoreTake( radioSemaphore, portMAX_DELAY);
         xSemaphoreGive( radioSemaphore);        
 
@@ -229,7 +239,10 @@ while(1){
                //reset chunked encoding counters
               reset_chunkstate();
               lowqueue = 0;
-               tellPixels( PIX_DECO );
+              tellPixels( PIX_DECO );
+              
+              xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
+
             }else{
               
               bool tonextstation=false;

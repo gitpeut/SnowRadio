@@ -75,6 +75,27 @@ char *utf8torus(const char *source, char *target){
     return( (char *)source );
   }
 #endif
+
+
+//---------------------------------------------------------------------
+void tft_message( const char  *message1, const char *message2 ){
+
+if ( !img.created() )img.createSprite( tft.width(), 100);
+
+img.setTextColor( TFT_WHITE, TFT_BLACK ); 
+img.setTextSize(1);
+img.fillSprite(TFT_BLACK);
+
+
+img.drawString( message1, 0,10, 2);  
+if (message2 ) img.drawString( message2, 0,40, 2);  
+
+ 
+xSemaphoreTake( tftSemaphore, portMAX_DELAY);  
+  img.pushSprite( 0, tft.height()/2 ); 
+xSemaphoreGive( tftSemaphore); 
+
+}
 //-----------------------------------------------------
 void tft_show_gesture( bool showonscreen ){
 int   w=32;
@@ -500,6 +521,8 @@ if ( percentage > 100 ) percentage = 100;
 void tft_notAvailable( int stationIdx){
 int w;
 
+return;
+
 grabTft();
 tft.fillRect(0,80, tft.width(), tft.height()-80, TFT_BLACK );
 tft.setTextColor( TFT_RED, TFT_WHITE );
@@ -550,7 +573,7 @@ releaseTft();
  }
 }
 //------------------------------------------------------
-
+/*
 void tft_NoConnect( WiFiManager *wm) {
  tft.setRotation( tftrotation );  
 
@@ -572,6 +595,7 @@ log_d("tftnoconnect");
  tellPixels( PIX_RED );
 
 }
+*/
 //------------------------------------------------------------------------------------------
 bmpFile *findBmpInCache( char *bmpfile ){
     

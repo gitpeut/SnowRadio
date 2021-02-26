@@ -29,25 +29,26 @@
     float feelslike;
     char  *description  = NULL;
     char  *iconfilename = NULL;
-    char  *city;  
+    char  *city         = NULL;
+    bool  valid         = false;  
   }owmdata;
 
   TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
   
-struct SpiRamAllocator {
+struct GrAllocator {
   void* allocate(size_t size) {
-    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+    return gr_malloc( size );
   }
 
   void deallocate(void* pointer) {
-    heap_caps_free(pointer);
+    free( pointer );
   }
 
   void* reallocate(void* ptr, size_t new_size) {
-    return heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM);
+    return gr_realloc(ptr, new_size);
   }
 }; 
-using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
+using WhateverRamJsonDocument = BasicJsonDocument<GrAllocator>;
 
 
 //------------------------------------------------------------------------------
@@ -120,7 +121,8 @@ bool getWeather(){
 //    error = deserializeJson( root, result );
 //    works, but should be conditional  
 
-  StaticJsonDocument<2048> root;
+  WhateverRamJsonDocument root(10*1024);
+//  StaticJsonDocument<2048> root;
   error = deserializeJson( root, result );
 
   if ( error  ){

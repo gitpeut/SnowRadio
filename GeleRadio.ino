@@ -57,14 +57,15 @@ const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
 #include <esp_littlefs.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <WiFi.h>
-#include <WiFiManager.h>
-#include <rom/rtc.h>
-
+#include <esp_wifi.h>
+#include <WiFiMulti.h>
+#include <AsyncTCP.h>
 #include <WiFiClient.h>
 #ifdef USETLS
 #include <WiFiClientSecure.h>
 #endif
 #include <ESPAsyncWebServer.h>
+#include <rom/rtc.h>
 
 #ifdef USEOTA
   #include <ArduinoOTA.h>
@@ -132,7 +133,11 @@ FBuf FBFiles[ FBUFSIZE ];
 // ps_calloc and ps_malloc
 
 void *(*gr_calloc)(size_t num, size_t size);
+void *(*gr_realloc)(void *pointer, size_t size);
 void *(*gr_malloc)( size_t size);
+
+//
+void tft_message( const char  *message1, const char *message = NULL );
 
 WiFiClient        *radioclient;
 WiFiClient        iclient;
@@ -159,6 +164,7 @@ TFT_eSprite gest    = TFT_eSprite(&tft);
 #define GETBANDFREQ 50 // call getbands after every GETBANDFREQ chunks
 #define SKIPSTART 350
 uint32_t skipstartsound=SKIPSTART;
+bool ModeChange = false;
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
@@ -174,7 +180,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.7"
+#define APVERSION "V4.8"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -260,7 +266,7 @@ VS1053g* vs1053player;
 #define SCROLLUP 0
 #define SCROLLDOWN 1
 // webserver
-WebServer server(80);
+//WebServer server(80);
 
 //battery
 float   batvolt = 0.0;
@@ -389,7 +395,7 @@ void initOTA( char *apname, char *appass){
 
 #endif
 
-/*-----------------------------------------------------------*/
+/*
 //from https://github.com/espressif/arduino-esp32/issues/2501
 void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
     switch (event) {
@@ -415,7 +421,6 @@ void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
     }
 }
 
-/*-----------------------------------------------------------*/
 
 void getWiFi( const char *apname, const char *appass){
     wifiSemaphore = xSemaphoreCreateBinary();
@@ -432,12 +437,6 @@ void getWiFi( const char *apname, const char *appass){
         log_i("Timed out waiting for connection\n");
     }
 
-    /*for ( int trycount=10; WiFi.status()!= WL_CONNECTED && trycount >=0 ; --trycount ){     
-      WiFi.begin();
-      log_i("WiFi.begin try #%d", trycount );
-      delay( 120 * trycount);
-    }
-    */
     
     if ( WiFi.status()!= WL_CONNECTED ){  
       //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
@@ -487,62 +486,34 @@ void getWiFi( const char *apname, const char *appass){
 #endif
 
 }
+*/
 
-/*----------------------------------------------------------*/
+//----------------------------------------------------------------
 
+void startAfterWifi(){
 
-void setup () {
+    img.deleteSprite();
 
-    Serial.begin(115200);
-    Serial.printf("\n%s %s  %s %s\n", APNAME, APVERSION, __DATE__, __TIME__);   
-
-    if ( psramFound() ){
-         Serial.println ( "PSRAM found");
-         gr_calloc = ps_calloc;
-         gr_malloc = ps_malloc;
-    }else{
-        Serial.println ( "No PSRAM found");
-        gr_calloc  = calloc;
-        gr_malloc  = malloc;
-    }
-
-    // Enable WDT on core 0
-    // https://forum.arduino.cc/index.php?topic=621311.0
-    // but reset wachtdog in the loop of tasks running on core0 using 
-    // TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    // TIMERG0.wdt_feed=1;
-    // TIMERG0.wdt_wprotect=0;
-    // This hack eventually causes indefinite hangs: just run most tasks on core 1 
-    
-    //enableCore0WDT(); 
-    //enableCore1WDT();
-
-    
+    Serial.println("Start WebServer...");
+    setupAsyncWebServer();
  
-     Serial.println("SPI begin...");
-     SPI.begin(); 
+    Serial.println("Start play task...");  
+    play_init();
+ 
+    Serial.println("Start radio task...");    
+    radio_init();
 
-     
-    //unreset the VS1053
-    pinMode( VS1053_RST , OUTPUT);
-    digitalWrite( VS1053_RST , LOW);
-    delay( 200);
-    digitalWrite( VS1053_RST , HIGH);
-    delay(200);
+    // time is set in getwifi, so valid timestamps in syslog from here, not earlier 
+    Serial.println("log boot");    
+    log_boot();
     
-    vs1053player = new VS1053g ( VS_CS_PIN,       // Make instance of player
-                                 VS_DCS_PIN,
-                                 VS_DREQ_PIN);
+}
 
-     // position and colors for the spectrum analyzer
-     vs1053player->spectrum_height    = TFTSPECTRUMH;
-     vs1053player->spectrum_top       = TFTSPECTRUMT;
-     vs1053player->setSpectrumBarColor(TFT_REALGOLD);
-     vs1053player->setSpectrumPeakColor(TFT_WHITE);
-     
+//----------------------------------------------------------------
 
-     
-     Serial.println("Creating semaphores...");
+void initSemaphores(){
+  
+    Serial.println("Creating semaphores...");
     
      staSemaphore = xSemaphoreCreateMutex();
      volSemaphore = xSemaphoreCreateMutex();
@@ -577,11 +548,53 @@ void setup () {
      xSemaphoreTake( clockSemaphore, 10);
      xSemaphoreGive( clockSemaphore);
 
-     Serial.println("Create playQueue...");
-     playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
+}
 
+//----------------------------------------------------------
+
+void setup () {
+
+    Serial.begin(115200);
+    Serial.printf("\n%s %s  %s %s\n", APNAME, APVERSION, __DATE__, __TIME__);   
+
+    if ( psramFound() ){
+         Serial.println ( "PSRAM found");
+         gr_calloc = ps_calloc;
+         gr_malloc = ps_malloc;
+         gr_realloc = ps_realloc;
+    }else{
+        Serial.println ( "No PSRAM found");
+        gr_calloc  = calloc;
+        gr_malloc  = malloc;
+        gr_realloc = realloc;
+    }
+
+    initSemaphores();
+    
+    Serial.println("Create playQueue...");
+    playQueue = xQueueCreate( PLAYQUEUESIZE, 32);
+
+    Serial.println("SPI begin...");
+    SPI.begin(); 
+
+    //unreset the VS1053
+    pinMode( VS1053_RST , OUTPUT);
+    digitalWrite( VS1053_RST , LOW);
+    delay( 200);
+    digitalWrite( VS1053_RST , HIGH);
+    delay(200);
+    
+    vs1053player = new VS1053g ( VS_CS_PIN,       // Make instance of player
+                                 VS_DCS_PIN,
+                                 VS_DREQ_PIN);
+
+     // position and colors for the spectrum analyzer
+     vs1053player->spectrum_height    = TFTSPECTRUMH;
+     vs1053player->spectrum_top       = TFTSPECTRUMT;
+     vs1053player->setSpectrumBarColor(TFT_REALGOLD);
+     vs1053player->setSpectrumPeakColor(TFT_WHITE);
      
-      
+  
      Serial.println("Start File System...");
      setupFS();   
 
@@ -597,22 +610,36 @@ void setup () {
   
      Serial.println("TFT init...");
      tft_init();
-          
-   
+
+    
+    // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
+      
+    #ifdef USEGESTURES
+       Serial.println("Start gestures..."); 
+       tft_message("Start gesture sensor" );  
+       
+       if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
+       delay(200);
+    
+       tellPixels( PIX_BLINKYELLOW );
+    #endif
+    
      Serial.println("player begin...");
-     
+     tft_message("Start VS1053 decoder" );  
+       
      vs1053player->begin();
 
-      Serial.println("Test VS1053 chip...");
-      while(1){ 
+     Serial.println("Test VS1053 chip...");
+     while(1){ 
         bool   isconnected = vs1053player->isChipConnected();
         Serial.printf( " Chip connected ? %s \n", isconnected?"true":"false: wait a bit");
         if ( isconnected ) break;
         
         delay(500);
-      }
+     }
 
-     
+     tft_message("Apply patches and plugin for decoder" );  
+       
 // apply patches and plugin.
 // Apparetly after applying a soft reset is mandatory for the
 // plugin to load succesfully.
@@ -633,57 +660,24 @@ void setup () {
      vs1053player->setVolume(0);
     
      #ifdef USEPIXELS
-
        Serial.println("Start pixeltask...");    
+       tft_message("Start pixels" );          
        initPixels();
      #endif
-
-    
       
      Serial.println("point radioclient to insecure WiFiclient");
      radioclient = &iclient;
 
+     tft_message("Read station list" );  
+        
      Serial.println("Getstations...");
      stationsInit();
 
+     tft_message("Start WiFi" );  
+       
      Serial.println("Start WiFi en web...");
-     getWiFi( APNAME,APPAS);    
-
-     // time is set in getwifi, so valid timestamps in syslog from here, not earlier 
-     Serial.println("log boot");    
-     log_boot();
-     
-     // to be sure start gestures (I2C) after WIFiManager as per
-     // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
-      
-      #ifdef USEGESTURES
-       Serial.println("Start gestures...");    
-       if ( gesture_init() ) Serial.println ( "FAILED to init gesture control");
-       delay(200);
-    
-       tellPixels( PIX_BLINKYELLOW );
-     #endif
-     
-    // Wait for VS1053 and PAM8403 to power up
-    // otherwise the system might not start up correctly
-    //delay(3000);
-    // already a delay in tft_init
-    
-    // This can be set in the IDE no need for ext library
-    // system_update_cpu_freq(160);
-    
-
-    delay(300);
-     
- Serial.println("Start WebServer...");
- setupAsyncWebServer();
- 
- Serial.println("Start play task...");  
-    play_init();
- Serial.println("Start radio task...");    
-    radio_init();
- Serial.println("setup done...");    
- 
+     //getWiFi( APNAME,APPAS);
+     startWiFi();    
 
  delay(10000);
  

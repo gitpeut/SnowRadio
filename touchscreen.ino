@@ -329,16 +329,11 @@ void drawScreen( screenPage newscreen){
     log_i("releasing radio semaphore, if needed");
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
      xSemaphoreGive( radioSemaphore);     
+
      log_i("released radio semaphore %s", MuteActive?"mute is active":"mute is NOT active" );
     }
   }else{                   
 
-    log_d("volume when switching to %d: %d", newscreen, vs1053player->getVolume()); 
-    for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
-      vs1053player->setVolume( curvol  );
-      delay( 3 );         
-    }
-  
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){  
      xSemaphoreTake(radioSemaphore, portMAX_DELAY);
     }
@@ -350,7 +345,9 @@ void drawScreen( screenPage newscreen){
 // screen functions call functions that test this.
 
   if ( newscreen != RADIO && newscreen != STNSELECT ){
+#ifdef USEOWM
      drawWeather();     
+#endif
      if ( newscreen != POWEROFF )tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
  
   }
@@ -528,7 +525,7 @@ int touch_init(){
     xTaskCreatePinnedToCore( 
          touch_process,                                      // Task to handle special functions.
          "Touch",                                            // name of task.
-         8*1024,                                          // Stack size of task
+         4*1024,                                          // Stack size of task
          NULL,                                               // parameter of the task
          TOUCHTASKPRIO,                                      // priority of the task
          &touchTask,                                         // Task handle to keep track of created task 

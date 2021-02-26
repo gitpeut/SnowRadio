@@ -307,7 +307,7 @@ void handleDel( AsyncWebServerRequest *request ){
     save_stations();                
     return_status = 200;
     read_stations();
-    sprintf( message,"Deleted station %s", server.arg("name").c_str() );      
+    sprintf( message,"Deleted station %s", request->getParam("name")->value().c_str() );      
   }
   
   request->send( return_status, "text/plain", message);
@@ -349,7 +349,7 @@ void handleAdd( AsyncWebServerRequest *request ){
     
     save_stations();                
     return_status = 200;
-    sprintf( message,"Added station %s", server.arg("name").c_str() );      
+    sprintf( message,"Added station %s", request->getParam("name")->value().c_str() );      
   }
   
   request->send( return_status, "text/plain", message);
@@ -795,7 +795,6 @@ void startWebServer( void *param ){
   
         time( &rawt );
         localtime_r( &rawt, &tinfo);
-
         
         if ( oldmin != tinfo.tm_min && currDisplayScreen != STNSELECT ){
            oldmin = tinfo.tm_min; 
@@ -831,7 +830,7 @@ void setupAsyncWebServer(){
     xTaskCreatePinnedToCore( 
          startWebServer,                                      // Task to handle special functions.
          "WebServer",                                            // name of task.
-         1024*4,                                                 // Stack size of task
+         1024*8,                                                 // Stack size of task
          NULL,                                                 // parameter of the task
          WEBSERVERTASKPRIO,                                    // priority of the task
          &webserverTask,                                        // Task handle to keep track of created task 

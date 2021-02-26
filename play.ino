@@ -3,7 +3,7 @@
 void play ( void *param ){
 uint8_t   playBuffer[32];
 uint32_t  bandcounter=GETBANDFREQ, VSlow=0; 
-
+int       oldvolume=0;
   Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
   
   vs1053player->startSong();
@@ -33,21 +33,24 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
 
       if ( strncmp( (char *) &playBuffer[0], "ChangeStationSoStartANewSongNow!",32) == 0 ){
 
-
+        log_i("start playing again");
         vs1053player->setVolume(0);
-        skipstartsound = SKIPSTART;
-
         vs1053player->stopSong();
+
+        skipstartsound = SKIPSTART;
+        oldvolume=0;
+        ModeChange = false; 
+          
         delay(5);
         vs1053player->startSong();
-        
+        vs1053player->setVolume(0);
       }
       
       
         for ( int i = 0; i < 1 ; ++i ){
           if ( digitalRead( VS_DREQ_PIN ) ){
             //xSemaphoreTake( tftSemaphore, portMAX_DELAY);
-            if ( !MuteActive && currDisplayScreen < POWEROFF ) {
+            if ( !MuteActive && !ModeChange ) {
               vs1053player->playChunk(playBuffer, 32  );
             }else{
               delay(3);
@@ -66,8 +69,12 @@ uint32_t  bandcounter=GETBANDFREQ, VSlow=0;
             }
 
             if ( skipstartsound ){
+                
                 if ( skipstartsound <= (getVolume()*4) ){ 
-                  vs1053player->setVolume( (getVolume() - (skipstartsound/4) + 1) );                                  
+                  int newvolume = (getVolume() - (skipstartsound/4) + 1);
+
+                  if( (newvolume - 2) > oldvolume )vs1053player->setVolume( newvolume );
+                  oldvolume = newvolume;                                  
                 }
                 if ( skipstartsound == 1 ) {
                   log_d("** end fade in **");
