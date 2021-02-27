@@ -4,6 +4,7 @@ hw_timer_t       *gTimer = NULL;
 uint32_t          goodbyeCount=0, oldGoodbyeCount=-1;
 bool              MuteActive = false;
 
+
 /*------------------------------------------------------------------------------*/
 void IRAM_ATTR gTmo(){
  BaseType_t    pxHighP=0;
@@ -155,19 +156,38 @@ int current_station;
 
 void toggleStop( bool nostop ){
   int curvol;
-  
-    if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){ 
-        for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
-          vs1053player->setVolume( curvol  );
-          delay( 5 );         
+        if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){ 
+          // turn on radio i.e. turn up the volume 
+          for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
+            vs1053player->setVolume( curvol  );
+            delay( 5 );         
+          }          
+        }else{
+          // turn radio off i.e. turn volume down 
+          for ( curvol = getVolume(); curvol; --curvol ){
+              vs1053player->setVolume( curvol  );
+              delay( 5 );         
+          }                              
         }
-    }else{     
-      for ( curvol = getVolume(); curvol; --curvol ){
-          vs1053player->setVolume( curvol  );
-          delay( 5 );         
-      }
-    } 
-  
+        
+        if ( currDisplayScreen == BLUETOOTH ){ 
+            // turn on Bluetooth 
+        }else{
+            // turn off bluetooth 
+        }
+
+        if ( currDisplayScreen == LINEIN ){ 
+            // turn on LINEIN 
+        }else{
+            // turn off LINEIN 
+        }
+
+        if ( currDisplayScreen == POWEROFF ){ 
+            // power anything else off 
+        }else{
+            // power anything else on
+        }
+        
 }
 //--------------------------------------------------------------------------
 
@@ -176,15 +196,17 @@ int curvol;
   if ( MuteActive ){
     
         if ( currDisplayScreen == RADIO ) {
-
+          // turn the volume up
           skipstartsound=SKIPSTART;
-
-          //for ( curvol = 0 ; curvol <= getVolume(); ++curvol ){
-          //  vs1053player->setVolume( curvol  );
-          //  delay( 5 );         
-          //} 
         }
       
+        if ( currDisplayScreen == BLUETOOTH ) {
+          // turn the volume up
+        }
+        if ( currDisplayScreen == LINEIN ) {
+          // turn the volume up
+        }
+
         #ifdef USETOUCH
           if ( currDisplayScreen != POWEROFF )touchbutton[BUTTON_MUTE].draw( false );
         #endif
@@ -205,7 +227,14 @@ int curvol;
           }
         
         }      
-        
+
+       if ( currDisplayScreen == BLUETOOTH ) {
+          // turn the volume down
+        }
+        if ( currDisplayScreen == LINEIN ) {
+          // turn the volume down
+        }
+
         MuteActive = true;
   }
   return; 
