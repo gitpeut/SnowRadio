@@ -403,6 +403,12 @@ void initOTA( char *apname, char *appass){
 void startAfterWifi(){
 
     img.deleteSprite();
+      
+    tft.fillScreen(TFT_BLACK);
+  
+    #ifdef USETOUCH    
+      touch_init();    
+    #endif  
 
     Serial.println("Start WebServer...");
     setupAsyncWebServer();

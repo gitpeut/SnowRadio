@@ -776,11 +776,8 @@ void tft_init(){
   //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 
   if( tft.width() > tft.height() ) tftrotation = 1;
   tft.setRotation( tftrotation );
-  tft.fillScreen(TFT_BLACK);
-  
-  #ifdef USETOUCH    
-    touch_init();    
-  #endif  
+
+  drawBmp( "/images/GoldRadio.bmp", (tft.width()/2) - 25, 20);
  
   delay(200);
 
