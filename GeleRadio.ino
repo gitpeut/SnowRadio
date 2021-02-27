@@ -149,7 +149,8 @@ int               contentsize=0;
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
-TFT_eSprite img     = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
+TFT_eSprite img     = TFT_eSprite(&tft);  
+TFT_eSprite msg     = TFT_eSprite(&tft);  
 TFT_eSprite bats    = TFT_eSprite(&tft); 
 TFT_eSprite vols    = TFT_eSprite(&tft);  
 TFT_eSprite clocks  = TFT_eSprite(&tft);  
@@ -402,8 +403,10 @@ void initOTA( char *apname, char *appass){
 
 void startAfterWifi(){
 
-    img.deleteSprite();
-      
+
+    delay(500);
+    msg.deleteSprite();
+          
     tft.fillScreen(TFT_BLACK);
   
     #ifdef USETOUCH    
@@ -559,7 +562,7 @@ void setup () {
         delay(500);
      }
 
-     tft_message("Apply patches and plugin for decoder" );  
+     tft_message("Apply patches for decoder" );  
        
 // apply patches and plugin.
 // Apparetly after applying a soft reset is mandatory for the
@@ -571,9 +574,11 @@ void setup () {
      vs1053player->patch_VS1053( patchname );
 
      delay(200); 
+     tft_message("Switch to MP3 mode and soft reset" );  
      log_i("Switch to MP3.../Soft reset");
      vs1053player->switchToMp3Mode();
      
+     tft_message("Apply spectrum analyzer plugin" );  
      sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
      vs1053player->patch_VS1053( patchname );
      

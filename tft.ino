@@ -79,20 +79,32 @@ char *utf8torus(const char *source, char *target){
 
 //---------------------------------------------------------------------
 void tft_message( const char  *message1, const char *message2 ){
+static int yposition = 0;
+bool progress = true;
 
-if ( !img.created() )img.createSprite( tft.width(), 100);
+if ( !msg.created() ){
+  msg.createSprite( tft.width(), progress?tft.height() - 90:100);
 
-img.setTextColor( TFT_WHITE, TFT_BLACK ); 
-img.setTextSize(1);
-img.fillSprite(TFT_BLACK);
+  msg.setTextColor( TFT_WHITE, TFT_BLACK ); 
+  msg.setTextSize(1);
+  msg.fillSprite(TFT_BLACK);
+}
 
+if ( !progress ){
+  msg.fillSprite(TFT_BLACK);
+  yposition = 0; 
+}
 
-img.drawString( message1, 0,10, 2);  
-if (message2 ) img.drawString( message2, 0,40, 2);  
+msg.drawString( message1, 0, yposition, 2);  
+yposition += 20;
+if (message2 ){
+  msg.drawString( message2, 0, yposition, 2);  
+  yposition += 20;
+}
 
  
 xSemaphoreTake( tftSemaphore, portMAX_DELAY);  
-  img.pushSprite( 0, tft.height()/2 ); 
+  msg.pushSprite( 0, 90 ); 
 xSemaphoreGive( tftSemaphore); 
 
 }
