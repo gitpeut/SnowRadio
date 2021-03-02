@@ -255,10 +255,26 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += getStation();
   output += ",\r\n";
 
+  output += "\t\"currentMode\" : ";
+  output += (int)currDisplayScreen;
+  output += ",\r\n";
+
+  char hextone[16];
+  sprintf( hextone,"%04x", getTone() );
+  output += "\t\"currentTone\" : \"";
+  output += hextone;
+  output += "\",\r\n";
+
+  output += "\t\"currentSpatial\" : ";
+  output += getSpatial();
+  output += ",\r\n";
+   
   output += "\t\"currentVolume\" : ";
   output += getVolume();
+  output += ",\r\n";
+
+  output += json_owmdata();
   output += "\r\n";
-   
   output += "}" ;
     
   request->send(200, "application/json;charset=UTF-8", output);
@@ -372,6 +388,46 @@ void handleSet( AsyncWebServerRequest *request ){
         sprintf( message,"Volume requested %d, but value must be between 0 and 100", desired_volume);
       }
   } 
+  
+  if ( request->hasParam("tone") ){
+      uint16_t desired_tone = (uint16_t) strtol( request->getParam("tone")->value().c_str(), NULL, 16 );
+      setTone( desired_tone );      
+            
+      sprintf( message,"Tone set to %04x", desired_tone );
+      return_status = 200;  
+  } 
+
+  if ( request->hasParam("spatial") ){
+      uint16_t desired_spatial = (uint16_t) strtol( request->getParam("spatial")->value().c_str(), NULL, 10 );
+      if ( setSpatial( desired_spatial ) ){                  
+        sprintf( message,"Spatial set to %d", desired_spatial );
+        return_status = 200;  
+      }else{
+        sprintf( message,"Spatial must be (0..3) not set to %04x", desired_spatial );  
+      }
+  } 
+
+  if ( request->hasParam("mode") ){
+      int desired_mode_int = (int) strtol( request->getParam("mode")->value().c_str(), NULL, 10 );
+      screenPage  desired_mode = (screenPage) desired_mode_int;
+      
+      if ( desired_mode > LINEIN || desired_mode < RADIO ){                  
+        sprintf( message,"Mode must be (%d..%d) not set to %d", (int) RADIO, (int) LINEIN, desired_mode_int );  
+      }else{
+        if ( desired_mode != currDisplayScreen && desired_mode != STNSELECT ){
+          #ifdef USETOUCH
+                  drawScreen( desired_mode );
+          #else
+                  currDisplayScreen = desired_mode;
+                  toggleStop();
+          #endif        
+        }
+        sprintf( message,"Mode set to %d", currDisplayScreen );
+        return_status = 200;  
+      }
+  } 
+
+
   if ( request->hasParam("station") ){
       int desired_station = request->getParam("station")->value().toInt();
       if ( desired_station < STATIONSSIZE && desired_station >= 0 && stations[ desired_station ].status == 1 ){

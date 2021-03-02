@@ -36,6 +36,15 @@ public:
 // to patch VS1053.
 
   void patch_VS1053( const char *filename, size_t skip_last_bytes = 0);
+  uint16_t getTone();
+  void     setTone ( uint16_t value );
+
+  uint16_t getSpatial();
+  void     setSpatial( uint8_t spatial);
+  uint16_t currspatial = -1; 
+
+  void     toMp3(); // include a wait for dreq to go high. 
+                         // possible solution for occasional hangs in MP3reset
 
 // after loading the spectrum analyzer plugin these functions display
 // a spectrum analyzer.
@@ -55,6 +64,7 @@ public:
   uint16_t setSpectrumBarColor( uint16_t newbarcolor);
   uint16_t setSpectrumPeakColor( uint16_t newpeakcolor);
 
+  
 };
 
 

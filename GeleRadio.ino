@@ -13,7 +13,9 @@
 // ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )
 // Thanks to all the authors 
 //
-
+#ifndef CONFIG_PSRAM_SUPPORT
+//#define CONFIG_PSRAM_SUPPPORT 1
+#endif 
 /*define or undefine */
 #define USEOWM // to enable Open weathermap owm_key, 
                // owm_id (city id), owm_lang (language),
@@ -181,7 +183,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V4.9"
+#define APVERSION "V5.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -275,7 +277,8 @@ VS1053g* vs1053player;
 float   batvolt = 0.0;
 
 // Default volume
-int currentVolume=65; 
+int      currentVolume=65; 
+uint16_t currentTone=0;
 
 bool stationChunked = false;
 bool stationClose   = false;
@@ -403,8 +406,6 @@ void initOTA( char *apname, char *appass){
 
 void startAfterWifi(){
 
-
-    delay(500);
     msg.deleteSprite();
           
     tft.fillScreen(TFT_BLACK);
@@ -425,6 +426,9 @@ void startAfterWifi(){
     // time is set in getwifi, so valid timestamps in syslog from here, not earlier 
     Serial.println("log boot");    
     log_boot();
+
+    //Serial.println("start bluetooth");
+    //start_bluetooth(); 
     
 }
 
@@ -531,11 +535,13 @@ void setup () {
       }else{
         log_w("no PSRAM ");
       }
+
+     
   
      Serial.println("TFT init...");
      tft_init();
-
-    
+     
+         
     // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
       
     #ifdef USEGESTURES
@@ -576,13 +582,15 @@ void setup () {
      delay(200); 
      tft_message("Switch to MP3 mode and soft reset" );  
      log_i("Switch to MP3.../Soft reset");
-     vs1053player->switchToMp3Mode();
+     vs1053player->toMp3();
      
      tft_message("Apply spectrum analyzer plugin" );  
      sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
      vs1053player->patch_VS1053( patchname );
      
      currentVolume = get_last_volstat(1);
+     currentTone   = (uint16_t)get_last_volstat(3);
+     
      vs1053player->setVolume(0);
     
      #ifdef USEPIXELS
@@ -591,6 +599,7 @@ void setup () {
        initPixels();
      #endif
       
+     
      Serial.println("point radioclient to insecure WiFiclient");
      radioclient = &iclient;
 
@@ -602,9 +611,8 @@ void setup () {
      tft_message("Start WiFi" );  
        
      Serial.println("Start WiFi en web...");
-     //getWiFi( APNAME,APPAS);
      startWiFi();    
-
+    
  delay(10000);
  
 

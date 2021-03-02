@@ -84,7 +84,8 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     Serial.printf("hostname : %s\n", foundname );
     
     add2netp();
-    
+    tft_message( "Connected to WiFi, IP address: " , WiFi.localIP().toString().c_str() ); 
+    tft_message( "Retrieving time from NTP server");
     ntp_setup( true );
     tellPixels( PIX_BLINKBLUE );
     
@@ -92,8 +93,8 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
       initOTA( APNAME, APPAS );
     #endif
   
-    tft_message( "Connected to WiFi, IP address: " , WiFi.localIP().toString().c_str() ); 
-
+    tft_message( "Start radio");
+  
     startAfterWifi();  
 
 }

@@ -54,7 +54,9 @@ class RadioButton : public TFT_eSPI_Button {
             }
             log_d( "fontbutton - draw %s", longname);
             tft.drawString( longname, x,y );          
-        }else{  
+        }else{ 
+            tft.setFreeFont( STATION_FONT );
+             
             drawButton( invert, longname);      
         }
         xSemaphoreGive( tftSemaphore );
@@ -84,8 +86,9 @@ class RadioButton : public TFT_eSPI_Button {
       if ( argbmp_normal && argbmp_invert == NULL ) bmp_invert = bmp_normal;
       
       initButtonUL(&tft, x, y, arg_butw, arg_buth, outline, buttonfill, textcolor, symbol_normal, 1);
-      setLabelDatum(0, 7, MC_DATUM );  // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
-                                       // in the middle of the label ("datum"). y offset tuned to font 4 = bigfont    
+      setLabelDatum(0, 0, MC_DATUM );  // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
+                                       // in the middle of the label ("datum"). y offset of 7 for font 4 = bigfont
+                                       // y offset 0 for FreeSansBold10pt8b    
     }
 
    

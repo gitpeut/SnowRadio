@@ -717,7 +717,9 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
         bmpCache.push_back( cachedbmp );
         free( lineBuffer );
       }
-      else log_e("BMP format not recognized.");
+      else {
+        log_e("BMP format not recognized.");
+      }
     }
     bmpFS.close();
     tft.setSwapBytes( false );// handy when proper colors are expected afterwards :-)jb
@@ -783,16 +785,20 @@ void tft_init(){
 //  pinMode(BATPIN, INPUT);
 //  analogSetAttenuation(ADC_6db);
 
-
+  //PSRAM_ENABLE == 3 psramFound test is already done by tft_espi,
+  //no need to duplicate.
+  tft.setAttribute( 3,1);
   tft.init();
+  
   //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 
   if( tft.width() > tft.height() ) tftrotation = 1;
   tft.setRotation( tftrotation );
 
   drawBmp( "/images/GoldRadio.bmp", (tft.width()/2) - 25, 20);
- 
-  delay(200);
-
+  
+  tft_message( tft.getAttribute(3)?"tft will use PSRAM": "tft will not use PSRAM");
+  tft_message( CONFIG_SPIRAM_SUPPORT?"sprites will so, too":"sprites will not" );
+  
   log_i("tft initialized");
   
 }

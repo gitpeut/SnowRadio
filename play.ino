@@ -2,12 +2,10 @@
 
 void play ( void *param ){
 uint8_t   playBuffer[32];
-uint8_t   emptyBuffer[32];
 uint32_t  bandcounter=GETBANDFREQ, VSlow=0; 
 int       setvolume = getVolume();
   Serial.printf("Playtask running on core %d\n", xPortGetCoreID()); 
   
-  for ( int i=0; i < 32;++i) emptyBuffer[i]=0;
   
   vs1053player->startSong();
 
@@ -63,7 +61,7 @@ int       setvolume = getVolume();
             if ( !MuteActive && !ModeChange ) {
               vs1053player->playChunk(playBuffer, 32  );
             }else{
-              vs1053player->playChunk(emptyBuffer, 32  );
+              delay(4);
             }
             
             --bandcounter;

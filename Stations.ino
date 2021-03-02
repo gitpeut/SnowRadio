@@ -360,7 +360,7 @@ int i,j,rc;
       
       if ( i == 200 ){
           Serial.println("didn't receive any data in 2 seconds");
-          radioclient->flush();
+          //radioclient->flush();
           radioclient->stop();
           return(2);
       }
@@ -385,6 +385,9 @@ switch( volstat ){
     break;
   case 2:
     sprintf( filename, "%s/last_mode.txt", RadioMount);
+    break;
+  case 3:
+    sprintf( filename, "%s/last_tone.txt", RadioMount);
     break;
 }
 
@@ -429,6 +432,10 @@ switch( volstat ){
   case 2:
     sprintf( filename, "%s/last_mode.txt", RadioMount);
     break;
+  case 3:
+    sprintf( filename, "%s/last_tone.txt", RadioMount);
+    break;
+  
 }
 
 last = fopen( filename, "w");
@@ -448,6 +455,9 @@ switch( volstat ){
   case 2:
     log_d("writing %d to last mode", currDisplayScreen );
     fprintf(last, "%d", currDisplayScreen );
+    break;
+  case 3:
+    fprintf(last, "%d", getTone() );
     break;
   
 }

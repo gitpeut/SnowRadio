@@ -17,7 +17,7 @@
 // symbol font for volume, battery and buttons
 #include "fonts.h"
 //freefont for stations
-#define STATION_FONT  &FreeMonoBold12pt7b
+#define STATION_FONT  &FreeSansBold10pt8b //Same as Date font
 //freefont for stationlist
 #define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
 #define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
@@ -113,5 +113,6 @@ extern SemaphoreHandle_t tftSemaphore;
 #define PIX_DECO        51
 
 void toggleStop( bool nostop=true );
+void tft_message( const char  *message1, const char *message2 );
 
 #endif

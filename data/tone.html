@@ -1,0 +1,261 @@
+<html>
+<head>
+<title>tone</title>
+<style>
+
+body {
+  font-family: Arial, Helvetica, sans-serif;	
+  background-color: black;
+}
+
+h1 {
+	color: gold;
+	font-size: 5vw;
+    margin-left: 20px;
+}
+
+ul {
+  margin:0;
+  padding:0;
+  margin-top:20px;
+  width: 100%;
+}
+
+li {
+  cursor:move;
+  display:block;
+  /*width: 240px;*/
+  width:  90%;
+  height: 25px;
+  padding: 5px;
+  margin: 10px;
+  margin-left: 8px;
+  margin-right: 0px;
+  margin-bottom: 6px;
+  color: black;
+  border-radius:10px;
+  background: black;
+  border:solid 1px lightgrey;
+}
+
+
+.setvolume {
+  margin: 5px;
+  margin-top: 10px;
+  width:  90%;  
+  padding: 5px;	
+  background-color: white;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.settone{
+  margin: 5px;
+  margin-top: 10px;
+  width:  90%;  
+  padding: 5px;	
+  background-color: darkgrey;
+  border-radius: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.slidecontainer {
+  width: 95%;
+  margin: 5px;
+  margin-top: 10px;
+  margin-left: 5px;
+}
+
+.tonecontainer {
+  width: 21%;
+  margin: 5px;
+  margin-top: 10px;
+  margin-left: 5px;
+  float: left;  
+}
+
+.spatialcontainer {
+  width: 10%;
+  margin: 1px;
+  margin-top: 1px;
+  margin-left: 5px;
+  float: right;
+  border-radius: 10px;
+  background-color: lightgrey;  
+}
+
+
+.slider.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 25px;
+  border-radius: 10px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: gold;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: gold;
+  cursor: pointer;
+}
+
+.slidervalue {
+    width: 50px;
+    margin: 2px;
+    margin-left: auto; 
+    margin-right: auto;
+    padding: 0px;
+    border-radius: 10px;
+    border: 0px none;
+    font-size: 14px;
+    font-weight: bold;   
+}
+.voltonetxt{
+    width: 100%;
+    margin-left: auto; 
+    margin-right: auto;
+    font-size: 14px;
+    font-weight: bold;    
+}
+</style>
+
+
+</head>
+<body>
+
+<div class="setvolume" title="Change volume">
+	<div class="slidecontainer">
+        <div class="voltonetxt">Volume</div> 
+        <div id="volumevalue" class="slidervalue"></div>
+		<input type="range" min="40" max="100" value="75" class="slider" id="volume">
+	</div>
+</div>
+<div class="settone" title="Tone control">
+	
+	<div class="tonecontainer" title="Highest bass frequency">
+        <div class="voltonetxt">Highest bass frequency (Hz)</div> 
+        <div id="basslimvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="150" value="0" step="10" class="slider" id="basslimit">
+	</div>
+    <div class="tonecontainer" title="Bass enhancement (dB)">
+        <div class="voltonetxt">Bass enhancement (dB)</div> 
+        <div id="bassvolvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
+	</div>
+    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
+        <div class="voltonetxt">Lowest treble (Hz)</div> 
+        <div id="treblelimvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="15000" value="0" step="1000" class="slider" id="treblelimit">
+	</div>
+    <div class="tonecontainer" title="Treble enhancement (dB)">
+        <div class="voltonetxt">Treble enhancement (dB)</div> 
+        <div id="treblevolvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="22.5" value="0" step="1.5" class="slider" id="treblevolume">
+	</div>
+    <div class="spatialcontainer">
+        <div class="voltonetxt">Spatial</div> 
+        <input type="radio" id="spatial0" name="earphone" value="0" "checked">
+        <label for="spatial0">0</label><br>
+        <input type="radio" id="spatial1" name="earphone" value="1">
+        <label for="spatial1">1</label><br>
+        <input type="radio" id="spatial2" name="earphone" value="2">
+        <label for="spatial2">2</label><br>
+        <input type="radio" id="spatial3" name="earphone" value="3">
+        <label for="spatial3">3</label><br>
+    <div>
+</div>
+
+<script>
+
+function setup_spatial(){
+    
+    for ( i = 0; i < 4; ++i ){
+        document.getElementById("spatial"+i).onclick=function setspatial(e){
+            value = e.target.value;
+            console.log( "spatial ", value);
+            //sendcommand( 'set?spatial='+ value );
+        }
+        console.log("onlclik spatial"+ i );
+    }    
+}
+
+
+function setup_slider( sliderobj, outputobj ){
+
+    outputobj.innerHTML = sliderobj.value;
+
+    sliderobj.oninput = function() {
+      outputobj.innerHTML = this.value;
+    };
+    sliderobj.outputobj = outputobj;
+
+    sliderobj.onmouseup =function slideOut( e ) {
+      console.log( 'focusout');
+      e.target.outputobj.style['background'] = 'gold';
+      setTimeout( function( a ){ a.style['background'] = a.parentNode.style['background'] ; } ,1000, e.target.outputobj );
+      if ( sliderobj.id === 'volume' ) {
+        //sendcommand( 'set?volume='+ this.value );
+      }else{
+        
+      
+        ta = document.getElementById("treblevolvalue").innerHTML / 1.5;
+        tl = document.getElementById("treblelimvalue").innerHTML / 1000;
+        ba = document.getElementById("bassvolvalue").innerHTML;
+        bl = document.getElementById("basslimvalue").innerHTML / 10;
+        
+        console.log( ta, tl, ba, bl);    
+        tonevalue = "";
+        tonevalue += parseInt(ta,10).toString(16);
+        tonevalue += parseInt(tl,10).toString(16);
+        tonevalue += parseInt(ba,10).toString(16);
+        tonevalue += parseInt(bl,10).toString(16);
+        
+        console.log( tonevalue );    
+        
+        ta = parseInt( tonevalue.substring(0,1), 16 ) *1.5;
+        tl = parseInt( tonevalue.substring(1,2), 16 ) *1000;
+        ba = parseInt( tonevalue.substring(2,3), 16 ) ;
+        bl = parseInt( tonevalue.substring(3), 16 ) *10;
+
+        console.log( ta, tl, ba, bl);    
+        
+        //sendcommand( 'set?tone='+ this.value );    
+      }  
+    }
+    sliderobj.ontouchend = sliderobj.onmouseup;
+}
+
+setup_slider( document.getElementById("volume"), document.getElementById("volumevalue") ); 
+setup_slider( document.getElementById("basslimit"), document.getElementById("basslimvalue") ); 
+setup_slider( document.getElementById("bassvolume"), document.getElementById("bassvolvalue") ); 
+setup_slider( document.getElementById("treblelimit"), document.getElementById("treblelimvalue") ); 
+setup_slider( document.getElementById("treblevolume"), document.getElementById("treblevolvalue") ); 
+
+setup_spatial();
+
+
+
+
+</script>
+</body>

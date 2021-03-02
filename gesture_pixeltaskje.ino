@@ -77,6 +77,63 @@ int setVolume( int v){
   
   return(v);
 }
+
+/*------------------------------------------------------------------------------*/
+bool setSpatial( uint16_t newspatial ){
+  
+
+  if ( newspatial > 3 ) return false;
+  
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  vs1053player->setSpatial( newspatial );
+  xSemaphoreGive(volSemaphore);
+
+  if ( vs1053player->getSpatial() == newspatial ){
+    
+    log_d( "currSpatial = %d, newspatial = %d", vs1053player->currspatial, newspatial);
+    return true;
+  }
+  log_d( "currSpatial = %d, newspatial = %d", vs1053player->currspatial, newspatial);
+  return(false);
+  
+}
+
+/*------------------------------------------------------------------------------*/
+uint16_t getSpatial(){
+  uint16_t t;
+  
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  t = vs1053player->getSpatial();
+  xSemaphoreGive(volSemaphore);
+
+  return(t);
+}
+
+/*------------------------------------------------------------------------------*/
+uint16_t getTone(){
+  uint16_t t;
+  
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+  t = currentTone;
+  xSemaphoreGive(volSemaphore);
+
+  return(t);
+}
+
+/*------------------------------------------------------------------------------*/
+uint16_t setTone( uint16_t newtone){
+
+  log_d( "Changing tone to %04x\n", newtone); 
+
+  xSemaphoreTake(volSemaphore, portMAX_DELAY);
+    currentTone = newtone;
+    vs1053player->setTone( newtone );    
+  xSemaphoreGive(volSemaphore);
+
+  save_last_volstat(3);
+  
+  return( newtone);
+}
 /*------------------------------------------------------------------------------*/
 int getStation(){
   int s;
@@ -198,13 +255,18 @@ int curvol;
         if ( currDisplayScreen == RADIO ) {
           // turn the volume up
           skipstartsound=SKIPSTART;
+          log_d("radio mute off- sound on");
         }
       
         if ( currDisplayScreen == BLUETOOTH ) {
+          
+          log_d("bluetooth mute off- sound on");
           // turn the volume up
         }
         if ( currDisplayScreen == LINEIN ) {
           // turn the volume up
+          log_d("line in mute off- sound on");
+
         }
 
         #ifdef USETOUCH
@@ -225,13 +287,17 @@ int curvol;
             vs1053player->setVolume( curvol  );
             delay( 5 );         
           }
-        
+          log_d("radio mute on- sound off");
+
         }      
 
        if ( currDisplayScreen == BLUETOOTH ) {
+          log_d("bluetooth mute on- sound off");
           // turn the volume down
         }
         if ( currDisplayScreen == LINEIN ) {
+          log_d("linein mute on- sound off");
+
           // turn the volume down
         }
 

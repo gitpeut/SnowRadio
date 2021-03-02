@@ -295,7 +295,7 @@ void drawMode(){
 
   switch( currDisplayScreen ){
         case POWEROFF:
-            strcpy( modetext, "POWER OFF");       
+            strcpy( modetext, "POWER OFF");
             break;
         case LINEIN:
             strcpy( modetext, "LINE IN");
@@ -304,6 +304,7 @@ void drawMode(){
             strcpy( modetext, "BLUETOOTH");
             break;                  
         default: 
+            // RADIO screen
             return;
   }
     
@@ -328,7 +329,7 @@ void drawMode(){
 void drawScreen( screenPage newscreen){ 
   int playing_station;
   int stationidx = 0;
-
+   
   if ( newscreen == RADIO || newscreen == STNSELECT){
     log_i("releasing radio semaphore, if needed");
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
@@ -341,7 +342,10 @@ void drawScreen( screenPage newscreen){
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){  
      xSemaphoreTake(radioSemaphore, portMAX_DELAY);
     }
+
   }
+  
+ 
     
   currDisplayScreen = newscreen;                  
 
@@ -356,11 +360,9 @@ void drawScreen( screenPage newscreen){
       tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
      }
      
-     if ( newscreen == POWEROFF ){
-      if ( MuteActive ) toggleMute();
-     }
  
   }
+
 
   if ( newscreen == STNSELECT ){
 
@@ -378,8 +380,12 @@ void drawScreen( screenPage newscreen){
   draw_buttons( stationidx );
 
   drawMode();  
-  if ( currDisplayScreen != POWEROFF )save_last_volstat(2);
-  
+  if ( currDisplayScreen != POWEROFF )save_last_volstat(2); //save last mode
+
+  if ( newscreen != STNSELECT ){
+      if ( MuteActive ) toggleMute();
+  }
+
   toggleStop();
 
 }
@@ -404,6 +410,7 @@ void touch_process( void *param){
   // if last mode was not radio init the other mode
   screenPage lastmode = (screenPage)get_last_volstat(2);
   lastmode = RADIO;
+  //lastmode = BLUETOOTH;
   log_d ("last mode is %d, forcing RADIO", lastmode);
 
   while ( !stationCount) delay(50);
@@ -478,7 +485,7 @@ void touch_process( void *param){
              break;
         case BUTTON_STOP:
              log_i("stop");
-             if ( currDisplayScreen == POWEROFF ){
+             if ( currDisplayScreen == POWEROFF ){              
               newScreen = previousScreen; // leave here to prevent compiler whining 'not used'
               newScreen = RADIO; // force to RADIO after poweron
              }else{
@@ -495,7 +502,7 @@ void touch_process( void *param){
         case BUTTON_ITEM5:
         case BUTTON_ITEM6:
         case BUTTON_ITEM7:
-             setStation( touchbutton[button_pressed].stationidx , -1 ); 
+             setStation( touchbutton[button_pressed].stationidx , -1 );                       
              draw_buttons( touchbutton[ BUTTON_ITEM0].stationidx );
              noreset = true;
              break; 

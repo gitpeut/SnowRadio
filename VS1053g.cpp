@@ -20,6 +20,62 @@ VS1053g::VS1053g( uint8_t _cs_ping, uint8_t _dcs_ping, uint8_t _dreq_ping) : VS1
     spectrum[i][2] = 0; // picco grafico (non da Vs1053)
   } 
 }
+//----------------------------------------------------------------------------------
+#define SCI_BASS  0x2
+uint16_t VS1053g::getTone(){
+    await_data_request();
+    return( read_register(SCI_BASS) ); 
+}
+//----------------------------------------------------------------------------------
+void     VS1053g::setTone( uint16_t value ){
+  await_data_request();
+  write_register(SCI_BASS, value); 
+}
+//----------------------------------------------------------------------------------
+
+void VS1053g::setSpatial( uint8_t spatial) {
+    uint8_t  sci_mode   = 0;  // register number
+    uint16_t spatial_lo = (spatial&1)?(1<<4):0;
+    uint16_t spatial_hi = (spatial&2)?(1<<7):0;
+    uint16_t sm_sdinew  = (1<<11); 
+
+    await_data_request();
+    write_register( sci_mode, (spatial_lo | spatial_hi| sm_sdinew)  );   
+    
+    currspatial = -1;
+    getSpatial();
+    
+}
+//----------------------------------------------------------------------------------
+
+uint16_t VS1053g::getSpatial() {
+    uint8_t  sci_mode   = 0;  // register number
+    uint16_t spatial_lo = (1<<4);
+    uint16_t spatial_hi = (1<<7);
+    uint16_t spatial;
+
+    if ( currspatial == 65535 ){
+      
+      await_data_request();
+      spatial    = read_register( sci_mode ); 
+
+      spatial = ( ((spatial&spatial_lo)?1:0) | ((spatial&spatial_hi)?2:0) );   
+      await_data_request();
+
+      currspatial = spatial;
+    }else{
+      spatial = currspatial;
+    }
+    
+    return( spatial );
+}
+
+//----------------------------------------------------------------------------------
+void VS1053g::toMp3() {
+    await_data_request();
+    log_d("now doing actual switch to MP3 mode");
+    switchToMp3Mode();
+}
 
 //----------------------------------------------------------------------------------
 #define BASE 0x1810
@@ -27,6 +83,7 @@ void VS1053g::getBands()
 {
   const uint16_t base = 0x1810;
   const uint8_t  wramaddr=7,wram =6;  
+  //await_data_request(); should be verified in app jb
 
   write_register( wramaddr, base + 2);
   bands = read_register( wram);
@@ -50,6 +107,7 @@ void VS1053g::getBands()
   }
 
 }
+//----------------------------------------------------------------------------------
 
 uint16_t VS1053g::setSpectrumBarColor( uint16_t newbarcolor){
   uint16_t oldcolor = spectrum_barcolor;
@@ -57,6 +115,7 @@ uint16_t VS1053g::setSpectrumBarColor( uint16_t newbarcolor){
   spectrum_barcolor  = newbarcolor;
   return( oldcolor );
 }
+//----------------------------------------------------------------------------------
 
 uint16_t VS1053g::setSpectrumPeakColor( uint16_t newpeakcolor){
   uint16_t oldcolor = spectrum_peakcolor;
@@ -146,6 +205,7 @@ void VS1053g::write_VS1053_registers( unsigned short *pluginr, size_t valuecount
     
     size_t i = 0, shortcount=0;
     unsigned short addr, n, val;
+
 
     while (i< valuecount - skiplast ) {
         addr = pluginr[i++];
@@ -402,7 +462,11 @@ char    bin_filename[80];
     if ( rc == 1){ // plg file not available   
        sprintf( bin_filename,"%s.bin", filename);
        rc = read_VS1053_bin( bin_filename ); 
-       if( rc )log_e( "applying patches to VS1053 failed");
+       if( rc ){
+        log_e( "applying patches to VS1053 failed");
+       }
     }
-    if ( !rc ) log_i( "Patch file %s (or the previously saved bin version) applied to VS1053", filename);    
+    if ( !rc ){
+      log_i( "Patch file %s (or the previously saved bin version) applied to VS1053", filename);    
+    }
 }

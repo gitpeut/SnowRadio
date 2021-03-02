@@ -9,7 +9,7 @@
 
 extern TFT_eSPI tft;
 extern screenPage currDisplayScreen;
-
+extern char  *jsonowm; 
 
     bool getWeather();
     void fillWeatherSprite();

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+<title>Gele radio</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -9,11 +9,11 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;	
-  background-color: lightgrey;
+  background-color: black;
 }
 
 h1 {
-	color: orange;
+	color: gold;
 	font-size: 5vw;
     margin-left: 20px;
 }
@@ -38,8 +38,8 @@ li {
   margin-bottom: 6px;
   color: black;
   border-radius:10px;
-  background: darkgrey;
-  border:solid 1px lightgray;
+  background: black;
+  border:solid 1px lightgrey;
 }
 
 .edit {
@@ -75,6 +75,7 @@ li {
 	margin-top: 5px;
 	padding: 5px;
 	width: 80%; 
+    color: black;
 	background-color: lightgrey;
 	border-radius: 5px;
 }
@@ -82,7 +83,7 @@ li {
 .edbutton{
   background-color: lightgrey;
   border: none;
-  color: white;
+  color: black;
   padding: 1px;
   margin-top: 2px;
   margin-bottom: 3px;
@@ -100,8 +101,8 @@ li {
 }
 
 .clickbutton {
-  background-color: grey;
-  border: 1px solid black;
+  background-color: lightgrey;
+  border: 1px solid darkgrey;
   color: black;
   padding: 1px;
   margin-top: 2px;
@@ -117,7 +118,7 @@ li {
 .delbutton{
   background-color: lightgrey;
   border: none;
-  color: white;
+  color: black;
   padding: 1px;
   margin-top: 2px;
   margin-bottom: 3px;
@@ -135,11 +136,11 @@ li {
 }
 
 .stationbutton {
-  background-color: lightyellow;
+  background-color: lightgrey;
   border-top: 1px solid white;
   border-left: 1px solid white;
-  border-right: 1px solid yellow;
-  border-bottom: 1px solid yellow;
+  border-right: 1px solid gold;
+  border-bottom: 1px solid gold;
   color: white;
   padding: 1px;
   margin-top: 2px;
@@ -159,9 +160,9 @@ li {
   margin-top: 10px;
   padding: 5px;	
   width: 90%;
-  color: darkgrey;
+  color: black;
   font-weight: bold;border:1px solid gray;
-  background-color: black;
+  background-color: gold;
   text-align: center;
   border-radius: 10px;
   width: 90%;
@@ -177,11 +178,76 @@ li {
   text-align: center;
 }
 
+.settone{
+  margin: 5px;
+  margin-top: 10px;
+  width:  90%;  
+  padding: 5px;	
+  background-color: darkgrey;
+  border-radius: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.setmode{
+  margin: 5px;
+  margin-left: 20px;
+  width:  250px;  
+  padding: 5px;	
+  background-color: black;
+  border-radius: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.modeimg{
+  margin: 5px;
+  float: left;  
+}
+
 .slidecontainer {
   width: 95%;
   margin: 5px;
   margin-top: 10px;
   margin-left: 5px;
+}
+
+.tonecontainer {
+  width: 20%;
+  margin: 5px;
+  margin-top: 10px;
+  margin-left: 5px;
+  float: left;  
+}
+
+.spatialcontainer {
+  width: 10%;
+  margin: 1px;
+  margin-top: 1px;
+  margin-left: 5px;
+  float: right;
+  border-radius: 10px;
+  background-color: lightgrey;  
+}
+
+.slidervalue {
+    width: 50px;
+    margin: 2px;
+    margin-left: auto; 
+    margin-right: auto;
+    padding: 0px;
+    border-radius: 10px;
+    border: 0px none;
+    font-size: 14px;
+    font-weight: bold;   
+}
+
+.voltonetxt{
+    width: 100%;
+    margin-left: auto; 
+    margin-right: auto;
+    font-size: 14px;
+    font-weight: bold;    
 }
 
 .slider.slider {
@@ -563,7 +629,7 @@ function rebootclick()
   rk.style.background= 'gold';
   rk.innerHTML= 'rebooting...';
   
-  setTimeout( reloadpage, 15000 );
+  setTimeout( reloadpage, 10000 );
 }
 //--------------------------------------------------------------------------------
 
@@ -849,8 +915,8 @@ function getjson( path ){
 					for( x in jstations.stations ){
 						if ( x == playingStation ){
 							playingElement =  document.getElementById( 's' + x );
-							playingElement.style['background'] = 'black';
-							playingElement.style['color'] = 'darkgrey';
+							playingElement.style['background'] = 'gold';
+							playingElement.style['color'] = 'black';
 					
 							playingButton  =  document.getElementById( 'b' + x );
 							playingButton.style['background-color'] = 'gold';
@@ -865,10 +931,44 @@ function getjson( path ){
 
 						}
 					}
-					var slider = document.getElementById("myRange");
-					var output = document.getElementById("volumevalue");
-					slider.value = 	jstatus.currentVolume;
-					output.innerHTML = jstatus.currentVolume;
+					document.getElementById("volume").value      = jstatus.currentVolume;
+					document.getElementById("volumevalue").innerHTML = jstatus.currentVolume;
+					
+                    tonevalue = jstatus.currentTone;
+                    
+                    ta = parseInt( tonevalue.substring(0,1), 16 ) *1.5;
+                    tl = parseInt( tonevalue.substring(1,2), 16 ) *1000;
+                    ba = parseInt( tonevalue.substring(2,3), 16 );
+                    bl = parseInt( tonevalue.substring(3), 16 ) * 10;
+
+                    document.getElementById("treblevolvalue").innerHTML = ta;
+                    document.getElementById("treblevolume").value       = ta;
+                    
+                    document.getElementById("treblelimvalue").innerHTML = tl;
+                    document.getElementById("treblelimit").value        = tl;
+                    
+                    document.getElementById("bassvolvalue").innerHTML = ba;
+                    document.getElementById("bassvolume").value       = ba;
+                    
+                    document.getElementById("basslimvalue").innerHTML = bl;
+                    document.getElementById("basslimit").value        = bl;
+                    
+                    spatialvalue = jstatus.currentSpatial;
+                    document.getElementById("spatial"+spatialvalue).checked = true;
+                    
+                    for( i = 0; i<5; ++i ){           
+                        var img = document.getElementById("modeimg"+i);
+                        if ( img ){
+                            var thisid = img.id;
+                            var thismode = thisid.slice(-1);
+                            
+                            if ( thismode == jstatus.currentMode){
+                                img.src = img.pressed_src;
+                            }else{
+                                img.src = img.normal_src;
+                            }
+                        }
+                    }
 					
 			}
 		};
@@ -894,17 +994,60 @@ function loadstatus(){
 </head>
 <body>
 <h1>Gele radio</h1>
+<div class="setmode">
+<img class="modeimg" src="./images/avin.bmp" alt="linein"   title="linein" id="modeimg4">
+<img class="modeimg" src="./images/btooth.bmp" alt="bluetooth" title="bluetooth" id="modeimg3">
+<img class="modeimg" src="./images/radio.bmp" alt="radio" title="radio" id="modeimg0">
+<img class="modeimg" src="./images/poweron.bmp" alt="poweroff" title="poweroff" id="modeimg2">
+</div>
 
 <div id="left"style="margin: 10px;width: 80%; float: left;">
 
 <div id="current" class="playing">Playing station</div>
 
 <div class="setvolume" title="Change volume">
-	<span id="volumevalue" style="margin: 5px;padding: 3px;border-radius: 10px;border: 0px none;"></span>
 	<div class="slidecontainer">
-		<input type="range" min="40" max="100" value="75" class="slider" id="myRange">
+        <div class="voltonetxt">Volume</div> 
+        <div id="volumevalue" class="slidervalue"></div>
+		<input type="range" min="40" max="100" value="75" class="slider" id="volume">
 	</div>
 </div>
+<div class="settone" title="Tone control">
+	
+	<div class="tonecontainer" title="Highest bass frequency">
+        <div class="voltonetxt">Highest bass frequency (Hz)</div> 
+        <div id="basslimvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="150" value="0" step="10" class="slider" id="basslimit">
+	</div>
+    <div class="tonecontainer" title="Bass enhancement (dB)">
+        <div class="voltonetxt">Bass enhancement (dB)</div> 
+        <div id="bassvolvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
+	</div>
+    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
+        <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
+        <div id="treblelimvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="15000" value="0" step="1000" class="slider" id="treblelimit">
+	</div>
+    <div class="tonecontainer" title="Treble enhancement (dB)">
+        <div class="voltonetxt">Treble enhancement (dB)</div> 
+        <div id="treblevolvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="22.5" value="0" step="1.5" class="slider" id="treblevolume">
+	</div>
+    <div class="spatialcontainer">
+        <div class="voltonetxt">Spatial</div> 
+        <input type="radio" id="spatial0" name="earphone" value="0">
+        <label for="spatial0">0</label><br>
+        <input type="radio" id="spatial1" name="earphone" value="1">
+        <label for="spatial1">1</label><br>
+        <input type="radio" id="spatial2" name="earphone" value="2">
+        <label for="spatial2">2</label><br>
+        <input type="radio" id="spatial3" name="earphone" value="3">
+        <label for="spatial3">3</label><br>
+    </div>
+</div>
+
+
 
 <div>
 <ul id="list"></ul> 
@@ -1002,23 +1145,83 @@ Reboot
 </script>
 <script>
 
-var slider = document.getElementById("myRange");
-var output = document.getElementById("volumevalue");
-output.innerHTML = slider.value;
+function setup_slider( sliderobj, outputobj ){
 
-slider.oninput = function() {
-  output.innerHTML = this.value;
+    outputobj.innerHTML = sliderobj.value;
+
+    sliderobj.oninput = function() {
+      outputobj.innerHTML = this.value;
+    };
+    sliderobj.outputobj = outputobj;
+
+    sliderobj.onmouseup =function slideOut( e ) {
+     
+      e.target.outputobj.style['background'] = 'gold';
+      setTimeout( function( a ){ a.style['background'] = a.parentNode.style['background'] ; } ,1000, e.target.outputobj );
+      if ( sliderobj.id === 'volume' ) {
+        sendcommand( 'set?volume='+ this.value );
+      }else{
+        ta = document.getElementById("treblevolvalue").innerHTML / 1.5;
+        tl = document.getElementById("treblelimvalue").innerHTML / 1000;
+        ba = document.getElementById("bassvolvalue").innerHTML;
+        bl = document.getElementById("basslimvalue").innerHTML / 10;
+        
+        console.log(ta, tl, ba, bl);    
+        tonevalue = "";
+        tonevalue += parseInt(ta,10).toString(16);
+        tonevalue += parseInt(tl,10).toString(16);
+        tonevalue += parseInt(ba,10).toString(16);
+        tonevalue += parseInt(bl,10).toString(16);
+        
+        console.log( tonevalue );    
+        
+        sendcommand( 'set?tone='+ tonevalue );    
+      }  
+    }
+    sliderobj.ontouchend = sliderobj.onmouseup;
 }
 
-function slideOut() {
-  console.log( 'focusout');
-  output.style['background'] = 'gold';
-  setTimeout( redout,1000);
-  sendcommand( 'set?volume='+ this.value );
+setup_slider( document.getElementById("volume"), document.getElementById("volumevalue") ); 
+setup_slider( document.getElementById("basslimit"), document.getElementById("basslimvalue") ); 
+setup_slider( document.getElementById("bassvolume"), document.getElementById("bassvolvalue") ); 
+setup_slider( document.getElementById("treblelimit"), document.getElementById("treblelimvalue") ); 
+setup_slider( document.getElementById("treblevolume"), document.getElementById("treblevolvalue") ); 
+
+function setup_spatial(){
+    
+    for ( i = 0; i < 4; ++i ){
+        document.getElementById("spatial"+i).onclick=function setspatial(e){
+            value = e.target.value;
+            console.log( "spatial ", value);
+            sendcommand( 'set?spatial='+ value );
+        }
+        console.log("onlclik spatial"+ i );
+    }    
 }
 
-slider.onmouseup  = slideOut;
-slider.ontouchend = slideOut;
+setup_spatial();
+
+function setup_modeimg(){
+    for( i = 0; i<5; ++i ){
+        var img = document.getElementById("modeimg"+i);
+        if ( img ){
+            img.pressed = false;
+            img.normal_src  = img.src;
+            img.pressed_src = img.src.slice( 0, -4) + "Pressed.bmp";
+            console.log( "image "+ i + " src " + img.normal_src + " pressed_src " + img.pressed_src);
+            img.onclick=function setmode(e){
+                var thisid = e.target.id;
+                var newmode = thisid.slice(-1);
+                
+                sendcommand( 'set?mode='+ newmode );
+            }
+            console.log("onlclik spatial"+ i );
+        }
+    }    
+}
+
+setup_modeimg();
+
 
 function hideed(event) {
   if (event.target == ed || event.target == edclose) {
