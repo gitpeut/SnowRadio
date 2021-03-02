@@ -46,10 +46,10 @@ All VS1053 breakouts should work ok, consult the 0pins.h file for a possible way
 <h2>compiling</h2>
 Should compile with the Arduino EID, but make sure a file
 wificredentials.h is available in folder wificredentials of you Arduino library folder.
-This file should contain the following variables for GeleRadio, this is j
+This file should contain the following variables for GeleRadio.
 <p />
 
-<code>
+<pre>
 #ifndef WIFICREDENTIALS_H
 #define WIFICREDENTIALS_H
 
@@ -75,7 +75,7 @@ const char	*owm_lang = "nl"; // en, ru....
 #endif
 
 #endif
-</code>
+</pre>
  
 In GeleRadio.ino a number of defines enable you to trun on or aff some features.
 Generally they are called USE<option>. Be aware that not all possible combinations 
