@@ -214,6 +214,9 @@ li {
     margin-top: 2px;
     margin-left: 15px;
     margin-right: auto;
+    /* display: none;*/
+/*    if mode buttons should not be visible and working uncomment this,
+      and comment out   */
 }
 
 
@@ -950,12 +953,24 @@ function getjson( path ){
 					
                     tonevalue = jstatus.currentTone;
                     
-                    ta = parseInt( tonevalue.substring(0,1), 16 ) *1.5;
+                    ta = parseInt( tonevalue.substring(0,1), 16 );
+                    
+                    // in ta the register value
+                    if ( ta > 7 ){ 
+                        ta = ta - 8;
+                    } else {
+                        ta = ta + 8; 
+                    }    
+                    // now in ta the step value
+                    
+                    //tav contains the amplification/attenuation treble
+                    tav = -12 + (ta*1.5);
+                    
                     tl = parseInt( tonevalue.substring(1,2), 16 ) *1000;
                     ba = parseInt( tonevalue.substring(2,3), 16 );
                     bl = parseInt( tonevalue.substring(3), 16 ) * 10;
 
-                    document.getElementById("treblevolvalue").innerHTML = ta;
+                    document.getElementById("treblevolvalue").innerHTML = tav;
                     document.getElementById("treblevolume").value       = ta;
                     
                     document.getElementById("treblelimvalue").innerHTML = tl;
@@ -1038,15 +1053,15 @@ function loadstatus(){
         <input type="radio" id="spatial3" name="earphone" value="3">
         <label for="spatial3">3</label><br>
     </div>
-	<div class="tonecontainer" title="Highest bass frequency" style="display: none;">
+	<div class="tonecontainer" title="Highest bass frequency" >
         <div class="voltonetxt">Highest bass frequency (Hz)</div> 
         <div id="basslimvalue" class="slidervalue"></div>
 		<input type="range" min="0" max="150" value="130" step="10" class="slider" id="basslimit">
 	</div>
-    <div class="tonecontainer" title="Lowest treble frequency (Hz)" style="display: none">
+    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
         <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
         <div id="treblelimvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="15000" value="10000" step="1000" class="slider" id="treblelimit">
+		<input type="range" min="0" max="15000" value="2000" step="1000" class="slider" id="treblelimit">
 	</div>
     <div class="tonecontainer" title="Bass enhancement (dB)">
         <div class="voltonetxt">Bass enhancement (dB)</div> 
@@ -1054,9 +1069,9 @@ function loadstatus(){
 		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
 	</div>
     <div class="tonecontainer" title="Treble enhancement (dB)">
-        <div class="voltonetxt">Treble enhancement (dB)</div> 
+        <div class="voltonetxt">Treble attenuation/amplification (dB)</div> 
         <div id="treblevolvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="22.5" value="0" step="1.5" class="slider" id="treblevolume">
+		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="treblevolume">
 	</div>
  
 </div>
@@ -1164,7 +1179,16 @@ function setup_slider( sliderobj, outputobj ){
     outputobj.innerHTML = sliderobj.value;
 
     sliderobj.oninput = function() {
-      outputobj.innerHTML = this.value;
+      if ( sliderobj.id !== 'treblevolume'){  
+        outputobj.innerHTML = this.value;
+      }else{
+        // tav contains th db of attenuation/amplification
+        ta = this.value;
+        tav = -12 + ( ta * 1.5 );      
+        outputobj.innerHTML =  tav;
+
+      }
+        
     };
     sliderobj.outputobj = outputobj;
 
@@ -1175,16 +1199,34 @@ function setup_slider( sliderobj, outputobj ){
       if ( sliderobj.id === 'volume' ) {
         sendcommand( 'set?volume='+ this.value );
       }else{
-        ta = document.getElementById("treblevolvalue").innerHTML / 1.5;
-        tl = document.getElementById("treblelimvalue").innerHTML / 1000;
-        ba = document.getElementById("bassvolvalue").innerHTML;
-        bl = document.getElementById("basslimvalue").innerHTML / 10;
+        ta = document.getElementById("treblevolume").value;
+        tl = document.getElementById("treblelimit").value / 1000;
+        ba = document.getElementById("bassvolume").value;
+        bl = document.getElementById("basslimit").value / 10;
         
+        // tav contains th db of attenuation/amplification
+        tav = -12 + ( ta * 1.5 );
+        //ta contains the step value
+        if ( ta < 8 ){
+           ta = parseInt(ta,10) + 8;
+        }else{
+           ta = ta - 8;
+        }
+        // now ta contains the register value 
+            
+        
+        console.log( "treblelimit : " + document.getElementById("treblelimit").value );
+        console.log( "registervalue treblevolume : " + ta + " db's "+ tav  );
+        console.log( "basslimit : " + document.getElementById("basslimit").value );
+        console.log( "treblevolume : " + document.getElementById("treblevolume").value );
+        console.log( "bassvolume : " + document.getElementById("bassvolume").value );
+    
         console.log(ta, tl, ba, bl);    
+        
         tonevalue = "";
         tonevalue += parseInt(ta,10).toString(16);
         tonevalue += parseInt(tl,10).toString(16);
-        tonevalue += parseInt(ba,10).toString(16);
+        tonevalue += parseInt(ba,10).toString(16);       
         tonevalue += parseInt(bl,10).toString(16);
         
         console.log( tonevalue );    
@@ -1233,6 +1275,8 @@ function setup_modediv(){
     }    
 }
 
+// comment out if mode switches should not work and also
+// add display:none; to the .modeclick css definition
 setup_modediv();
 
 
