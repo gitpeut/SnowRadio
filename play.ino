@@ -63,7 +63,8 @@ int       setvolume = getVolume();
             }else{
               delay(4);
             }
-            
+
+#ifdef USESPECTRUM            
             --bandcounter;
             if ( ! bandcounter ){
                 
@@ -74,7 +75,7 @@ int       setvolume = getVolume();
 
                 bandcounter = GETBANDFREQ;         
             }
-
+#endif
             if ( skipstartsound ){
                 
                 if ( skipstartsound < 200 ){ 

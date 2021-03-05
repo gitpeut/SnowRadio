@@ -195,23 +195,33 @@ void showVolume( int percentage ){
 // indicator font is 32 wide and 32 high.
   int   ypos = TFTINDICT;
   char  volstring[2]; 
+
   
   volstring[0]= 'A' + percentage/10;
   volstring[1]= 0;
+/*
+  char  volstringplus[2]; 
+  char  volstringmin[2]; 
+  
+  volstringplus[0]= 'W';
+  volstringplus[1]= 0;
 
- 
-    vols.createSprite(32,32);
-    vols.setFreeFont( &indicator );
-    vols.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-    vols.fillSprite(TFT_BLACK);          
-    vols.drawString( volstring ,0 ,0 );
+  volstringmin[0]= 'X';
+  volstringmin[1]= 0;
+ */ 
+  vols.createSprite(32,32);
+  vols.setFreeFont( &indicator );
+  vols.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
+  vols.fillSprite(TFT_BLACK);          
+  vols.drawString( volstring ,0 ,0 );
+  
 
-    grabTft();
-      //log_d("Push sprite to x %d, y%d", 0, ypos);
-    vols.pushSprite( BUTOFFSET, ypos);
-    releaseTft();
+  grabTft();
+    //log_d("Push sprite to x %d, y%d", 0, ypos);
+  vols.pushSprite( BUTOFFSET, ypos);
+  releaseTft();
 
-    vols.deleteSprite();
+  vols.deleteSprite();
  
   return;  
 }

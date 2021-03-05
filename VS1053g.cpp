@@ -69,7 +69,30 @@ uint16_t VS1053g::getSpatial() {
     
     return( spatial );
 }
-
+//---------------------------------------------------------------------------------
+bool VS1053g::stop_song(){
+ uint16_t modereg; // Read from mode register
+ int      i;            // Loop control
+ uint8_t  sci_mode   = 0; 
+ uint16_t sm_cancel  = (1<<3); 
+ uint16_t sm_sdinew  = (1<<11); 
+ 
+    sdi_send_fillers(2052);
+    delay(10);
+    write_register(sci_mode, sm_cancel | sm_sdinew );
+    for (i = 0; i < 200; i++) {
+        sdi_send_fillers(32);
+        modereg = read_register( sci_mode); // Read status
+        if ((modereg & sm_cancel ) == 0) {
+            sdi_send_fillers(2052);
+            LOG("Song stopped correctly after %d msec\n", i * 10);
+            return true;
+        }
+        delay(10);
+    }
+    printDetails("Song stopped incorrectly!");
+    return false;
+}
 //----------------------------------------------------------------------------------
 void VS1053g::toMp3() {
     await_data_request();

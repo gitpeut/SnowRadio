@@ -67,8 +67,13 @@ extern SemaphoreHandle_t tftSemaphore;
 //  tft ( will use TFT_eSPI tft variable declared globally )
 //  drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
+#ifdef USETOUCH
+  #define TFTINDICT 51                             //top
+#else
+  #define TFTINDICT  0                             //top
+#endif
+
 #define TFTINDICH 32                             //height
-#define TFTINDICT 51                             //top
 #define TFTINDICB (TFTINDICT + TFTINDICH )       //bottom 83
 
 #define TFTCLOCKH 80                                //height

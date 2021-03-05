@@ -90,12 +90,12 @@ int what_button(){
   log_d("%d - touch (%s) at %u,%u", touch_count++, pressed?"pressed":"not pressed", touch_x,touch_y);
 
     if ( currDisplayScreen == RADIO ){
-      startbutton = BUTTON_AV;
+      startbutton = 0; // BUTTON_AV or BUTTON_UP depending on USEINPUTSELECT
       endbutton   = BUTTON_ITEM0;
   }
 
   if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT  ){
-      startbutton = BUTTON_AV;
+      startbutton = 0; //BUTTON_AV or BUTTON_UP depending on USEINPUTSELECT
       endbutton   = BUTTON_PREV;
       if ( currDisplayScreen == POWEROFF) endbutton = BUTTON_MUTE;
   }
@@ -127,22 +127,14 @@ int listbuttonxo = ( tft.width() - 3*listbuttonw ) /4;
 
   log_i( "ram free before buttons %d",ESP.getFreeHeap()  );
 
-  /*
-  touchbutton[BUTTON_AV].init( butoffset,                  topt, (char *)"",BUTW,BUTH, (char*)"/buttons/avin.bmp", (char*)"/buttons/avinPressed.bmp" ); 
-  touchbutton[BUTTON_BLUETOOTH].init( 1*BUTW +2*butoffset, topt, (char *)"",BUTW,BUTH, (char*)"/buttons/btooth.bmp",  (char*)"/buttons/btoothPressed.bmp" );
-  touchbutton[BUTTON_RADIO].init( 2*BUTW +3*butoffset,     topt, (char *)"",BUTW,BUTH, (char*)"/buttons/radio.bmp", (char*)"/buttons/radioPressed.bmp" );   
-  touchbutton[BUTTON_STOP].init( 3*BUTW + 4*butoffset,     topt, (char *)"", BUTW, BUTH, (char*)"/buttons/PowerOn.bmp", (char*)"/buttons/PowerOff.bmp" );
-   
-  
-  touchbutton[BUTTON_MUTE].init( butoffset,                bott, (char *)"",BUTW,BUTH, (char*)"/buttons/muteOff.bmp", (char*)"/buttons/muteOn.bmp" );
-
-  touchbutton[BUTTON_PREV].init( 1*BUTW + 2*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/PrevStn.bmp", (char*)"/buttons/PrevStnPressed.bmp");
-  touchbutton[BUTTON_NEXT].init( 2*BUTW + 3*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/NextStn.bmp", (char*)"/buttons/NextStnPressed.bmp");
-  touchbutton[BUTTON_LIST].init( 3*BUTW + 4*butoffset,     bott, (char *)"", BUTW,BUTH, (char*)"/buttons/list.bmp" );
-  */
-
+#ifdef USEINPUTSELECT
   touchbutton[BUTTON_AV].init( butoffset,                  topt, (char *)"0",BUTW,BUTH ); 
   touchbutton[BUTTON_BLUETOOTH].init( 1*BUTW +2*butoffset, topt, (char *)"1",BUTW,BUTH );
+#else
+  touchbutton[BUTTON_UP].init( butoffset,                  topt, (char *)"9",BUTW,BUTH ); 
+  touchbutton[BUTTON_DOWN].init( 1*BUTW +2*butoffset, topt, (char *)":",BUTW,BUTH );
+#endif
+
   touchbutton[BUTTON_RADIO].init( 2*BUTW +3*butoffset,     topt, (char *)"2",BUTW,BUTH );   
   touchbutton[BUTTON_STOP].init( 3*BUTW + 4*butoffset,     topt, (char *)"3",BUTW,BUTH );
    
@@ -184,12 +176,12 @@ void draw_buttons( int startidx ){
 
 
   if ( currDisplayScreen == RADIO ){
-      startbutton = BUTTON_AV;
+      startbutton = 0;
       endbutton   = BUTTON_ITEM0;
   }
 
   if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT  ){
-      startbutton = BUTTON_AV;
+      startbutton = 0;
       endbutton   = BUTTON_PREV;
       if ( currDisplayScreen == POWEROFF) endbutton = BUTTON_MUTE;
   }
@@ -234,7 +226,7 @@ void draw_buttons( int startidx ){
       delay(20); // give others a chance and avoid taskwatchdog
       log_i( "end draw button %d", i);
   }
-
+  
   switch( currDisplayScreen ){
     case RADIO:
         touchbutton[BUTTON_RADIO].draw( true );
@@ -353,13 +345,12 @@ void drawScreen( screenPage newscreen){
 // screen functions call functions that test this.
 
   if ( newscreen != RADIO && newscreen != STNSELECT ){
-#ifdef USEOWM
-     drawWeather();     
-#endif
+
+
+     drawWeather();
      if ( newscreen != POWEROFF ){
-      tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
+        tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
      }
-     
  
   }
 
@@ -446,12 +437,10 @@ void touch_process( void *param){
         
       switch( button_pressed ){
         case BUTTON_DOWN:
-             break;// not used 
              log_i("T lower volume");
              change_volstat( -1, gVolume );
              break; 
         case BUTTON_UP:
-             break;// not used  
              log_i("T increase volume");
              change_volstat( 1, gVolume );
              break;

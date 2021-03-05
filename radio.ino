@@ -104,7 +104,11 @@ void disconnect_radioclient(){
   }
   
   xQueueReset( playQueue); //empty queue
-  vs1053player->stopSong();
+  
+  if ( !vs1053player->stop_song() ){
+    syslog( (char *)"Reboot, VS1053 confused");  
+    ESP.restart();
+  }
   
 }
 //--------------------------------------------------------------------

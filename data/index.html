@@ -216,7 +216,7 @@ li {
     margin-right: auto;
     /* display: none;*/
 /*    if mode buttons should not be visible and working uncomment this,
-      and comment out   */
+      and comment out  setup_modediv(); below */
 }
 
 
@@ -238,10 +238,10 @@ li {
 
 .spatialcontainer {
   width: 20%;
-  margin: 1px;
-  margin-top: 1px;
+  margin: 1px; 
+ /* margin-top: 7px;  */
   margin-left: 5px;
-  padding: 40px 0;
+  padding: 120px 0;
   float: right;
   border-radius: 10px;
   background-color: lightgray;  
@@ -1070,8 +1070,8 @@ function loadstatus(){
 	</div>
     <div class="tonecontainer" title="Treble enhancement (dB)">
         <div class="voltonetxt">Treble attenuation/amplification (dB)</div> 
-        <div id="treblevolvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="treblevolume">
+        <div id="treblevolvalue" class="slidervalue">0</div>
+		<input type="range" min="0" max="15" value="8" step="1" class="slider" id="treblevolume">
 	</div>
  
 </div>
@@ -1176,7 +1176,14 @@ Reboot
 
 function setup_slider( sliderobj, outputobj ){
 
-    outputobj.innerHTML = sliderobj.value;
+      if ( sliderobj.id !== 'treblevolume'){  
+        outputobj.innerHTML = sliderobj.value;
+      }else{
+        // tav contains th db of attenuation/amplification
+        ta = sliderobj.value;
+        tav = -12 + ( ta * 1.5 );      
+        outputobj.innerHTML =  tav;
+      }
 
     sliderobj.oninput = function() {
       if ( sliderobj.id !== 'treblevolume'){  

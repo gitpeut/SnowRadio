@@ -3,6 +3,7 @@
 #include "owm.h"
 
 // graphic constants
+
   int weathert = TFTCLOCKB;
   int weatherh = tft.height() - weathert;  
   int weatherw = tft.width();  
@@ -35,7 +36,7 @@
 
   char  *jsonowm = NULL;
 
-  TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
+  
   
 struct GrAllocator {
   void* allocate(size_t size) {
@@ -244,15 +245,25 @@ void draw_weather_description(int x, int y){
 }
 //---------------------------------------------------------------------------------
 void drawWeather(){
+
+int extray = 0;
+
+#ifdef USETOUCH
     if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT ){
+#else
+    if (1){
+       if ( currDisplayScreen == RADIO ){ 
+          extray = tft.height() - weathert - label2t; 
+       }
+#endif
        if ( xSemaphoreTake( tftSemaphore, 1000 ) == pdTRUE ){
           if ( owmdata.iconfilename != NULL ){
-            weather_sprite.pushSprite( 0, weathert );
+            weather_sprite.pushSprite( 0, weathert + extray );
             releaseTft();  
-            drawBmp( owmdata.iconfilename,labelo, weathert );
+            drawBmp( owmdata.iconfilename,labelo, weathert + extray );
 
           }else{
-            weather_sprite.pushSprite( 0, weathert + labelh );
+            weather_sprite.pushSprite( 0, weathert + labelh + extray );
             releaseTft();
           }  
           // drawing 24bit colorbmp's to sprites gives weird colors
@@ -285,7 +296,8 @@ void fillWeatherSprite(){
 // drawing 24bit colorbmp's to sprites gives weird colors
 //  drawBmp( owmdata.iconfilename,labelo, label1t - 1, &weather_sprite);
 //  drawBmp( owmdata.iconfilename,labelo, weathert + label1t - 1 );
-  
+
+#ifdef USEOWM
   weather_sprite.setTextDatum(L_BASELINE);
   weather_sprite.setTextFont( 4 );
   weather_sprite.setTextSize(2);  
@@ -351,25 +363,29 @@ void fillWeatherSprite(){
   //int desoffset = weather_sprite.textWidth( owmdata.description, 1 );
   //desoffset = (tft.width() - 2*labelo - desoffset)/2;
   //weather_sprite.drawString(  owmdata.description, labelo, label1t-4 );
-
-  int dw = tft.textWidth( owmdata.description,1);
-
-    if( dw > labelw ){
-
+  
+  int dw = weather_sprite.textWidth( owmdata.description,1);
+  
+   if( dw > labelw ){
     char *line[2];
     char *t = ps_strdup(owmdata.description);
     char *s;
     
     line[0] = t;   
-    for ( s = t; isalnum(*s) && (s-t)>6; ++s );
-    *s = 0;++s;
-    line[1] = s;
-
+    
+    for ( s = t+5; *s && *s != ' '; ++s );
+    
+    if (*s){
+      *s = 0;++s;
+      line[1] = s;
+    }
+    
     weather_sprite.drawString( line[0], labelo, 58 );
-    weather_sprite.drawString( line[1], labelo, 72 );
+    if(*s)weather_sprite.drawString( line[1], labelo, 72 );
     
     free(t);
   }else{
+    log_d("description shorter than labelw ");
     weather_sprite.drawString(  owmdata.description, labelo, 50 + 12 );
   }
 
@@ -406,9 +422,24 @@ void fillWeatherSprite(){
   weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
   weather_sprite.drawString("m/s",   endv[ vwind], label2t + 40 );
   weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
+
+#endif
   
-  tft.setFreeFont();
 }
 
+#else
+String json_owmdata(){return("\t\"openweathermap\" : {}");}
 
+void drawWeather(){
+
+  if ( ! weather_sprite.created() ){
+    weather_sprite.createSprite( tft.width(), TFTSTATIONB - TFTCLOCKB );  
+  }
+    
+  weather_sprite.fillRect(0,0, tft.width(), TFTSTATIONB - TFTCLOCKB, TFT_BLACK);
+  
+  grabTft();
+  weather_sprite.pushSprite( 0, TFTCLOCKB );
+  releaseTft(); 
+}  
 #endif

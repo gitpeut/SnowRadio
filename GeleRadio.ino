@@ -1,6 +1,6 @@
  
-// Oranje radio
-// Jose Baars, 2019
+// Gele radio
+// Jose Baars, Alexander Semenow, 2020-2021
 // public domain
 // uses the follwing libraries:
 // wifi manager ( https://github.com/tzapu/WiFiManager.git )
@@ -13,23 +13,24 @@
 // ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )
 // Thanks to all the authors 
 //
-#ifndef CONFIG_PSRAM_SUPPORT
-//#define CONFIG_PSRAM_SUPPPORT 1
-#endif 
-/*define or undefine */
+
+/*define or undef */
 #define USEOWM // to enable Open weathermap owm_key, 
                // owm_id (city id), owm_lang (language),
                //owm_unit (metric, imperial) in wificredentials.h
                // should be defined as const char *, e.g.
                // const char* owm_unit = "metric";
-#undef USESSDP
-#undef USEOTA
+
+#undef  USEOTA
 #define USETLS 1
-#undef USEPIXELS   
-#define USEGESTURES 1
-#undef MULTILEVELGESTURES
-#define USETOUCH
-#undef USETOUCH2
+#undef  USEPIXELS   
+#define  USEGESTURES 
+#undef  MULTILEVELGESTURES
+#define  USETOUCH
+#define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
+                       // if undefined, volume buttons are displayed on the touchscreen, otherwise 
+                       // buttons to select BLUETOOTH and AV (LINE IN) 
+#define USESPECTRUM
 
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
@@ -79,11 +80,8 @@ const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
 //...Documents\ArduinoData\packages\esp32\hardware\esp32\1.0.3-rc1\tools\sdk\include\config\\sdkconfig.h
 //https://github.com/espressif/esp-idf/issues/3646
 
-#ifdef USESSDP
-  #include <SSDPDevice.h>
-#else
-  #include <ESPmDNS.h>
-#endif
+
+#include <ESPmDNS.h>
 #include <Update.h>
 #include <Wire.h>
 
@@ -158,6 +156,8 @@ TFT_eSprite vols    = TFT_eSprite(&tft);
 TFT_eSprite clocks  = TFT_eSprite(&tft);  
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
 TFT_eSprite gest    = TFT_eSprite(&tft); 
+TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
+TFT_eSprite blackweather = TFT_eSprite(&tft); 
 
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
@@ -183,7 +183,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.0"
+#define APVERSION "V5.1"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -478,6 +478,31 @@ void initSemaphores(){
 
 }
 
+void patch_vs1053(){
+  tft_message("Apply patches for decoder" );  
+       
+// apply patches and plugin.
+// Apparetly after applying a soft reset is mandatory for the
+// plugin to load succesfully.
+// The switch to MP3 includes a soft reset.
+
+  char patchname[128];     
+  sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patches.plg");
+  vs1053player->patch_VS1053( patchname );
+  
+  delay(200); 
+  tft_message("Switch to MP3 mode and soft reset" );  
+  log_i("Switch to MP3.../Soft reset");
+  vs1053player->toMp3();
+
+#ifdef USESPECTRUM  
+  tft_message("Apply spectrum analyzer plugin" );  
+  sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
+  vs1053player->patch_VS1053( patchname );
+#endif
+}     
+
+
 //----------------------------------------------------------
 
 void setup () {
@@ -568,28 +593,10 @@ void setup () {
         delay(500);
      }
 
-     tft_message("Apply patches for decoder" );  
-       
-// apply patches and plugin.
-// Apparetly after applying a soft reset is mandatory for the
-// plugin to load succesfully.
-// The switch to MP3 includes a soft reset.
-
-     char patchname[128];     
-     sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patches.plg");
-     vs1053player->patch_VS1053( patchname );
-
-     delay(200); 
-     tft_message("Switch to MP3 mode and soft reset" );  
-     log_i("Switch to MP3.../Soft reset");
-     vs1053player->toMp3();
-     
-     tft_message("Apply spectrum analyzer plugin" );  
-     sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
-     vs1053player->patch_VS1053( patchname );
-     
      currentVolume = get_last_volstat(1);
      currentTone   = (uint16_t)get_last_volstat(3);
+     
+     patch_vs1053();   
      
      vs1053player->setVolume(0);
     
@@ -623,7 +630,7 @@ void loop(void){
    vTaskDelete( NULL );
    //ArduinoOTA.handle();    
    //server.handleClient();
-   //SSDPDevice.handleClient(); 
+   
    delay(100);
 
 }

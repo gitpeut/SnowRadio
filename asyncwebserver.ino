@@ -410,9 +410,13 @@ void handleSet( AsyncWebServerRequest *request ){
   if ( request->hasParam("mode") ){
       int desired_mode_int = (int) strtol( request->getParam("mode")->value().c_str(), NULL, 10 );
       screenPage  desired_mode = (screenPage) desired_mode_int;
-      
+#ifdef USEINPUTSELECT      
       if ( desired_mode > LINEIN || desired_mode < RADIO ){                  
         sprintf( message,"Mode must be (%d..%d) not set to %d", (int) RADIO, (int) LINEIN, desired_mode_int );  
+#else
+      if ( desired_mode != RADIO && desired_mode != POWEROFF ){                  
+        sprintf( message,"Mode must be (%d or %d) not set to %d", (int) RADIO, (int) POWEROFF, desired_mode_int );  
+#endif
       }else{
         if ( desired_mode != currDisplayScreen && desired_mode != STNSELECT ){
           #ifdef USETOUCH
@@ -812,11 +816,8 @@ void startWebServer( void *param ){
   fsxserver.begin();
   Update.onProgress(printProgress);
 
-#ifndef USESSDP
+
     MDNS.addService("http", "tcp", 80);
-#else
-    int dossdp= 0;
-#endif
 
 
   // loop for frequent updates
@@ -834,14 +835,7 @@ void startWebServer( void *param ){
   
   while(1){
     
-    #ifdef USESSDP
-     ++dossdp;
-     if ( dossdp >= 40 ){
-        SSDPDevice.handleClient(); 
-        dossdp = 0;
-     }
-    #endif   
-    
+ 
     #ifdef USEOTA
         ArduinoOTA.handle();    
     #endif

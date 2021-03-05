@@ -169,7 +169,7 @@ int current_station;
     
       current_volume  = getVolume();
       
-      current_volume += (dir*10); // number of volume increase or decrease
+      current_volume += (dir*5); // number of volume increase or decrease
   
       if ( current_volume > 100 )current_volume = 100;    
       if ( current_volume < 0  ) current_volume = 0;    
@@ -214,17 +214,47 @@ int current_station;
 void toggleStop( bool nostop ){
   int curvol;
         if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){ 
-          // turn on radio i.e. turn up the volume 
-          for ( curvol = vs1053player->getVolume() ; curvol <= getVolume(); ++curvol ){
-            vs1053player->setVolume( curvol  );
-            delay( 5 );         
-          }          
-        }else{
+          #ifndef USETOUCH
+              log_i("releasing radio semaphore, if needed");
+              if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
+                   vs1053player->setVolume(0);
+                   xSemaphoreGive( radioSemaphore); 
+                   log_i("released radio semaphore %s", MuteActive?"mute is active":"mute is NOT active" );
+              }
+              #ifndef USESPECTRUM
+                  if ( ! blackweather.created() ){
+                    blackweather.createSprite( tft.width(), tft.height() - TFTCLOCKB  );  
+                  }
+    
+                  blackweather.fillRect(0,0, tft.width(), tft.height() - TFTCLOCKB, TFT_BLACK);
+  
+                  grabTft();
+                    blackweather.pushSprite( 0, TFTCLOCKB );
+                  releaseTft(); 
+
+                  blackweather.deleteSprite();
+                  
+              #endif
+              drawWeather();
+              tft_showstation( getStation() ); 
+          
+          #endif         
+          // now play() will turn up the volume 
+      }else{
+          
+          
           // turn radio off i.e. turn volume down 
           for ( curvol = getVolume(); curvol; --curvol ){
               vs1053player->setVolume( curvol  );
               delay( 5 );         
-          }                              
+          }
+          
+          #ifndef USETOUCH
+          if ( xSemaphoreGetMutexHolder( radioSemaphore ) == NULL ){  
+               xSemaphoreTake(radioSemaphore, portMAX_DELAY);
+          }
+          #endif   
+                                     
         }
         
         if ( currDisplayScreen == BLUETOOTH ){ 
@@ -241,8 +271,14 @@ void toggleStop( bool nostop ){
 
         if ( currDisplayScreen == POWEROFF ){ 
             // power anything else off 
+#ifndef USETOUCH
+  
+            drawWeather();
+  
+#endif
         }else{
             // power anything else on
+
         }
         
 }

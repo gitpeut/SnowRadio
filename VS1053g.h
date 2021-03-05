@@ -58,7 +58,8 @@ public:
   uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
   uint8_t     spectrum_height = 70; //высота графика = Spectrum graph height
   TFT_eSprite spectrum_sprite = TFT_eSprite(&tft);    
-  
+
+  bool        stop_song();
   void getBands();
   void displaySpectrum();
   uint16_t setSpectrumBarColor( uint16_t newbarcolor);
