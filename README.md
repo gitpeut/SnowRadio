@@ -3,7 +3,7 @@
 Gele Radio means yellow radio. 
 </p>
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
-optional gesture and touchscreen controland openweathermap data. User friendly web interface
+optional gesture and touchscreen control and openweathermap data. User friendly web interface
 for easy addition of internet radio stations. https and http radio stations, chunked tranfer
 encoding supported. Latency is low by design.
 <p />
@@ -56,12 +56,14 @@ Honourable mentions should be made for the support and inspiration taken from:
 Thanks to all the authors 
 
 <h2>hardware</h2>
-An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 screen is used.
-All VS1053 breakouts should work ok, consult the 0pins.h file for a possible way of connecting this hardware.
+An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 SPI ( NOT parallel, you 
+will run out of pins) screen is used. All VS1053 breakouts should work ok, consult the 0pins.h file for a 
+possible way of connecting this hardware.
 
 <h2>compiling</h2>
 Should compile with the Arduino IDE, but make sure a file
-wificredentials.h is available in folder wificredentials of you Arduino library folder.
+wificredentials.h is available in folder wificredentials of your Arduino library folder.
+( credits: Andres Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
 This file should contain the following variables for GeleRadio.
 <p />
 
@@ -78,7 +80,7 @@ const char* ntpTimezone		= "CET-1CEST,M3.5.0/2,M10.5.0/3";
 
 
 
-// Key and IV for G Radio used to encruypts wifi credentials for networks connected to by ESP touch
+// Key and IV for G Radio used to encrypt wifi credentials for networks connected to by ESP touch
 const char* gr_iv      = "DummyValyeWIthallkindsofNUmbers&****ssss";
 const char* gr_key     = "OtherDummyValyeWIthallkindsof*&DGD";
 
