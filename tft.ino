@@ -8,6 +8,7 @@
 #define BATDIV      5.54f // (1M + 220k )/220k
 
 
+
 #define SCROLLPIN 0
 int station_scroll_h=TFTSTATIONH;
 
@@ -22,6 +23,7 @@ int bigfont=4;
 int segmentfont = CLOCK_FONT;
 
 std::vector<bmpFile *> bmpCache;
+
 
 
 //
@@ -44,6 +46,7 @@ xSemaphoreGive( tftSemaphore);
 //----------------------------------------------------------
 #ifdef MONTHNAMES_RU
 
+//char *torus(const char *source, utf8char *target){
 char *utf8torus(const char *source, char *target){
     unsigned char *s  = (unsigned char *) source;
     unsigned char *t  = (unsigned char *) target;
@@ -96,7 +99,7 @@ if ( !progress ){
 }
 
 msg.drawString( message1, 0, yposition, 2);  
-yposition += 20;
+yposition += 18;
 if (message2 ){
   msg.drawString( message2, 0, yposition, 2);  
   yposition += 20;
@@ -111,8 +114,11 @@ xSemaphoreGive( tftSemaphore);
 //-----------------------------------------------------
 void tft_show_gesture( bool showonscreen ){
 int   w=32;
-int   h=TFTINDICH;
-int   xpos=33 + (BUTOFFSET*2),ypos=TFTINDICT;
+//int   h=TFTINDICH;
+//int   xpos=33 + (BUTOFFSET*2),ypos=TFTINDICT;
+int   h    = 20;
+int   xpos = BUTOFFSET;
+int   ypos = TFTCLOCKT + 12 + h; 
 char  geststring[4];
 
    if ( currDisplayScreen != RADIO) return;
@@ -122,10 +128,10 @@ char  geststring[4];
 
    if ( showonscreen ){
       gest.setFreeFont( &indicator );
-      geststring[0] = 92; //little hand
+      geststring[0] = 81; //little hand
       geststring[1] = 0;   
       gest.setTextColor( TFT_WHITE, TFT_BLACK ); 
-      gest.drawString( geststring , 0,0 );
+      gest.drawString( geststring , 0,1 );
    }
 
 
@@ -165,17 +171,23 @@ int read_battery(){
  
 }
 //-------------------------------------------------------------------------------
-void showBattery(){
+void showBattery(bool force ){
 
-  int   ypos = TFTINDICT;
+//  int   ypos = TFTINDICT;
+  int   ypos = TFTCLOCKT;
   int   xpos = tft.width() - 32 - BUTOFFSET;
   int   percentage = read_battery();
+  static int previous_percentage = -1;
   char  batstring[2]; 
+
+  if ( currDisplayScreen == STNSELECT )return;
+  if ( percentage == previous_percentage && !force ) return;
+  previous_percentage = percentage;
   
   batstring[0]= 'L' + percentage/25;
   batstring[1]= 0;
  
-    bats.createSprite(32,32);
+    bats.createSprite(32,24);
     bats.setFreeFont( &indicator );
     bats.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
     bats.fillSprite(TFT_BLACK);          
@@ -191,33 +203,33 @@ void showBattery(){
 }
 
 //----------------------------------------------------------
-void showVolume( int percentage ){
-// indicator font is 32 wide and 32 high.
-  int   ypos = TFTINDICT;
-  char  volstring[2]; 
+void showVolume( int percentage, bool force){
+// indicator font is 32 wide and 20 high.
 
+  int   ypos = TFTCLOCKT;
+  char  volstring[2];
+  static int previous_percentage=-1; 
   
+  if ( currDisplayScreen == STNSELECT )return;
+  if ( force == false){
+    if ( percentage == previous_percentage ) return;
+  }
+  
+  previous_percentage = percentage;
+
   volstring[0]= 'A' + percentage/10;
   volstring[1]= 0;
-/*
-  char  volstringplus[2]; 
-  char  volstringmin[2]; 
-  
-  volstringplus[0]= 'W';
-  volstringplus[1]= 0;
-
-  volstringmin[0]= 'X';
-  volstringmin[1]= 0;
- */ 
-  vols.createSprite(32,32);
+    
+  vols.createSprite(32,24);
   vols.setFreeFont( &indicator );
   vols.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-  vols.fillSprite(TFT_BLACK);          
-  vols.drawString( volstring ,0 ,0 );
-  
+  vols.fillSprite(TFT_BLACK);  
 
+  if ( currDisplayScreen == RADIO ){
+    vols.drawString( volstring ,0 ,0 );
+  }
+  
   grabTft();
-    //log_d("Push sprite to x %d, y%d", 0, ypos);
   vols.pushSprite( BUTOFFSET, ypos);
   releaseTft();
 
@@ -226,60 +238,150 @@ void showVolume( int percentage ){
   return;  
 }
 
-
 //--------------------------------------------------------------------------------------------------------
-void showClock ( int hour, int min, int date,int mon, int wday, int yy ){
-int     spritey =  TFTCLOCKT;
-int     clockx, datex, clockw, datew, spritew, spritex;                                                     
-int     spriteh = TFTCLOCKH;
-char    tijd[8], datestring[64];
-char    tmpday[16], tmpmon[ 32 ];
 
+void showCloud( bool force){
+  int   ypos = TFTCLOCKT + 23;
+  int   xpos = tft.width() - 32 - BUTOFFSET;static char  previous_char = 0; 
+  char  tmpmon[8];
+
+  if ( currDisplayScreen == STNSELECT )return;
+
+  if ( force == false ){
+    if ( owmdata.iconchar == previous_char )return;
+  }  
+  previous_char = owmdata.iconchar; 
+
+  if ( !cloud_sprite.created() )cloud_sprite.createSprite(  30, 30 );
+ 
+  cloud_sprite.fillSprite(TFT_BLACK);    
+  cloud_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
+  cloud_sprite.setFreeFont( &weather ); 
+  
+  tmpmon[0] = owmdata.iconchar; 
+  tmpmon[1] = 0;         
+  
+  cloud_sprite.drawString( tmpmon,0, 0 );
+          
+  grabTft();
+   cloud_sprite.pushSprite( xpos, ypos );// 128 is the bottom of the date label
+  releaseTft();
+      
+}
+//--------------------------------------------------------------------------------------------------------
+void showClock ( bool force ){
+int     clockh, clockx, clocky, clockw;
+int     datex, datey, datew;
+int     dspritex,dspritey,dspritew;
+int     yy;
+char    tijd[32], datestring[64];
+char    tmpday[128], tmpmon[ 128 ];
+static  int previous_date = -1;
+static  int previous_min  = -1;
+
+time_t  rawt;
+struct tm tinfo;    
+        
+if ( currDisplayScreen == STNSELECT )return;
+
+time( &rawt );
+localtime_r( &rawt, &tinfo);
+
+if ( tinfo.tm_year < 100 )return;
+
+if ( force == false ){
+  if ( tinfo.tm_min == previous_min )return;
+}  
 if ( xSemaphoreTake( clockSemaphore, 50) != pdTRUE) return;
 
-sprintf(tijd,"%02d:%02d", hour, min);   
-clockw = tft.textWidth( tijd, segmentfont );
+previous_min = tinfo.tm_min;
 
-sprintf( datestring,"%s %d %s %d", utf8torus( daynames[wday], tmpday ), date, utf8torus(monthnames[mon], tmpmon), yy);   
 
-clocks.setFreeFont( DATE_FONT );    
-datew = clocks.textWidth( datestring, 1 );
+yy = tinfo.tm_year + 1900 ;
 
-spritew = tft.width();
-datex   = ( spritew - datew )/2;
-clockx  = ( spritew - clockw )/2;
+sprintf(tijd,"%02d:%02d", tinfo.tm_hour, tinfo.tm_min);   
+clockw = tft.textWidth( tijd, segmentfont ) + 4;
+clockh = tft.fontHeight( segmentfont) + 2;
+clockx = (tft.width() - clockw)/2;
+clocky = TFTCLOCKT;
 
-spritex = (tft.width() - spritew)/2;
+if ( !clocks.created() )clocks.createSprite(  clockw, clockh );
 
-//log_d("spriteh %d spritey %d spritex %d clockw = %d clockx = %d, datew %d, datex %d", spriteh, spritey, spritex, clockw, clockx, datew, datex);
-
-if ( !clocks.created() )clocks.createSprite(  spritew, spriteh );
-
+clocks.fillSprite(TFT_BLACK);    
 clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-clocks.fillSprite(TFT_BLACK);
-// time
-clocks.drawString( tijd, clockx, 2, segmentfont);
+clocks.drawString( tijd, 0, 1, segmentfont);
 
-// date 
-clocks.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
+if ( (tinfo.tm_mday != previous_date) || force ){
+    previous_date = tinfo.tm_mday;
+    
+    dspritew = tft.width();
+    if ( !date_sprite.created() )date_sprite.createSprite(  dspritew, 32 );
+    
+    date_sprite.fillSprite(TFT_BLACK);
+    date_sprite.setFreeFont( DATE_FONT );    
+    
+    int labelh  = date_sprite.fontHeight(1)-1 ;
+    int labelw  = 230;
+    int labelx  = (dspritew - labelw)/2;
+    int labely  = 0;
+    date_sprite.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
+    
+    sprintf( datestring,"%s %d %s %d", utf8torus( daynames[tinfo.tm_wday], tmpday ), tinfo.tm_mday, utf8torus(monthnames[tinfo.tm_mon], tmpmon), yy);   
+    datew = date_sprite.textWidth( datestring, 1 );
+    
+    datex    = (dspritew - datew )/2;
+    datey    = 0;
+  
+    date_sprite.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
+    date_sprite.drawString( datestring, datex, datey ); 
+  
+    dspritex = 0;
+    dspritey = TFTCLOCKT + tft.fontHeight( segmentfont) + 6;
 
-int labelh  = clocks.fontHeight(1)-1 ;
-int labelw  = 230;
-int labelx  = (spritew - labelw)/2;
-int labely  = tft.fontHeight( segmentfont) + 6;
+    log_d( "date label bottom (top) %d + (height) %d = %d", dspritey, labelh, dspritey+labelh);
+    
+    grabTft();
+      date_sprite.pushSprite( dspritex, dspritey );
+    releaseTft();
 
-clocks.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
-clocks.drawString( datestring, datex, tft.fontHeight( segmentfont) + 6 ); 
-
+    
+ 
+}
+  
 
 grabTft();
-clocks.pushSprite( spritex, spritey );
+  clocks.pushSprite( clockx, clocky );
 releaseTft();
   
-clocks.deleteSprite();
+showBattery( force);
+showVolume( getVolume(), force );
+#ifdef USEOWM
+  showCloud( force );
+#endif
 
-showBattery();
-if ( currDisplayScreen == RADIO )showVolume( getVolume() );
+if ( currDisplayScreen == RADIO ){
+
+      
+      date_sprite.fillSprite(TFT_BLACK);    
+      date_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK );       
+
+      char tmprus[128];
+      sprintf( tmpmon, "%2.1f*C %s",owmdata.temperature, utf8torus( owmdata.description, tmprus ) );
+      if( strlen( tmpmon ) > 15 ){
+        date_sprite.setFreeFont( LABEL_FONT );         
+      }else{
+        date_sprite.setFreeFont( DATE_FONT ); 
+      }
+      
+      int dw = date_sprite.textWidth( tmpmon, 1 );
+      int dx = ( tft.width() - dw )/2;
+      
+      date_sprite.drawString( tmpmon, dx, 6 );
+
+      grabTft();
+        date_sprite.pushSprite( dspritex, 130 );// 128 is the bottom of the date label
+      releaseTft();
+}
 
 xSemaphoreGive( clockSemaphore );
 

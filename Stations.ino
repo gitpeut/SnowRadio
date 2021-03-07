@@ -258,6 +258,7 @@ int justConnect( int stationIdx ){
  #ifdef USETLS
     if ( stations[stationIdx].protocol == 1 ){
       // TLS by not setting //radioclient -> setCACert(rootCACertificate); no certificates are checked.
+      sclient.setInsecure(); // open the door for mind control by Internet radio.
       radioclient = &sclient;
     }
  #endif

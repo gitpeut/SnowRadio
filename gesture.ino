@@ -31,20 +31,22 @@ delay(3);
 
 for( gerror = 1; gerror; delay(300) ){  
   gerror = paj7620Init();      // initialize Paj7620 registers
+  if ( !gerror)gerror = paj7620ReadReg(0x43, 1, &data);//test if it really worked. 
   if (gerror) {
     Serial.print("INIT ERROR,CODE:");
     Serial.println(gerror);
-
+    Wire.begin();
     tellPixels(9);     
  
   }else{
+    Wire.begin();
     Serial.println("PAJ7620 Gesture init ok");
   }
 }
 
   
 while(1){
- log_d("Gesture read pin %d -> %d", GINTPIN, digitalRead(GINTPIN));
+ //log_d("Gesture read pin %d -> %d", GINTPIN, digitalRead(GINTPIN));
   
  xTaskNotifyWait(0,0,&notify_value,portMAX_DELAY);
 
@@ -55,14 +57,14 @@ while(1){
      continue;
  }
  for(int rtry=0 ; (gerror = paj7620ReadReg(0x43, 1, &data) ) ; rtry++ ){
-  // Read Bank_0_Reg_0x43/0x44 for gesture result.
-  // reset I2C bus if an error is encountered, as per
-  // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-581163709
-  // 
-  
-  Wire.begin();
-  if ( rtry > 5 ) break;
-  delay(20);
+    // Read Bank_0_Reg_0x43/0x44 for gesture result.
+    // reset I2C bus if an error is encountered, as per
+    // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-581163709
+    // 
+    
+    Wire.begin();
+    if ( rtry > 5 ) break;
+    delay(20);
  }
  
  if ( gerror ) { Serial.println("Error reading register 0x43"); continue;}

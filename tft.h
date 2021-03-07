@@ -44,8 +44,11 @@ enum screenPage
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
-void showVolume( int percentage );
+void showVolume( int percentage , bool force = false);
+void showBattery( bool force = false);
 void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite=NULL, bool show=true );
+void showClock ( bool force = false);
+
 
 typedef struct{
   char     *name;
@@ -58,6 +61,7 @@ typedef struct{
 extern std::vector<bmpFile*> bmpCache;
 extern SemaphoreHandle_t tftSemaphore;
 
+
 // to display image in sprite, provide poiter to sprite. 
 // to display on screen, omit this argument or fill it with NULL );
 // display in sprite:
@@ -68,20 +72,16 @@ extern SemaphoreHandle_t tftSemaphore;
 //  drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
 #ifdef USETOUCH
-  #define TFTINDICT 51                             //top
+  #define TFTCLOCKT 51                             //top
 #else
-  #define TFTINDICT  0                             //top
+  #define TFTCLOCKT  0                             //top
 #endif
 
-#define TFTINDICH 32                             //height
-#define TFTINDICB (TFTINDICT + TFTINDICH )       //bottom 83
-
 #define TFTCLOCKH 80                                //height
-#define TFTCLOCKT (TFTINDICB + 1)                   //top     
 #define TFTCLOCKB (TFTCLOCKT + TFTCLOCKH)           //bottom 175
 
 #define TFTSPECTRUMH 50                             // height
-#define TFTSPECTRUMT (TFTCLOCKB + 1 )               // top    
+#define TFTSPECTRUMT (TFTCLOCKB + 32 )               // top    
 #define TFTSPECTRUMB (TFTSPECTRUMT + TFTSPECTRUMH ) //bottom  226
 
 #define TFTSTATIONH  50                             //height

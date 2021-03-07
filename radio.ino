@@ -94,34 +94,33 @@ if ( stationChunked ){
 //--------------------------------------------------------------------
 
 void disconnect_radioclient(){
+      
+  if ( radioclient->connected() ) {
+    radioclient->stop();  
+    tellPixels( PIX_YELLOW );
+  
+    for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
+      vs1053player->setVolume( curvol  );
+      delay( 7 );         
+    }
 
-  if ( radioclient->connected() ) radioclient->stop();  
-  tellPixels( PIX_YELLOW );
-  
-  for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
-    vs1053player->setVolume( curvol  );
-    delay( 7 );         
-  }
-  
-  xQueueReset( playQueue); //empty queue
-  
-  if ( !vs1053player->stop_song() ){
-    syslog( (char *)"Reboot, VS1053 confused");  
-    ESP.restart();
-  }
+    ModeChange = true;
+    xQueueReset( playQueue); //empty queue   
+    delay(200);
+  } 
   
 }
 //--------------------------------------------------------------------
 
 void radio( void *param) {
 
-static int connectmillis;
-int   rc;
-int   noreads = 0, lowqueue=0;
-int   totalbytes=0;
-//uint8_t radioBuffer[32];
-uint8_t radioBuffer[256];
-         
+  static int connectmillis;
+  int   rc;
+  int   noreads = 0, lowqueue=0;
+  int   totalbytes=0;
+  //uint8_t radioBuffer[32];
+  uint8_t radioBuffer[256];
+           
   log_i("Radiotask running on core %d", xPortGetCoreID()); 
 
   setStation( get_last_volstat(0),-1 );
@@ -129,7 +128,7 @@ uint8_t radioBuffer[256];
      
   log_i("Radiotask starting loop"); 
 
-while(1){
+  while(1){
     //log_i("read %d bytes", totalbytes);
     if ( xSemaphoreGetMutexHolder( updateSemaphore ) != NULL ){
         xSemaphoreTake( updateSemaphore, portMAX_DELAY);
@@ -143,9 +142,10 @@ while(1){
         
         //disconnect_radioclient();
         vs1053player->setVolume(0);
-        vs1053player->stopSong();
+        log_d("stop song before waiting for radio semaphore");        
+        vs1053player->stop_song();
 
-        log_d("waiting for radio semaphore");        
+        
         
         playingStation = -1;
         log_d("volume when stopping radiotask %d", vs1053player->getVolume()); 
@@ -161,9 +161,11 @@ while(1){
     if ( uxQueueMessagesWaiting(playQueue) < 20 ){
         lowqueue++; 
         if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
-           syslog( (char *)"Reconnect to solve low queue");  
-           disconnect_radioclient();                
-           lowqueue = 0;    
+           syslog( (char *)"Restart to solve low queue");  
+           disconnect_radioclient();
+           ModeChange = false;                       
+           lowqueue = 0;     
+           ESP.restart();   
         }
     }
       
@@ -285,7 +287,7 @@ while(1){
    if ( getStation() != playingStation || unavailablecount > MAXUNAVAILABLE  ){
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
-
+        log_d ( "station change, disconnect from playingStation");
         disconnect_radioclient();
         lowqueue = 0;
         

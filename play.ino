@@ -42,8 +42,16 @@ int       setvolume = getVolume();
 
         log_i("start playing again");
         vs1053player->setVolume(0);
-        vs1053player->stopSong();
-
+        if ( !ModeChange ){
+          log_d("play stops song");
+            
+          if ( !vs1053player->stop_song()  ){
+            log_d("play reboots as VS1053 was confused");
+            syslog((char *)"play reboots as VS1053 was confused");
+            ESP.restart();
+          }
+        }
+        
         skipstartsound = SKIPSTART;
         
         setvolume = getVolume();        

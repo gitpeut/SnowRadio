@@ -823,11 +823,9 @@ void startWebServer( void *param ){
   // loop for frequent updates
   
   int     delaytime = 60;
-  int     timecount = (1000/delaytime), oldmin=987;
+  int     timecount = (1000/delaytime);
   int     weathercount = 0;  // open weather, every hour, but also at start
-  time_t  rawt;
-  struct tm tinfo;
-
+  
  #ifdef USEOWM
   // initialize weather sprite
   fillWeatherSprite();
@@ -842,18 +840,9 @@ void startWebServer( void *param ){
   
     --timecount;
     if ( timecount <= 0  ){
-  
-        time( &rawt );
-        localtime_r( &rawt, &tinfo);
-        
-        if ( oldmin != tinfo.tm_min && currDisplayScreen != STNSELECT ){
-           oldmin = tinfo.tm_min; 
-           
-           showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
-           
+           showClock();
            timecount = (1000/delaytime); 
-        }
-     }
+    }
 
      #ifdef USEOWM
 

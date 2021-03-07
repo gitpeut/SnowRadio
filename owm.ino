@@ -2,6 +2,8 @@
 
 #include "owm.h"
 
+#undef TWOLINEDESC
+
 // graphic constants
 
   int weathert = TFTCLOCKB;
@@ -10,15 +12,14 @@
   
   int iconh    = 51;
   int iconw    = 51;
-  int icont    = 1;
+  int icont    = 1 + 32;
   
   int labelh   = 15;     
   int labelw   = 66; 
   int labelo   = (weatherw - 3*labelw)/4;
   
-  int label1t    = 15;
+  int label1t    = 1 + 32;
   int label2t    = label1t + 62;
-
   int value1t    = label1t + labelh;   
   int value2t    = label2t + labelh;   
 
@@ -31,7 +32,8 @@
     char  *description  = NULL;
     char  *iconfilename = NULL;
     char  *city         = NULL;
-    bool  valid         = false;  
+    bool  valid         = false;
+    char  iconchar;  
   }owmdata;
 
   char  *jsonowm = NULL;
@@ -181,31 +183,40 @@ bool getWeather(){
   switch( atoi( iconname ) ){
        case 1:
           owmdata.iconfilename = ps_strdup( "/weather_icon/sunny.bmp");
+          owmdata.iconchar = 'A';
           break;
        case 2:
           owmdata.iconfilename = ps_strdup( "/weather_icon/partlysunny.bmp");
+          owmdata.iconchar = 'E';
           break;
        case 3:
           owmdata.iconfilename = ps_strdup( "/weather_icon/partlycloudy.bmp");
+          owmdata.iconchar = 'F';
           break;
        case 4:
           owmdata.iconfilename = ps_strdup( "/weather_icon/cloudy.bmp");
+          owmdata.iconchar = 'H';
           break;
        case 9:
        case 10:
           owmdata.iconfilename = ps_strdup( "/weather_icon/rain.bmp");
+          owmdata.iconchar = 'D';
           break;
        case 11:
           owmdata.iconfilename = ps_strdup( "/weather_icon/tstorms.bmp");
+          owmdata.iconchar = 'B';          
           break;
        case 13:
           owmdata.iconfilename = ps_strdup( "/weather_icon/snow.bmp");
+          owmdata.iconchar = '@';
           break;
        case 50:
           owmdata.iconfilename = ps_strdup( "/weather_icon/fog.bmp");
+          owmdata.iconchar = 'H';
           break;
        default:
           owmdata.iconfilename = ps_strdup( "/weather_icon/unknown.bmp");
+          owmdata.iconchar = 'D';
           break;
           
   }
@@ -216,33 +227,8 @@ drawWeather();
 
 return( true );
 }
-//--------------------------------------------------------------------------------
-void draw_weather_description(int x, int y){
 
-  tft.setFreeFont( LABEL_FONT);                 // FreeSansBold6pt8b
-  tft.setTextDatum(L_BASELINE);
-  tft.setTextColor( TFT_MY_GOLD, TFT_BLACK );
 
-  int dw = tft.textWidth( owmdata.description,1);
-
-  if( dw > labelw ){
-    char *line[2];
-    char *s = owmdata.description;
-    
-    line[0] = s;
-    
-    for ( ; isalnum(*s); ++s )++s;
-    *s = 0;++s;
-    line[1] = s;
-
-    tft.drawString( line[0], x, y );
-    tft.drawString( line[1], x, y + 10);
-    *(s-1) = ' ';      
-  }else{
-    tft.drawString(  owmdata.description, x, y );
-  }
-
-}
 //---------------------------------------------------------------------------------
 void drawWeather(){
 
@@ -260,8 +246,11 @@ int extray = 0;
           if ( owmdata.iconfilename != NULL ){
             weather_sprite.pushSprite( 0, weathert + extray );
             releaseTft();  
-            drawBmp( owmdata.iconfilename,labelo, weathert + extray );
-
+#ifdef TWOLINEDESC            
+            drawBmp( owmdata.iconfilename,labelo, weathert + extray );           
+#else
+            drawBmp( owmdata.iconfilename,labelo, weathert + label1t + labelh/2 + extray );         
+#endif
           }else{
             weather_sprite.pushSprite( 0, weathert + labelh + extray );
             releaseTft();
@@ -364,14 +353,18 @@ void fillWeatherSprite(){
   //desoffset = (tft.width() - 2*labelo - desoffset)/2;
   //weather_sprite.drawString(  owmdata.description, labelo, label1t-4 );
   
-  int dw = weather_sprite.textWidth( owmdata.description,1);
+#ifdef TWOLINEDESC  
+   char *torusdesc = ps_strdup( owmdata.description );
+   utf8torus( owmdata.description, torusdesc );     
+   int dw = weather_sprite.textWidth( torusdesc ,1);
   
    if( dw > labelw ){
     char *line[2];
-    char *t = ps_strdup(owmdata.description);
+    char *t = ps_strdup( torusdesc );
     char *s;
     
     line[0] = t;   
+    line[1] = t;
     
     for ( s = t+5; *s && *s != ' '; ++s );
     
@@ -384,14 +377,32 @@ void fillWeatherSprite(){
     if(*s)weather_sprite.drawString( line[1], labelo, 72 );
     
     free(t);
+    
   }else{
     log_d("description shorter than labelw ");
-    weather_sprite.drawString(  owmdata.description, labelo, 50 + 12 );
+    weather_sprite.drawString(  torusdesc, labelo, 50 + 12 );
   }
+  
+  free( torusdesc );
+#else
+    weather_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
+    weather_sprite.setFreeFont( LABEL_FONT ); 
 
+    char tmprus[128];
+    char tmpline[128];
+    
+    sprintf( tmpline, "%s",utf8torus( owmdata.description, tmprus ) );
 
-
-
+    if( strlen( tmpline ) > 15 ){
+        date_sprite.setFreeFont( LABEL_FONT );         
+    }else{
+        date_sprite.setFreeFont( DATE_FONT ); 
+    }
+    
+    int dw = weather_sprite.textWidth( tmpline, 1 );
+    int dx = (weatherw - dw )/2;
+    weather_sprite.drawString( tmpline, dx, 20 );
+#endif
 
   weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
   

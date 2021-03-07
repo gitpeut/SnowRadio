@@ -21,23 +21,26 @@
                // should be defined as const char *, e.g.
                // const char* owm_unit = "metric";
 
-#undef  USEOTA
-#define USETLS 1
-#undef  USEPIXELS   
-#define  USEGESTURES 
-#undef  MULTILEVELGESTURES
-#define  USETOUCH
+#undef  USEOTA      // disable Arduino OTA. http update is always on and works 
+                    // as well.
+#define USETLS 1    // allow for https
+#undef  USEPIXELS   // use pixels as an indicator for the gestures
+#define USEGESTURES // Use the PAJ7620 gesture sensor
+#undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
+#define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341
 #define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
-#define USESPECTRUM
+#define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
+                    // and gracefully adapted from the Web Radio of Blotfi
 
+//#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
-#ifdef MONTHNAMES_RU
+#if defined(MONTHNAMES_RU)
 const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
 const char *daynames[]   = {"ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"};
-#elif MONTHNAMES_EN
+#elif defined(MONTHNAMES_EN)
 const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
 #else
@@ -153,11 +156,14 @@ TFT_eSprite img     = TFT_eSprite(&tft);
 TFT_eSprite msg     = TFT_eSprite(&tft);  
 TFT_eSprite bats    = TFT_eSprite(&tft); 
 TFT_eSprite vols    = TFT_eSprite(&tft);  
-TFT_eSprite clocks  = TFT_eSprite(&tft);  
+TFT_eSprite clocks  = TFT_eSprite(&tft); 
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
 TFT_eSprite gest    = TFT_eSprite(&tft); 
 TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
-TFT_eSprite blackweather = TFT_eSprite(&tft); 
+TFT_eSprite blackweather = TFT_eSprite(&tft); // only used when touch is disabled
+TFT_eSprite date_sprite  = TFT_eSprite(&tft); 
+TFT_eSprite cloud_sprite = TFT_eSprite(&tft);
+ 
 
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
@@ -171,7 +177,7 @@ bool ModeChange = false;
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
-#define RESTART_AFTER_LOWQ_COUNT 100
+#define RESTART_AFTER_LOWQ_COUNT 50
 
 int   unavailablecount=0;
 int   failed_connects=0;
@@ -183,7 +189,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.1"
+#define APVERSION "V5.2"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -599,7 +605,8 @@ void setup () {
      patch_vs1053();   
      
      vs1053player->setVolume(0);
-    
+     vs1053player->setTone( currentTone );
+      
      #ifdef USEPIXELS
        Serial.println("Start pixeltask...");    
        tft_message("Start pixels" );          

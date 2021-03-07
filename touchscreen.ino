@@ -76,7 +76,7 @@ int what_button(){
   // return the button number 
   
   uint16_t          touch_x = 0, touch_y = 0;
-  static uint32_t   touch_count=0;
+  //static uint32_t   touch_count=0;
   int               startbutton, endbutton;
   boolean           pressed;
     
@@ -87,7 +87,7 @@ int what_button(){
     return(-1);
   }
   
-  log_d("%d - touch (%s) at %u,%u", touch_count++, pressed?"pressed":"not pressed", touch_x,touch_y);
+  //log_d("%d - touch (%s) at %u,%u", touch_count++, pressed?"pressed":"not pressed", touch_x,touch_y);
 
     if ( currDisplayScreen == RADIO ){
       startbutton = 0; // BUTTON_AV or BUTTON_UP depending on USEINPUTSELECT
@@ -206,7 +206,7 @@ void draw_buttons( int startidx ){
 
           if ( stationidx == playing_station ){
              playing_button = startbutton + i;  
-             log_d("playing buttton = %d", playing_button);           
+             //log_d("playing buttton = %d", playing_button);           
           }
                   
           touchbutton[ startbutton + i ].stationidx = stationidx; 
@@ -217,14 +217,14 @@ void draw_buttons( int startidx ){
   }
   
   for ( int i = startbutton ; i < endbutton; ++i ){
-      log_i( "draw button %d", i);
+      //log_i( "draw button %d", i);
       if ( i == BUTTON_MUTE ){
         touchbutton[i].draw( MuteActive ); 
       }else{
           touchbutton[i].draw( ( i == playing_button)?true: false );
       }
       delay(20); // give others a chance and avoid taskwatchdog
-      log_i( "end draw button %d", i);
+      //log_i( "end draw button %d", i);
   }
   
   switch( currDisplayScreen ){
@@ -261,17 +261,13 @@ void drawStationScreen(){
 }
 //--------------------------------------------------------------------
 void drawRadioScreen(){ 
-  time_t  rawt;
-  struct tm tinfo;
+  
 
   grabTft();
     tft.fillScreen(TFT_BLACK);
   releaseTft();
     
-    time( &rawt );
-    localtime_r( &rawt, &tinfo);
-       
-    if ( tinfo.tm_year > 100 )showClock(tinfo.tm_hour, tinfo.tm_min, tinfo.tm_mday, tinfo.tm_mon, tinfo.tm_wday, tinfo.tm_year + 1900 );
+   
     if ( playingStation >= 0 )tft_showstation( getStation() );
 
   

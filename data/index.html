@@ -1043,7 +1043,7 @@ function loadstatus(){
 </div>
 <div class="settone" title="Tone control">
 	<div class="spatialcontainer">
-        <div class="voltonetxt">Spatial</div> 
+        <div class="voltonetxt">3D effect</div> 
         <input type="radio" id="spatial0" name="earphone" value="0">
         <label for="spatial0">0</label><br>
         <input type="radio" id="spatial1" name="earphone" value="1">
@@ -1058,15 +1058,15 @@ function loadstatus(){
         <div id="basslimvalue" class="slidervalue"></div>
 		<input type="range" min="0" max="150" value="130" step="10" class="slider" id="basslimit">
 	</div>
-    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
-        <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
-        <div id="treblelimvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="15000" value="2000" step="1000" class="slider" id="treblelimit">
-	</div>
     <div class="tonecontainer" title="Bass enhancement (dB)">
         <div class="voltonetxt">Bass enhancement (dB)</div> 
         <div id="bassvolvalue" class="slidervalue"></div>
 		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
+	</div>
+    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
+        <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
+        <div id="treblelimvalue" class="slidervalue"></div>
+		<input type="range" min="0" max="15000" value="2000" step="1000" class="slider" id="treblelimit">
 	</div>
     <div class="tonecontainer" title="Treble enhancement (dB)">
         <div class="voltonetxt">Treble attenuation/amplification (dB)</div> 

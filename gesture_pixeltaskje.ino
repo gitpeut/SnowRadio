@@ -213,6 +213,9 @@ int current_station;
 
 void toggleStop( bool nostop ){
   int curvol;
+  
+  
+
         if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){ 
           #ifndef USETOUCH
               log_i("releasing radio semaphore, if needed");
@@ -237,8 +240,9 @@ void toggleStop( bool nostop ){
               #endif
               drawWeather();
               tft_showstation( getStation() ); 
-          
+              
           #endif         
+          
           // now play() will turn up the volume 
       }else{
           
@@ -280,7 +284,10 @@ void toggleStop( bool nostop ){
             // power anything else on
 
         }
-        
+
+  
+    showClock( true );
+    
 }
 //--------------------------------------------------------------------------
 
