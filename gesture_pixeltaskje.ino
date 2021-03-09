@@ -381,11 +381,11 @@ void show_gesture_off(){
               case GES_COUNT_CLOCKWISE_FLAG:
                 gmode = gVolume;
                 show_gesture_on();
-                log_i("wake gesture sensor, mode to gVolume");
+                log_i("wake gesture sensor");
                 setgTimer();
                 break;
               default:
-                log_i("not listening to this gesture until wakeup");
+                //log_i("not listening to this gesture until wakeup");
                 break;  
           }
           break;

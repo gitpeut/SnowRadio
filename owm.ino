@@ -380,6 +380,7 @@ void fillWeatherSprite(){
     
   }else{
     log_d("description shorter than labelw ");
+    
     weather_sprite.drawString(  torusdesc, labelo, 50 + 12 );
   }
   
@@ -394,9 +395,9 @@ void fillWeatherSprite(){
     sprintf( tmpline, "%s",utf8torus( owmdata.description, tmprus ) );
 
     if( strlen( tmpline ) > 15 ){
-        date_sprite.setFreeFont( LABEL_FONT );         
+        weather_sprite.setFreeFont( LABEL_FONT );         
     }else{
-        date_sprite.setFreeFont( DATE_FONT ); 
+        weather_sprite.setFreeFont( DATE_FONT ); 
     }
     
     int dw = weather_sprite.textWidth( tmpline, 1 );
@@ -405,6 +406,7 @@ void fillWeatherSprite(){
 #endif
 
   weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
+  weather_sprite.setFreeFont( LABEL_FONT );         
   
   int txtxo4 = (labelw - weather_sprite.textWidth( "TEMP",1) )/2;
   int txtxo3 = (labelw - weather_sprite.textWidth( "HUM", 1) )/2;

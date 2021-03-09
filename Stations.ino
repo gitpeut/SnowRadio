@@ -187,6 +187,13 @@ for(;;){
         //contentsize = atoi( s );           
   }
 
+  if ( strncasecmp(line,"icy-metaint:", 12) == 0 ){
+        for( s = line; !isdigit(*s); ++s);
+        stationMetaInt = atoi( s );           
+        log_d( "meta interval is %d", stationMetaInt);  
+  }
+
+
 
   if ( strncasecmp( line, "Connection:",11) == 0 ){
         for( s = line; *s != ' '; ++s);
@@ -250,9 +257,7 @@ int justConnect( int stationIdx ){
     }
     
     Serial.print("connecting to ");  Serial.println(stations[stationIdx].host); 
-
-    
-    
+       
     radioclient = &iclient;
 
  #ifdef USETLS
@@ -272,39 +277,25 @@ int justConnect( int stationIdx ){
    
     radioclient->setTimeout(1);
 
-    //if ( contentsize == 0  ){
-          Serial.print(String("GET ") + stations[stationIdx].path + " HTTP/1.1\r\n" +
-                  "Host: " + stations[stationIdx].host + "\r\n" + 
-                  "User-Agent: "+  APNAME +" "+ APVERSION + "\r\n" +
-                  "Accept: */*" + "\r\n" +                  
-                  "Connection: close\r\n\r\n");
+    int namelen = strlen( stations[stationIdx].path ) + strlen( stations[stationIdx].host );
+    
+    char *getstring = (char *)gr_calloc( namelen + 256, 1 );
+    if ( getstring == NULL ) {
+      Serial.print( "No memory to access station!") ;
+      return( 666 );
+    }
 
-      
-      
-      radioclient->print(String("GET ") + stations[stationIdx].path + " HTTP/1.1\r\n" +
-                  "Host: " + stations[stationIdx].host + "\r\n" + 
-                  "User-Agent: "+  APNAME +" "+ APVERSION + "\r\n" +
-                  "Accept: */*" + "\r\n" +                  
-                  "Connection: close\r\n\r\n");
-    // }else{
-    //  Serial.print(String("GET ") + stations[stationIdx].path + " HTTP/1.1\r\n" +
-    //              "Host: " + stations[stationIdx].host + "\r\n" + 
-    //              "User-Agent: "+  APNAME +" "+ APVERSION + "\r\n" +
-    //
-    //              //"Accept: */*" + "\r\n" +                  
-    //              "Range: bytes=" + stations[stationIdx].position + "-" + (contentsize - 1 - stations[stationIdx].position) + "\r\n" +
-    //              "Connection: close\r\n\r\n");     
-    //
-    //  radioclient->print(String("GET ") + stations[stationIdx].path + " HTTP/1.1\r\n" +
-    //              "Host: " + stations[stationIdx].host + "\r\n" + 
-    //              "User-Agent: "+  APNAME +" "+ APVERSION + "\r\n" +
-    //
-    //              //"Accept: */*" + "\r\n" +                  
-    //              "Range: bytes=" + stations[stationIdx].position + "-" + (contentsize - 1 - stations[stationIdx].position) + "\r\n" +
-    //              "Connection: close\r\n\r\n");     
-    //}
-    
-    
+    sprintf( getstring,"GET %s HTTP/1.1\r\nHost: %s\r\nAgent: %s %s\r\n%sAccept: */*\r\nConnection: close\r\n\r\n",
+               stations[stationIdx].path,
+               stations[stationIdx].host,
+               APNAME,
+               APVERSION,
+               1?"Icy-MetaData: 1\r\n":"");
+                  
+    Serial.print( getstring );
+           
+    radioclient->print( getstring );
+    free( getstring);    
     return(0);
 }
 
@@ -318,6 +309,8 @@ int i,j,rc;
     contentsize = 0;
     
     for( j = 0; j < 4 ; ++j ){ 
+
+      stationMetaInt = 0;
       
       rc = justConnect( stationIdx );
       if ( rc != 0) {
@@ -533,7 +526,16 @@ int     mode=0;
 char    searchstring[32];
 char    *source;
 int     stationidx=0, targetcount=0;
+char    *current_station_name = NULL;
+char    *playing_station_name = NULL;
+int     newcurrent = -1;
+int     newplaying = -1;
 
+//log_d("current station = %d, playing station = %d", currentStation, playingStation);
+
+if ( currentStation >= 0 ) current_station_name = ps_strdup( stations[currentStation].name );
+if ( playingStation >= 0 ) playing_station_name = ps_strdup( stations[playingStation].name );
+ 
 sprintf( searchstring,"\"name\"");
 Serial.println("Loading stations");
 
@@ -564,6 +566,13 @@ for(; *s; ++s ){
                                 case 0:
                                         stations[stationidx].name = strndup( source, s-source);
                                         Serial.printf("%d - %s\n", stationidx, stations[stationidx].name);
+                                        if ( current_station_name != NULL ){
+                                          if ( strcmp( stations[stationidx].name, current_station_name ) == 0 ) newcurrent = stationidx;
+                                        }
+                                        if ( playing_station_name != NULL ){
+                                          if ( strcmp( stations[stationidx].name, playing_station_name ) == 0 ) newplaying = stationidx;
+                                        }
+                                        
                                         sprintf( searchstring,"\"protocol\"");
                                         targetcount++;
                                         break;
@@ -617,6 +626,14 @@ for(; *s; ++s ){
 
 Serial.printf("\nFound %d stations\n", stationidx);
 stationCount = stationidx;
+
+xSemaphoreTake( updateSemaphore, portMAX_DELAY);        
+if ( newcurrent >= 0 ) currentStation = newcurrent;
+if ( newplaying >= 0 ) playingStation = newplaying;
+xSemaphoreGive( updateSemaphore);
+
+if ( current_station_name != NULL )free(current_station_name); 
+if ( playing_station_name != NULL )free(playing_station_name); 
 
 return( stationidx );
 }

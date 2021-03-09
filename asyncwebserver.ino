@@ -363,7 +363,8 @@ void handleAdd( AsyncWebServerRequest *request ){
         sprintf( message, "Error: No more stations can be added" );
   }else{
     
-    save_stations();                
+    save_stations(); 
+    read_stations();//added               
     return_status = 200;
     sprintf( message,"Added station %s", request->getParam("name")->value().c_str() );      
   }
@@ -691,8 +692,9 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
   if ( final ){
     if (fsUploadFile) {
       fsUploadFile.close();
-
-      if ( delFBuf( fspath ) ) addFBuf( fspath );        
+      
+      if ( delFBuf( fspath ) ) addFBuf( fspath );
+      if ( fspath == "/stations.json" ) read_stations();//added         
     }
 
     log_i("Uploaded file %s of %u bytes\n", fspath.c_str(), bcount);
@@ -825,7 +827,9 @@ void startWebServer( void *param ){
   int     delaytime = 60;
   int     timecount = (1000/delaytime);
   int     weathercount = 0;  // open weather, every hour, but also at start
-  
+ #ifdef SHOWMETA
+    int     metacount    = 0;
+ #endif 
  #ifdef USEOWM
   // initialize weather sprite
   fillWeatherSprite();
@@ -857,6 +861,14 @@ void startWebServer( void *param ){
      }
      
      #endif  
+
+    #ifdef SHOWMETA
+     --metacount;
+     if ( metacount<= 0 ){ 
+      tft_showmeta();
+      metacount = 2;
+     }
+     #endif
           
      delay( delaytime );
   }

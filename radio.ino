@@ -1,4 +1,4 @@
-
+#include "tft.h"
 
 static struct {
   int mode;
@@ -14,21 +14,84 @@ void reset_chunkstate(){
   chunkstate.h        = 0;
   chunkstate.bufsize  = 0;
   chunkstate.sendsize = 0;
- 
+
+  reset_meta();
+}
+//---------------------------------------------------------------------------
+
+struct metaInfo meta;
+//---------------------------------------------------------------------------
+void reset_meta(){  
+  meta.metacount    = 0;
+  meta.metalen      = 0;
+  meta.metar        = NULL;
+  meta.metadata[0]  = 0;
+  meta.inquote      = false;
+  meta.ignorequote  = false;
+  
+  tft_fillmeta();
 }
 
-
 //---------------------------------------------------------------------------
+
+char trackInfo[256]; 
 
 void filter_buffer ( uint8_t *rBuffer, int bytecount ){
 uint8_t     *r;  
 static char hexstring[16], sendbuffer[32];
 
+
+
 if ( ! stationChunked ){
    for ( r = rBuffer ; r - rBuffer < bytecount; ++r){
     
-          sendbuffer[ chunkstate.sendsize] = *r;
-          ++chunkstate.sendsize;
+          ++meta.metacount;
+                    
+          if ( meta.metalen ){
+             meta.intransit = true;                                             
+             if ( (meta.metar - meta.metadata) < 1000 ){
+              if ( *r == '\"' ) {
+                meta.ignorequote = !meta.ignorequote;
+              }
+              if ( meta.inquote){
+                  if ( *r == '\'' && !meta.ignorequote ) meta.inquote = 0; 
+                  if ( meta.inquote ){
+                    *meta.metar = *r;
+                    ++meta.metar;
+                  }
+              }else{
+                if ( *r == '\'' )meta.inquote = 1;
+              }
+              
+             }              
+             --meta.metalen; 
+             if( meta.metalen == 0 ){
+               *meta.metar  = 0;
+               meta.metalen = 0;
+               meta.metar   = NULL;                  
+               log_d( "Metadata:\n%s", meta.metadata);
+               tft_fillmeta();
+               meta.intransit = false;                                                                                                     
+             }
+          }else{
+            if ( stationMetaInt && (meta.metacount > stationMetaInt) ){
+
+             
+               meta.metalen   = (int)*r;
+               meta.metalen   = meta.metalen * 16; 
+               meta.metar     = meta.metadata;
+               *meta.metar    = 0; 
+               meta.metacount = 0 - meta.metalen;
+               meta.inquote   = 0;
+               meta.ignorequote = false;
+                               
+               //log_d ("\nmetacount %d = stationMetaInt %d, metalen %d", meta.metacount, stationMetaInt, meta.metalen); 
+            }else{
+               sendbuffer[ chunkstate.sendsize] = *r;
+               ++chunkstate.sendsize;
+            }
+          }        
+                     
                      
           if ( chunkstate.sendsize == 32 ){
              xQueueSend( playQueue, sendbuffer, portMAX_DELAY);
@@ -103,7 +166,8 @@ void disconnect_radioclient(){
       vs1053player->setVolume( curvol  );
       delay( 7 );         
     }
-
+    
+    
     ModeChange = true;
     xQueueReset( playQueue); //empty queue   
     delay(200);
@@ -180,12 +244,13 @@ void radio( void *param) {
       if( lowqueue > 0 )lowqueue--; 
       
       int bytesread = 0;
-  
+
+        
         bytesread = radioclient->read( &radioBuffer[0], 128 );  
         
-         if ( contentsize != 0 ){
+        if ( contentsize != 0 ){
             stations[ playingStation].position += bytesread;
-         }
+        }
          
          totalbytes += bytesread;
          

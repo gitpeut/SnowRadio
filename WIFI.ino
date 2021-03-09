@@ -79,10 +79,6 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     Serial.print( " on WiFi network with SSID ");
     Serial.println(WiFi.SSID() );
     
-    const char  *foundname;
-    tcpip_adapter_get_hostname(TCPIP_ADAPTER_IF_STA, &foundname);
-    Serial.printf("hostname : %s\n", foundname );
-    
     add2netp();
     tft_message( "Connected to WiFi, IP address: " , WiFi.localIP().toString().c_str() ); 
     tft_message( "Retrieving time from NTP server");
@@ -98,12 +94,6 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     startAfterWifi();  
 
 }
-//---------------------------------------------------------------------------------------
-
-void WiFisetHostname(WiFiEvent_t event, WiFiEventInfo_t info){
-  tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, APNAME );
-}
-
 
 //---------------------------------------------------------------------------------------
 
@@ -115,11 +105,10 @@ void runWiFi( void *param){
   //displaynetp();
 
   //add2netp( ssid , password ); // add wifi and password in wificredentials 
-    
+  WiFi.setHostname( APNAME );  
   WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP); 
   WiFi.onEvent(WiFiLostIP, WiFiEvent_t::SYSTEM_EVENT_STA_LOST_IP); 
-  WiFi.onEvent(WiFisetHostname, WiFiEvent_t::SYSTEM_EVENT_STA_CONNECTED);
-   
+ 
   WiFi.mode(WIFI_STA);
 
   log_i("Waiting for WiFi");

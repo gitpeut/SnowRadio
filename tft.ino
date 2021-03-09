@@ -270,120 +270,121 @@ void showCloud( bool force){
 }
 //--------------------------------------------------------------------------------------------------------
 void showClock ( bool force ){
-int     clockh, clockx, clocky, clockw;
-int     datex, datey, datew;
-int     dspritex,dspritey,dspritew;
-int     yy;
-char    tijd[32], datestring[64];
-char    tmpday[128], tmpmon[ 128 ];
-static  int previous_date = -1;
-static  int previous_min  = -1;
-
-time_t  rawt;
-struct tm tinfo;    
+  int     clockh, clockx, clocky, clockw;
+  int     datex, datey, datew;
+  int     dspritex,dspritey,dspritew;
+  int     yy;
+  char    tijd[32], datestring[128];
+  char    tmpday[128], tmpmon[ 128 ];
+  static  int previous_date = -1;
+  static  int previous_min  = -1;
+  
+  time_t  rawt;
+  struct tm tinfo;    
         
-if ( currDisplayScreen == STNSELECT )return;
-
-time( &rawt );
-localtime_r( &rawt, &tinfo);
-
-if ( tinfo.tm_year < 100 )return;
-
-if ( force == false ){
-  if ( tinfo.tm_min == previous_min )return;
-}  
-if ( xSemaphoreTake( clockSemaphore, 50) != pdTRUE) return;
-
-previous_min = tinfo.tm_min;
-
-
-yy = tinfo.tm_year + 1900 ;
-
-sprintf(tijd,"%02d:%02d", tinfo.tm_hour, tinfo.tm_min);   
-clockw = tft.textWidth( tijd, segmentfont ) + 4;
-clockh = tft.fontHeight( segmentfont) + 2;
-clockx = (tft.width() - clockw)/2;
-clocky = TFTCLOCKT;
-
-if ( !clocks.created() )clocks.createSprite(  clockw, clockh );
-
-clocks.fillSprite(TFT_BLACK);    
-clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-clocks.drawString( tijd, 0, 1, segmentfont);
-
-if ( (tinfo.tm_mday != previous_date) || force ){
-    previous_date = tinfo.tm_mday;
-    
-    dspritew = tft.width();
-    if ( !date_sprite.created() )date_sprite.createSprite(  dspritew, 32 );
-    
-    date_sprite.fillSprite(TFT_BLACK);
-    date_sprite.setFreeFont( DATE_FONT );    
-    
-    int labelh  = date_sprite.fontHeight(1)-1 ;
-    int labelw  = 230;
-    int labelx  = (dspritew - labelw)/2;
-    int labely  = 0;
-    date_sprite.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
-    
-    sprintf( datestring,"%s %d %s %d", utf8torus( daynames[tinfo.tm_wday], tmpday ), tinfo.tm_mday, utf8torus(monthnames[tinfo.tm_mon], tmpmon), yy);   
-    datew = date_sprite.textWidth( datestring, 1 );
-    
-    datex    = (dspritew - datew )/2;
-    datey    = 0;
+  if ( currDisplayScreen == STNSELECT )return;
   
-    date_sprite.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
-    date_sprite.drawString( datestring, datex, datey ); 
+  tinfo.tm_year = 0;
+  time( &rawt );
+  localtime_r( &rawt, &tinfo);
+  // no clock after year 2100
+  if ( tinfo.tm_year < 100 || tinfo.tm_year > 200 )return;
   
-    dspritex = 0;
-    dspritey = TFTCLOCKT + tft.fontHeight( segmentfont) + 6;
-
-    log_d( "date label bottom (top) %d + (height) %d = %d", dspritey, labelh, dspritey+labelh);
-    
-    grabTft();
-      date_sprite.pushSprite( dspritex, dspritey );
-    releaseTft();
-
-    
- 
-}
+  if ( force == false ){
+    if ( tinfo.tm_min == previous_min )return;
+  }  
+  if ( xSemaphoreTake( clockSemaphore, 50) != pdTRUE) return;
   
-
-grabTft();
-  clocks.pushSprite( clockx, clocky );
-releaseTft();
+  previous_min = tinfo.tm_min;
+  yy = tinfo.tm_year + 1900 ;
   
-showBattery( force);
-showVolume( getVolume(), force );
-#ifdef USEOWM
-  showCloud( force );
-#endif
-
-if ( currDisplayScreen == RADIO ){
-
+  //log_d( "hour %d, minute %d", tinfo.tm_hour, tinfo.tm_min);
+  
+  sprintf(tijd,"%02d:%02d",tinfo.tm_hour, tinfo.tm_min);   
+  clockw = tft.textWidth( tijd, segmentfont ) + 4;
+  clockh = tft.fontHeight( segmentfont) + 2;
+  clockx = (tft.width() - clockw)/2;
+  clocky = TFTCLOCKT;
+  
+  if ( !clocks.created() )clocks.createSprite(  clockw, clockh );
+  
+  clocks.fillSprite(TFT_BLACK);    
+  clocks.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
+  clocks.drawString( tijd, 0, 1, segmentfont);
+  
+  if ( (tinfo.tm_mday != previous_date) || force ){
+      previous_date = tinfo.tm_mday;
       
-      date_sprite.fillSprite(TFT_BLACK);    
-      date_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK );       
-
-      char tmprus[128];
-      sprintf( tmpmon, "%2.1f*C %s",owmdata.temperature, utf8torus( owmdata.description, tmprus ) );
-      if( strlen( tmpmon ) > 15 ){
-        date_sprite.setFreeFont( LABEL_FONT );         
-      }else{
-        date_sprite.setFreeFont( DATE_FONT ); 
-      }
+      dspritew = tft.width();
+      if ( !date_sprite.created() )date_sprite.createSprite(  dspritew, 32 );
       
-      int dw = date_sprite.textWidth( tmpmon, 1 );
-      int dx = ( tft.width() - dw )/2;
+      date_sprite.fillSprite(TFT_BLACK);
+      date_sprite.setFreeFont( DATE_FONT );    
       
-      date_sprite.drawString( tmpmon, dx, 6 );
-
+      int labelh  = date_sprite.fontHeight(1)-1 ;
+      int labelw  = 230;
+      int labelx  = (dspritew - labelw)/2;
+      int labely  = 0;
+      date_sprite.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
+      
+      sprintf( datestring,"%s %d %s %d", utf8torus( daynames[tinfo.tm_wday], tmpday ), tinfo.tm_mday, utf8torus(monthnames[tinfo.tm_mon], tmpmon), yy);   
+      datew = date_sprite.textWidth( datestring, 1 );
+      
+      datex    = (dspritew - datew )/2;
+      datey    = 0;
+    
+      date_sprite.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
+      date_sprite.drawString( datestring, datex, datey ); 
+    
+      dspritex = 0;
+      dspritey = TFTCLOCKT + tft.fontHeight( segmentfont) + 6;
+  
+      log_d( "date label bottom (top) %d + (height) %d = %d", dspritey, labelh, dspritey+labelh);
+      
       grabTft();
-        date_sprite.pushSprite( dspritex, 130 );// 128 is the bottom of the date label
+        date_sprite.pushSprite( dspritex, dspritey );
       releaseTft();
-}
-
-xSemaphoreGive( clockSemaphore );
+  
+      
+   
+  }
+    
+  
+  grabTft();
+    clocks.pushSprite( clockx, clocky );
+  releaseTft();
+    
+  showBattery( force);
+  showVolume( getVolume(), force );
+  #ifdef USEOWM
+    showCloud( force );
+  #endif
+  
+  if ( currDisplayScreen == RADIO ){
+  
+        
+        date_sprite.fillSprite(TFT_BLACK);    
+        date_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK );       
+  
+        char tmprus[128];
+        sprintf( tmpmon, "%2.1f*C %s",owmdata.temperature, utf8torus( owmdata.description, tmprus ) );
+        if( strlen( tmpmon ) > 15 ){
+          date_sprite.setFreeFont( LABEL_FONT );         
+        }else{
+          date_sprite.setFreeFont( DATE_FONT ); 
+        }
+        
+        int dw = date_sprite.textWidth( tmpmon, 1 );
+        int dx = ( tft.width() - dw )/2;
+        
+        date_sprite.drawString( tmpmon, dx, 6 );
+  
+        grabTft();
+          date_sprite.pushSprite( dspritex, 130 );// 128 is the bottom of the date label
+        releaseTft();
+  }
+  
+  xSemaphoreGive( clockSemaphore );
 
 }
 
@@ -408,63 +409,140 @@ int started=0;
 //---------------------------------------------------------------------
 void tft_showstation( int stationIdx){
 
-int   xpos = 0, ypos=7;
-char  *t, *s = stations[stationIdx].name;
-char  topline[64], bottomline[64];
+  int   xpos = 0, ypos=7;
+  char  *s = stations[stationIdx].name;
+  
+  if ( currDisplayScreen != RADIO ) return;
+  if ( xSemaphoreTake( stationSemaphore, 50) != pdTRUE) return;
+  
+  if ( strlen( s ) > 18 ) { //omit the first word of the station name
+               s += 5;
+               while( *s && *s != ' ') ++s;
+               if ( *s ) ++s; 
+  }
+  
+  img.createSprite(tft.width(), station_scroll_h );
+  img.fillSprite(TFT_BLACK);
+  img.setTextColor( TFT_WHITE, TFT_BLACK ); 
+  img.setFreeFont( STATION_FONT );
+  
+  int wholew = img.textWidth( s, 1 );
+  
+  xpos = (tft.width() - wholew)/2; 
+  ypos = 2;
+  img.drawString( s , xpos, ypos,1);
+  
+  
+  grabTft();
+  img.pushSprite( 0, TFTSTATIONT );
+  releaseTft();
+  
+  img.deleteSprite();
+  xSemaphoreGive( stationSemaphore );
+}
 
-if ( currDisplayScreen != RADIO ) return;
-if ( xSemaphoreTake( stationSemaphore, 50) != pdTRUE) return;
-
-
-
-img.createSprite(tft.width(), station_scroll_h );
-img.setTextColor( TFT_WHITE, TFT_BLACK ); 
-
-img.fillSprite(TFT_BLACK);
-img.setFreeFont( STATION_FONT );
-
-int wholew = img.textWidth( stations[stationIdx].name, GFXFF );
-//int h = img.fontHeight(GFXFF);
-
-
-if ( wholew >= tft.width() ){
-   for( s = stations[stationIdx].name, t = topline; !isspace(*s ); ++s){
-      *t = *s;
-      ++t;
-   }
-   *t =  0;
-   ++s;
-   for( t = bottomline; *s ; ++s){
-      *t = *s;
-      ++t;
-   }
-   *t =  0;
-
-   int linew = img.textWidth( topline, GFXFF );
-   xpos = (tft.width() - linew)/2;    
-   img.drawString( topline, xpos, ypos, GFXFF);
-
-   ypos += img.fontHeight( GFXFF);
+//---------------------------------------------------------------------
+void tft_create_meta( int spritew){
+#ifndef SHOWMETA
+  return;
+#endif
     
-   linew = img.textWidth( bottomline, GFXFF );
-   xpos = (tft.width() - linew)/2; 
-   img.drawString( bottomline, xpos, ypos, GFXFF);
- 
-}else{
-   xpos = (tft.width() - wholew)/2; 
-   ypos = (station_scroll_h - img.fontHeight(GFXFF) )/2;
-   img.drawString( stations[stationIdx].name, xpos, ypos,GFXFF);
+  if ( meta_sprite.created() )return;
+
+  meta_sprite.createSprite(spritew?spritew:tft.width(), TFTMETAH );
+  meta_sprite.fillSprite(TFT_BLACK);
+  meta_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
+  meta_sprite.setFreeFont( LABEL_FONT );
+
+
+}
+//---------------------------------------------------------------------
+void tft_fillmeta(){
+  int   textw, textx=0, spritew;
+  char  *txt[2] = {NULL,NULL};
+  char  *middle;
+
+#ifndef SHOWMETA
+  return;
+#endif
+
+  tft_create_meta();
+  textw   = meta_sprite.textWidth( meta.metadata, 1 ); 
+  if ( textw < tft.width() ){
+     textx    = ( tft.width() - textw )/2;
+     spritew  = tft.width();
+  }else if ( textw < ( 2*tft.width() ) ){
+
+     middle = meta.metadata + strlen( meta.metadata ) / 2;
+     for( ; middle > meta.metadata && *middle != ' '; --middle);
+     if ( middle - meta.metadata < strlen( meta.metadata ) / 4 ){
+        middle = meta.metadata + strlen( meta.metadata ) / 2;
+        for( ; middle > meta.metadata && *middle != ' '; ++middle);
+     }
+     txt[0] = ps_strndup( meta.metadata, middle - meta.metadata );
+     txt[1] = ps_strdup( middle + 1);
+
+      
+     char *longest = txt[0];
+     if ( strlen( txt[1]) > strlen(txt[0]) ){
+      longest = txt[1];
+     }
+     
+     textx   = (tft.width() - meta_sprite.textWidth( longest, 1 ))/2;
+     if ( textx < 0 ) textx = 0;
+      
+     spritew = tft.width();   
+  }else{  
+     textx    = 0;
+     spritew  = textw + tft.width();
+  }
+  
+  meta_sprite.deleteSprite();
+  tft_create_meta( spritew );
+  
+  if ( txt[0] != NULL ){ 
+    meta_sprite.drawString( txt[0], textx, 0, 1);
+    free( txt[0]);
+    if ( txt[1] != NULL){
+      meta_sprite.drawString( txt[1],textx, 12, 1);
+      free( txt[1] );
+    } 
+  }else{
+    meta_sprite.drawString( meta.metadata, textx, 3, 1);
+  }
+  tft_showmeta( true );
+}
+//---------------------------------------------------------------------
+void tft_showmeta(bool resetx){
+static int currentx=0, onscreen=0; 
+
+  if ( resetx ){
+    currentx = 0;
+    onscreen = 0;
+    return;
+  }
+  
+  if ( currDisplayScreen != RADIO ) return;
+  if ( meta.intransit ) return;
+  if ( onscreen )return;
+   
+  if ( meta_sprite.width() == tft.width() ){  
+       currentx = tft.width();
+       onscreen = 1;
+  }else{
+      if ( currentx < meta_sprite.width() ){
+        currentx += 1;
+      }else{
+        currentx = 0;
+      }
+  }
+
+  grabTft();
+    meta_sprite.pushSprite( tft.width() - currentx, TFTMETAT );        
+  releaseTft();
 }
 
-grabTft();
-img.pushSprite( 0, TFTSTATIONT );
-releaseTft();
-
-img.deleteSprite();
-xSemaphoreGive( stationSemaphore );
-}
-
-
+//---------------------------------------------------------------------
 
 #ifdef MULTILEVELGESTURES
 //---------------------------------------------------------------------
@@ -739,11 +817,11 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
-  uint32_t startTime = millis();
+  //uint32_t startTime = millis();
   bmpFile *cachedbmp = findBmpInCache( (char *) filename );
   
   if ( cachedbmp == NULL ){
-    log_i( "%s not found in cache", filename); 
+    //log_i( "%s not found in cache", filename); 
     
     fs::File bmpFS; 
     bmpFS = RadioFS.open(filename, "r");
@@ -824,7 +902,7 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
       
         }
         
-        log_d("Image read %sin %u ms", show?"and rendered ":"", millis() - startTime);
+        //log_d("Image read %sin %u ms", show?"and rendered ":"", millis() - startTime);
   
         bmpCache.push_back( cachedbmp );
         free( lineBuffer );
@@ -836,7 +914,7 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
     bmpFS.close();
     tft.setSwapBytes( false );// handy when proper colors are expected afterwards :-)jb
   }else{
-     log_i( "%s found in cache", filename);
+     //log_i( "%s found in cache", filename);
 
      if ( show){
        tft.setSwapBytes(true);   
@@ -849,7 +927,7 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
        releaseTft();       
        tft.setSwapBytes( false );
 
-       log_d("Image rendered from cache in %u ms", millis() - startTime);
+       //log_d("Image rendered from cache in %u ms", millis() - startTime);
     }      
   }
 }
@@ -906,11 +984,15 @@ void tft_init(){
   if( tft.width() > tft.height() ) tftrotation = 1;
   tft.setRotation( tftrotation );
 
+  tft.fillScreen(TFT_BLACK);
   drawBmp( "/images/GoldRadio.bmp", (tft.width()/2) - 25, 20);
   
   tft_message( tft.getAttribute(3)?"tft will use PSRAM": "tft will not use PSRAM");
   tft_message( CONFIG_SPIRAM_SUPPORT?"sprites will so, too":"sprites will not" );
-  
+
+  // make sure meta sprite exists
+  tft_create_meta();
+   
   log_i("tft initialized");
   
 }

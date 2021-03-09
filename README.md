@@ -5,12 +5,13 @@ Gele Radio means yellow radio.
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
 optional gesture and touchscreen control and openweathermap data. User friendly web interface
 for easy addition of internet radio stations. https and http radio stations, chunked tranfer
-encoding supported. Latency is low by design.
+encoding supported. Also artist and track information is collected, if available.
+Latency is low by design.
 <p />
 Gele radio was greatly improved and extended due to the generous support, useful suggestions 
 and rigorous testing of Alexander Semenov.
 <p />
-Playlists ( .pls, .m3u, .dash etc.) are not supported nor are track- and artist information.
+Playlists ( .pls, .m3u, .dash etc.) are not supported. 
 No plans exist to support these, but this may change one day.  
 <p />
 User friendly install of VS1053 plugins and patches, just upload the .plg 
@@ -101,6 +102,7 @@ have been tested (although most have) , and that a random combination of feature
 show random and undefined behaviour.
 Currently, the following options are defined:
 <pre>
+/*define or undef */
 #define USEOWM // to enable Open weathermap owm_key, 
                // owm_id (city id), owm_lang (language),
                //owm_unit (metric, imperial) in wificredentials.h
@@ -113,12 +115,12 @@ Currently, the following options are defined:
 #undef  USEPIXELS   // use pixels as an indicator for the gestures
 #define USEGESTURES // Use the PAJ7620 gesture sensor
 #undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
-#define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341 SPI 
+#define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341
 #define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
                     // and gracefully adapted from the Web Radio of Blotfi
+#define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
+                    // place under the station name.</pre>
 </pre>
-
-

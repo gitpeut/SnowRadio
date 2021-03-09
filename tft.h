@@ -41,15 +41,6 @@ enum screenPage
 };
 
 
-
-void IRAM_ATTR grabTft();
-void IRAM_ATTR releaseTft();
-void showVolume( int percentage , bool force = false);
-void showBattery( bool force = false);
-void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite=NULL, bool show=true );
-void showClock ( bool force = false);
-
-
 typedef struct{
   char     *name;
   uint16_t w;
@@ -84,9 +75,13 @@ extern SemaphoreHandle_t tftSemaphore;
 #define TFTSPECTRUMT (TFTCLOCKB + 32 )               // top    
 #define TFTSPECTRUMB (TFTSPECTRUMT + TFTSPECTRUMH ) //bottom  226
 
-#define TFTSTATIONH  50                             //height
+#define TFTSTATIONH  25                             //height
 #define TFTSTATIONT  (TFTSPECTRUMB + 1)             //top      
 #define TFTSTATIONB  ( TFTSTATIONT + TFTSTATIONH )  //bottom  277
+
+#define TFTMETAH  25                                //height
+#define TFTMETAT  (TFTSTATIONB)                     //top      
+#define TFTMETAB  (TFTMETAT + TFTMETAH)             //bottom  277
 
 #define BUTOFFSET ((tft.width() - 4*BUTW)/5)
 
@@ -117,7 +112,30 @@ extern SemaphoreHandle_t tftSemaphore;
 
 #define PIX_DECO        51
 
+
+struct metaInfo{
+  int  metacount = 0;
+  int  metalen   = 0;
+  char *metar;
+  char metadata[1024];
+  int  inquote   = 0;
+  bool ignorequote = false;
+  bool intransit = false;
+};
+
+extern struct metaInfo meta;
+
+void IRAM_ATTR grabTft();
+void IRAM_ATTR releaseTft();
+void showVolume( int percentage , bool force = false);
+void showBattery( bool force = false);
+void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite=NULL, bool show=true );
+void showClock ( bool force = false);
 void toggleStop( bool nostop=true );
 void tft_message( const char  *message1, const char *message2 );
+void tft_create_meta( int spritew = 0);
+void tft_fillmeta();
+void tft_showmeta(bool resetx=false);
+
 
 #endif

@@ -33,7 +33,9 @@
                        // buttons to select BLUETOOTH and AV (LINE IN) 
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
                     // and gracefully adapted from the Web Radio of Blotfi
-
+#define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
+                    // place under the station name.
+                     
 //#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
@@ -163,7 +165,7 @@ TFT_eSprite weather_sprite = TFT_eSprite(&tft);
 TFT_eSprite blackweather = TFT_eSprite(&tft); // only used when touch is disabled
 TFT_eSprite date_sprite  = TFT_eSprite(&tft); 
 TFT_eSprite cloud_sprite = TFT_eSprite(&tft);
- 
+TFT_eSprite meta_sprite  = TFT_eSprite(&tft); 
 
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
@@ -189,7 +191,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.2"
+#define APVERSION "V5.3"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -213,11 +215,11 @@ TaskHandle_t      scrollTask;
 TaskHandle_t      touchTask;
 
 
-#define WEBCORE     0
+#define WEBCORE     1
 #define RADIOCORE   1
 #define GESTURECORE 1
 #define PLAYCORE    1
-#define TOUCHCORE   1
+#define TOUCHCORE   0
 
 
 #define PIXELTASKPRIO     3
@@ -247,13 +249,14 @@ unsigned int   position;
 #define STATIONSSIZE 100
 Station *stations; 
 
-static volatile int     currentStation;
+static volatile int     currentStation = -1;
 static volatile int     stationCount;
 int                     playingStation = -1;
 int                     chosenStation = 0;
 int                     scrollStation = -1;
 int                     scrollDirection;
 int                     DEBUG = 1 ;                            // Debug on/off
+int                     stationMetaInt = 0;
 
 
 
@@ -365,10 +368,9 @@ void initOTA( char *apname, char *appass){
       RadioFS.end();
     }
 
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
     Serial.println("Start updating " + type);
 
-      tft_ShowUpload( type );
+    tft_ShowUpload( type );
 
   });
   ArduinoOTA.onEnd([]() {
