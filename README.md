@@ -124,3 +124,6 @@ Currently, the following options are defined:
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.</pre>
 </pre>
+<h2>sundry</h2>
+New url's for BBC stations that work for GeleRadio have been found here:
+https://gist.github.com/bpsib/67089b959e4fa898af69fea59ad74bc3

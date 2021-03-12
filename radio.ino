@@ -10,6 +10,9 @@ static struct {
 //---------------------------------------------------------------------------
 
 void reset_chunkstate(){
+  
+  log_d("reset chunkstate");
+  
   chunkstate.mode     = 0;
   chunkstate.h        = 0;
   chunkstate.bufsize  = 0;
@@ -20,99 +23,149 @@ void reset_chunkstate(){
 //---------------------------------------------------------------------------
 
 struct metaInfo meta;
+bool noMeta = false;
 //---------------------------------------------------------------------------
+
 void reset_meta(){  
   meta.metacount    = 0;
   meta.metalen      = 0;
   meta.metar        = NULL;
   meta.metadata[0]  = 0;
+  meta.qoffset      = 0;
   meta.inquote      = false;
   meta.ignorequote  = false;
-  
+  meta.intransit    = false;
+  meta.intervalcount = 0;
+
   tft_fillmeta();
 }
 
 //---------------------------------------------------------------------------
+int extractMeta ( uint8_t *r ){
 
-char trackInfo[256]; 
+  
+  if ( meta.metalen ){
+     meta.intransit = true;                                             
+     if ( (meta.metar - meta.metadata) < 1000 ){
+      if ( *r == '\"' ) {
+        meta.ignorequote = !meta.ignorequote;
+      }
+      
+      if ( meta.inquote){
+          if ( !meta.ignorequote ){
+            if ( *r == '\'') {
+              //log_d("found endquote at %d", meta.metalen);
+              meta.inquote = 0; 
+            }
+          }
+          if ( meta.inquote ){
+            *meta.metar = *r;
+            ++meta.metar;
+          }
+      }else{
+        if ( *r == '\'' ){
+           //log_d("found beginquote at %d", meta.qoffset );
+            
+           meta.inquote = 1;
+           // StreamTitle='... quote should be at 13 
+           if ( (meta.metalen > 256) || (meta.qoffset > 23) || (meta.qoffset < 0) ){
+              // choppy reception of data, out of sync
+              char tmpstring[132];
+              sprintf( tmpstring, "stream of %s out of sync at interval %d, no more updates of trackinfo", 
+                        stations[ getStation() ].name, meta.intervalcount);
+              Serial.println( tmpstring); 
+              syslog( tmpstring );
+              stationMetaInt = 0;
+              reset_meta();
+              return( 777 );
+           }
+        }
+      }
+      
+     }              
+     --meta.metalen; 
+     if( meta.metalen == 0 ){
+       *meta.metar  = 0;
+       meta.metalen = 0;
+       meta.metar   = NULL;
+       meta.qoffset =0;                       
+       log_d( "Metadata:\n%s", meta.metadata);
+       
+       tft_fillmeta();
+       meta.intransit = false;                                                                                             
+     }     
+  }else{
+    if ( stationMetaInt && (meta.metacount >= stationMetaInt) ){
+     
+       meta.metalen   = (int)*r;
+       meta.metalen   = meta.metalen * 16; 
+       meta.metar     = meta.metadata;
+       *meta.metar    = 0; 
+       meta.metacount = 0 - meta.metalen - 1; 
+       meta.inquote   = 0;
+       meta.ignorequote = false;
+       meta.qoffset   = 0;
+       meta.intervalcount++;
+       
+       if ( meta.metadata[0] ){
+        log_d( "Metadata:\n%s", meta.metadata);;
+       }
+                     
+//       log_d ("\nchunkmode %d stationMetaInt %d, metalen %d metacount %d ", 
+//        chunkstate.mode, stationMetaInt, meta.metalen, meta.metacount);        
+    }else{
+       return(1);
+    }
+  }
+  return(0);             
+}
+//---------------------------------------------------------------------------
 
-void filter_buffer ( uint8_t *rBuffer, int bytecount ){
+int filter_buffer ( uint8_t *rBuffer, int bytecount ){
 uint8_t     *r;  
 static char hexstring[16], sendbuffer[32];
 
 
-
 if ( ! stationChunked ){
    for ( r = rBuffer ; r - rBuffer < bytecount; ++r){
-    
-          ++meta.metacount;
-                    
-          if ( meta.metalen ){
-             meta.intransit = true;                                             
-             if ( (meta.metar - meta.metadata) < 1000 ){
-              if ( *r == '\"' ) {
-                meta.ignorequote = !meta.ignorequote;
-              }
-              if ( meta.inquote){
-                  if ( *r == '\'' && !meta.ignorequote ) meta.inquote = 0; 
-                  if ( meta.inquote ){
-                    *meta.metar = *r;
-                    ++meta.metar;
-                  }
-              }else{
-                if ( *r == '\'' )meta.inquote = 1;
-              }
-              
-             }              
-             --meta.metalen; 
-             if( meta.metalen == 0 ){
-               *meta.metar  = 0;
-               meta.metalen = 0;
-               meta.metar   = NULL;                  
-               log_d( "Metadata:\n%s", meta.metadata);
-               tft_fillmeta();
-               meta.intransit = false;                                                                                                     
-             }
-          }else{
-            if ( stationMetaInt && (meta.metacount > stationMetaInt) ){
+          
+          int outofsync = extractMeta(r);
+          if ( outofsync > 1 ) return( outofsync );
+            
+          if ( outofsync == 1 ){            
+             sendbuffer[ chunkstate.sendsize] = *r;
+             ++chunkstate.sendsize;
+          }
 
-             
-               meta.metalen   = (int)*r;
-               meta.metalen   = meta.metalen * 16; 
-               meta.metar     = meta.metadata;
-               *meta.metar    = 0; 
-               meta.metacount = 0 - meta.metalen;
-               meta.inquote   = 0;
-               meta.ignorequote = false;
-                               
-               //log_d ("\nmetacount %d = stationMetaInt %d, metalen %d", meta.metacount, stationMetaInt, meta.metalen); 
-            }else{
-               sendbuffer[ chunkstate.sendsize] = *r;
-               ++chunkstate.sendsize;
-            }
-          }        
-                     
-                     
+          ++meta.metacount;
+
           if ( chunkstate.sendsize == 32 ){
              xQueueSend( playQueue, sendbuffer, portMAX_DELAY);
              chunkstate.sendsize = 0;
           }
    }
-   return;                              
+   return(0);                              
 }
 
 if ( stationChunked ){
- delay(1);
+ //delay(1);
+ //log_d("starting chunked metacount = %d", meta.metacount);
+  
  for ( r = rBuffer ; r - rBuffer < bytecount; ++r){
+                    
+  int outofsync = extractMeta(r);
+  if ( outofsync > 1 ) return( outofsync );
+   
   switch ( chunkstate.mode ){
     case 0:
           if ( *r == ';' || *r == '\r' ){
               hexstring[chunkstate.h] = 0;
               chunkstate.h = 0;
               chunkstate.bufsize = strtol( hexstring, NULL, 16 );
-              //Serial.printf( " String %s = Hex %X\n", hexstring, chunkstate.bufsize);
+              
               chunkstate.mode = 1; 
               if ( chunkstate.bufsize == 0 )chunkstate.mode = 4;
+              //log_d( " String %s = Hex %X. mode now %d\n", hexstring, chunkstate.bufsize, chunkstate.mode);
           }
           hexstring[chunkstate.h] = *r;
           ++chunkstate.h;
@@ -125,10 +178,14 @@ if ( stationChunked ){
             chunkstate.mode = 3;
             break;
           }
-          sendbuffer[ chunkstate.sendsize] = *r;
-          ++chunkstate.sendsize;
+          
+          if ( outofsync == 1 ){
+            sendbuffer[ chunkstate.sendsize] = *r;
+            ++chunkstate.sendsize;            
+          }
           --chunkstate.bufsize;
-                     
+          ++meta.metacount;
+                   
           if ( chunkstate.sendsize == 32 ){
              xQueueSend( playQueue, sendbuffer, portMAX_DELAY);
              chunkstate.sendsize = 0;
@@ -137,7 +194,7 @@ if ( stationChunked ){
     case 3:
           if (*r  == '\n' ) chunkstate.mode = 0;          
           break;
-    case 4:
+    case 4:         
           if (*r  == '\n' ) chunkstate.mode = 5;
           break;
     case 5:
@@ -151,7 +208,7 @@ if ( stationChunked ){
  }
 }    
 
-  return;  
+  return(0);  
 }
 
 //--------------------------------------------------------------------
@@ -237,7 +294,7 @@ void radio( void *param) {
 
       if (unavailablecount){
         if ( unavailablecount > topunavailable ) topunavailable = unavailablecount;
-        Serial.printf("- data available again after %d fruitless poll%s (lowqueue = %d)\n", unavailablecount, (unavailablecount==1)?"":"s", lowqueue);   
+        if ( unavailablecount > 3)Serial.printf("- data available again after %d fruitless poll%s (lowqueue = %d)\n", unavailablecount, (unavailablecount==1)?"":"s", lowqueue);   
       }
       
       unavailablecount = 0;
@@ -260,9 +317,7 @@ void radio( void *param) {
           Serial.printf("noreads : %d (read rc %d)\n", noreads, bytesread);
           if ( bytesread < 0 ) bytesread = 0;
          }else{
-            noreads = 0;
-            filter_buffer( &radioBuffer[0], bytesread );
-            
+            noreads = filter_buffer( &radioBuffer[0], bytesread );            
          }
       
       if ( ( errno != EWOULDBLOCK && errno != EINPROGRESS ) ||  noreads > 5 ) {
@@ -270,8 +325,10 @@ void radio( void *param) {
         
           Serial.printf("Disconnect radio errno %d bytesread %d\n", errno, bytesread );
           disconnectcount++; 
-          //radioclient->flush(); //experimental
-          radioclient->stop();       
+          if ( noreads == 777 ) { // metadata out of sync, reconnect again without metadata
+             noMeta = true;
+          }
+          radioclient->stop(); 
           
       }            
      

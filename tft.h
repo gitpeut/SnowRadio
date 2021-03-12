@@ -119,8 +119,11 @@ struct metaInfo{
   char *metar;
   char metadata[1024];
   int  inquote   = 0;
+  int  qoffset   = 0;
+  int  intervalcount = 0;
   bool ignorequote = false;
   bool intransit = false;
+  
 };
 
 extern struct metaInfo meta;

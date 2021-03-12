@@ -438,9 +438,11 @@ void handleSet( AsyncWebServerRequest *request ){
       if ( desired_station < STATIONSSIZE && desired_station >= 0 && stations[ desired_station ].status == 1 ){
         return_status = 200;
         if( desired_station != getStation() ) setStation( desired_station, -1 );
-        sprintf( message,"Station set to %d, %s", desired_station, stations [ desired_station].name );      
+        sprintf( message,"Station set to %d, %s", desired_station, stations [ desired_station].name ); 
+        log_d( "%s", message );     
       }else{
         sprintf( message,"Station %d does not exist", desired_station);
+        log_d( "%s", message );     
       }
   }  
   
@@ -826,7 +828,9 @@ void startWebServer( void *param ){
   
   int     delaytime = 60;
   int     timecount = (1000/delaytime);
-  int     weathercount = 0;  // open weather, every hour, but also at start
+  int     weathercount  = 0;  // open weather, every hour, but also at start
+  int     forecastcount = 0;
+  
  #ifdef SHOWMETA
     int     metacount    = 0;
  #endif 
@@ -854,12 +858,21 @@ void startWebServer( void *param ){
      
      if ( weathercount <= 0  ){
         if( getWeather() ){
-          weathercount = ((10*60*1000) /delaytime); // every 10 minutes
+          weathercount = ((30*60*1000) /delaytime); // every 30 minutes, 48 requests a day - free allows for 100 requests a day 
         }else{
           weathercount = ( 20 * 1000 ) / delaytime; 
         }
      }
-     
+
+     --forecastcount;
+
+     if ( forecastcount <= 0  ){
+        if( getForecast() ){
+          forecastcount = ((4*60*60*1000) /delaytime); // every 4 hours, 6 a day - free allows for 100 requests a day 
+          print_forecast();
+        }
+     }
+    
      #endif  
 
     #ifdef SHOWMETA

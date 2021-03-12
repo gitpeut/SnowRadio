@@ -161,12 +161,12 @@ TFT_eSprite vols    = TFT_eSprite(&tft);
 TFT_eSprite clocks  = TFT_eSprite(&tft); 
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
 TFT_eSprite gest    = TFT_eSprite(&tft); 
-TFT_eSprite weather_sprite = TFT_eSprite(&tft);    
+TFT_eSprite weather_sprite  = TFT_eSprite(&tft);    
+TFT_eSprite forecast_sprite = TFT_eSprite(&tft); 
 TFT_eSprite blackweather = TFT_eSprite(&tft); // only used when touch is disabled
 TFT_eSprite date_sprite  = TFT_eSprite(&tft); 
 TFT_eSprite cloud_sprite = TFT_eSprite(&tft);
 TFT_eSprite meta_sprite  = TFT_eSprite(&tft); 
-
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
 
@@ -191,7 +191,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.3"
+#define APVERSION "V5.4"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -494,19 +494,33 @@ void patch_vs1053(){
 // plugin to load succesfully.
 // The switch to MP3 includes a soft reset.
 
-  char patchname[128];     
+   char patchname[128];     
+
+#if defined(USESPECTRUM)  
+
+  tft_message("Switch to MP3 mode and soft reset" );  
+  log_i("Switch to MP3.../Soft reset");
+  vs1053player->toMp3();
+  
   sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patches.plg");
   vs1053player->patch_VS1053( patchname );
   
   delay(200); 
-  tft_message("Switch to MP3 mode and soft reset" );  
-  log_i("Switch to MP3.../Soft reset");
+  tft_message("And again, switch to MP3 mode and soft reset" );  
   vs1053player->toMp3();
-
-#ifdef USESPECTRUM  
+  
   tft_message("Apply spectrum analyzer plugin" );  
   sprintf( patchname,"%s%s", RadioMount, "/patches/spectrum1053b-2.plg");
   vs1053player->patch_VS1053( patchname );
+
+#else
+
+  log_i("Switch to MP3.../Soft reset");
+  vs1053player->toMp3();
+  
+  sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patch-290-flac.plg");
+  vs1053player->patch_VS1053( patchname );
+  
 #endif
 }     
 
@@ -573,7 +587,9 @@ void setup () {
   
      Serial.println("TFT init...");
      tft_init();
-     
+#ifdef USEOWM
+     init_owm();
+#endif     
          
     // https://github.com/espressif/arduino-esp32/issues/3701#issuecomment-744706173
       

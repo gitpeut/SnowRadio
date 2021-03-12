@@ -98,6 +98,7 @@ void VS1053g::toMp3() {
     await_data_request();
     log_d("now doing actual switch to MP3 mode");
     switchToMp3Mode();
+   
 }
 
 //----------------------------------------------------------------------------------

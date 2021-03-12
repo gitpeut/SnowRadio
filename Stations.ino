@@ -1,4 +1,5 @@
 
+extern bool noMeta; // in radio.ino
 //-----------------------------------------------------
 
 char * ps_strndup (const char *s, size_t n)
@@ -290,12 +291,15 @@ int justConnect( int stationIdx ){
                stations[stationIdx].host,
                APNAME,
                APVERSION,
-               1?"Icy-MetaData: 1\r\n":"");
+               noMeta==false?"Icy-MetaData: 1\r\n":"");
+
                   
     Serial.print( getstring );
            
     radioclient->print( getstring );
-    free( getstring);    
+    free( getstring);  
+
+    if ( noMeta ) noMeta = false;   
     return(0);
 }
 
@@ -343,7 +347,12 @@ int i,j,rc;
             
             if ( rc != 200 && rc != 206 ) return(4);
 
-            setStation( stationIdx, -1 );
+            // escape tight loop of gets 
+            if( getStation() == stationIdx ){
+              setStation( stationIdx, -1 );
+            }else{
+              return(5);
+            }
             Serial.printf("Now start listening to %s\n", stations[stationIdx].name );
             tft_showstation(stationIdx);
             return(0);

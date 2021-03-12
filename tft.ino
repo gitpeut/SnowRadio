@@ -245,6 +245,10 @@ void showCloud( bool force){
   int   xpos = tft.width() - 32 - BUTOFFSET;static char  previous_char = 0; 
   char  tmpmon[8];
 
+  if ( !owmdata.valid ){
+    log_e("no valid weather data");
+    return;
+  }
   if ( currDisplayScreen == STNSELECT )return;
 
   if ( force == false ){
@@ -274,8 +278,8 @@ void showClock ( bool force ){
   int     datex, datey, datew;
   int     dspritex,dspritey,dspritew;
   int     yy;
-  char    tijd[32], datestring[128];
-  char    tmpday[128], tmpmon[ 128 ];
+  char    tijd[32] = "", datestring[128] = "";
+  char    tmpday[128] = "", tmpmon[ 128 ]= "";
   static  int previous_date = -1;
   static  int previous_min  = -1;
   
@@ -283,29 +287,35 @@ void showClock ( bool force ){
   struct tm tinfo;    
         
   if ( currDisplayScreen == STNSELECT )return;
+
   
   tinfo.tm_year = 0;
   time( &rawt );
   localtime_r( &rawt, &tinfo);
+
+ 
   // no clock after year 2100
   if ( tinfo.tm_year < 100 || tinfo.tm_year > 200 )return;
   
   if ( force == false ){
     if ( tinfo.tm_min == previous_min )return;
-  }  
+  }else{  
+    delay(100);
+  }
   if ( xSemaphoreTake( clockSemaphore, 50) != pdTRUE) return;
   
   previous_min = tinfo.tm_min;
   yy = tinfo.tm_year + 1900 ;
   
   //log_d( "hour %d, minute %d", tinfo.tm_hour, tinfo.tm_min);
-  
+ 
   sprintf(tijd,"%02d:%02d",tinfo.tm_hour, tinfo.tm_min);   
   clockw = tft.textWidth( tijd, segmentfont ) + 4;
   clockh = tft.fontHeight( segmentfont) + 2;
   clockx = (tft.width() - clockw)/2;
   clocky = TFTCLOCKT;
-  
+
+ 
   if ( !clocks.created() )clocks.createSprite(  clockw, clockh );
   
   clocks.fillSprite(TFT_BLACK);    
@@ -326,10 +336,10 @@ void showClock ( bool force ){
       int labelx  = (dspritew - labelw)/2;
       int labely  = 0;
       date_sprite.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
-      
+ 
       sprintf( datestring,"%s %d %s %d", utf8torus( daynames[tinfo.tm_wday], tmpday ), tinfo.tm_mday, utf8torus(monthnames[tinfo.tm_mon], tmpmon), yy);   
       datew = date_sprite.textWidth( datestring, 1 );
-      
+
       datex    = (dspritew - datew )/2;
       datey    = 0;
     
@@ -339,7 +349,7 @@ void showClock ( bool force ){
       dspritex = 0;
       dspritey = TFTCLOCKT + tft.fontHeight( segmentfont) + 6;
   
-      log_d( "date label bottom (top) %d + (height) %d = %d", dspritey, labelh, dspritey+labelh);
+      //log_d( "date label bottom (top) %d + (height) %d = %d", dspritey, labelh, dspritey+labelh);
       
       grabTft();
         date_sprite.pushSprite( dspritex, dspritey );
@@ -349,13 +359,13 @@ void showClock ( bool force ){
    
   }
     
-  
   grabTft();
     clocks.pushSprite( clockx, clocky );
   releaseTft();
     
   showBattery( force);
   showVolume( getVolume(), force );
+
   #ifdef USEOWM
     showCloud( force );
   #endif
@@ -365,20 +375,21 @@ void showClock ( bool force ){
         
         date_sprite.fillSprite(TFT_BLACK);    
         date_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK );       
-  
-        char tmprus[128];
-        sprintf( tmpmon, "%2.1f*C %s",owmdata.temperature, utf8torus( owmdata.description, tmprus ) );
-        if( strlen( tmpmon ) > 15 ){
-          date_sprite.setFreeFont( LABEL_FONT );         
-        }else{
-          date_sprite.setFreeFont( DATE_FONT ); 
+
+        if ( owmdata.valid ){
+          char tmprus[128];
+          sprintf( tmpmon, "%2.1f*C %s",owmdata.temperature, utf8torus( owmdata.description, tmprus ) );
+          if( strlen( tmpmon ) > 15 ){
+            date_sprite.setFreeFont( LABEL_FONT );         
+          }else{
+            date_sprite.setFreeFont( DATE_FONT ); 
+          }
+          
+          int dw = date_sprite.textWidth( tmpmon, 1 );
+          int dx = ( tft.width() - dw )/2;
+          
+          date_sprite.drawString( tmpmon, dx, 6 );
         }
-        
-        int dw = date_sprite.textWidth( tmpmon, 1 );
-        int dx = ( tft.width() - dw )/2;
-        
-        date_sprite.drawString( tmpmon, dx, 6 );
-  
         grabTft();
           date_sprite.pushSprite( dspritex, 130 );// 128 is the bottom of the date label
         releaseTft();

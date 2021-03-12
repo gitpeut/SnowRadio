@@ -7,7 +7,7 @@
 #ifndef TOUCH_H
 #define TOUCH_H
 
-#include "btn_radio.h"
+#include "fonts.h"
 
 
 
@@ -48,8 +48,12 @@ class RadioButton : public TFT_eSPI_Button {
       if ( bmp_normal == NULL && bmp_invert == NULL ){
         xSemaphoreTake( tftSemaphore, portMAX_DELAY);
         if ( strlen( longname ) == 1 ){
-            //use Btn_radio font
-            tft.setFreeFont(&Btn_radio);
+            //use radio_button_font font
+            if ( longname[0] < 112 ){
+               tft.setFreeFont(&radio_button_font);
+            }else{
+               tft.setFreeFont(&Arrows);              
+            }
             if ( invert ){
               tft.setTextColor( TFT_BLUE, TFT_BLACK);             
             }else{
@@ -73,6 +77,7 @@ class RadioButton : public TFT_eSPI_Button {
         log_i ( "drawing %s", bmp_invert); 
         drawBmp( bmp_invert, x, y );  
       }
+      return;
     }
 
     void init( int argx, int argy, char *argsymbol_normal, int arg_butw = BUTW, int arg_buth = BUTH, char *argsymbol_invert = NULL, char *argbmp_normal=NULL, char *argbmp_invert=NULL ){
