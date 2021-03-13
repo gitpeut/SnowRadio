@@ -53,9 +53,16 @@ int extractMeta ( uint8_t *r ){
       
       if ( meta.inquote){
           if ( !meta.ignorequote ){
-            if ( *r == '\'') {
-              //log_d("found endquote at %d", meta.metalen);
-              meta.inquote = 0; 
+            if ( *r == ';') {
+              //log_d("found ending semicolon at %d", meta.metalen);
+              if ( meta.metar > meta.metadata){
+                if ( *(meta.metar-1) == '\'' ){
+                  *(meta.metar-1)= 0;
+                  meta.inquote = 0; 
+                }
+              }else{
+                *(meta.metar) = 0;
+              }
             }
           }
           if ( meta.inquote ){
@@ -63,6 +70,7 @@ int extractMeta ( uint8_t *r ){
             ++meta.metar;
           }
       }else{
+        
         if ( *r == '\'' ){
            //log_d("found beginquote at %d", meta.qoffset );
             
@@ -273,8 +281,9 @@ void radio( void *param) {
 
        
         xSemaphoreTake( radioSemaphore, portMAX_DELAY);
-        xSemaphoreGive( radioSemaphore);        
-
+        xSemaphoreGive( radioSemaphore); 
+               
+       
     }
     
     delay(2);
