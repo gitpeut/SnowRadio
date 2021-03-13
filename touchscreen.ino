@@ -256,7 +256,8 @@ void drawStationScreen(){
   
   tft.setTextColor( TFT_WHITE );
   tft.setTextFont( bigfont);     
- 
+
+  tft_showmeta( true );
   
 }
 //--------------------------------------------------------------------
