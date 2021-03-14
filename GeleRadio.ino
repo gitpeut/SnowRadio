@@ -41,7 +41,7 @@
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
 const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
-const char *daynames[]   = {"ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"};
+const char *daynames[]   = {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"};
 #elif defined(MONTHNAMES_EN)
 const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
@@ -179,7 +179,7 @@ bool ModeChange = false;
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
-#define RESTART_AFTER_LOWQ_COUNT 50
+#define RESTART_AFTER_LOWQ_COUNT 100
 
 int   unavailablecount=0;
 int   failed_connects=0;
@@ -520,6 +520,8 @@ void patch_vs1053(){
   
   sprintf( patchname,"%s%s", RadioMount, "/patches/vs1053b-patch-290-flac.plg");
   vs1053player->patch_VS1053( patchname );
+
+  vs1053player->toMp3();
   
 #endif
 }     
