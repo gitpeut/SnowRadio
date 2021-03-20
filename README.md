@@ -5,7 +5,8 @@ Gele Radio means yellow radio.
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
 optional gesture and touchscreen control and openweathermap data. User friendly web interface
 for easy addition of internet radio stations. https and http radio stations, chunked tranfer
-encoding supported. Also artist and track information is collected, if available.
+encoding supported. Also artist and track information is collected, if available and shown both
+on the display and in the web browser.
 Latency is low by design.
 <p />
 Gele radio was greatly improved and extended due to the generous support, useful suggestions 
@@ -23,7 +24,7 @@ http://www.vlsi.fi/en/support/software/vs10xxpatches.html
 <li>plg files for plugins ( like the spectrum analyzer plugin) can be downloaded here:
 http://www.vlsi.fi/en/support/software/vs10xxplugins.html
 </li>
-<li> The VS10xx series is very interesting for more ideas:
+<li> The VS10xx series website is very interesting for more ideas:
 http://www.vlsi.fi/en/support/software.html
 </li>
 </ul>
@@ -64,7 +65,7 @@ possible way of connecting this hardware.
 <h2>compiling</h2>
 Should compile with the Arduino IDE, but make sure a file
 wificredentials.h is available in folder wificredentials of your Arduino library folder.
-( credits: Andres Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
+(credits: Andres Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
 This file should contain the following variables for GeleRadio.
 <p />
 
@@ -98,7 +99,7 @@ const char	*owm_lang = "nl"; // en, ru....
  
 In GeleRadio.ino a number of defines enable you to turn on or off some features.
 Generally they are called USE<option>. Be aware that not all possible combinations 
-have been tested (although most have) , and that a random combination of features may 
+have been tested (although many have) , and that a random combination of features may 
 show random and undefined behaviour.
 Currently, the following options are defined:
 <pre>
@@ -125,5 +126,8 @@ Currently, the following options are defined:
                     // place under the station name.</pre>
 </pre>
 <h2>sundry</h2>
-New url's for BBC stations that work for GeleRadio have been found here:
-https://gist.github.com/bpsib/67089b959e4fa898af69fea59ad74bc3
+
+A very comprehensive and meticulously maintained website with more internet radio
+stations is :
+https://www.hendrikjansen.nl/henk/streaming.html
+
