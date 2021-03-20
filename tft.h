@@ -80,7 +80,7 @@ extern SemaphoreHandle_t tftSemaphore;
 #define TFTSTATIONT  (TFTSPECTRUMB + 1)             //top      
 #define TFTSTATIONB  ( TFTSTATIONT + TFTSTATIONH )  //bottom  277
 
-#define TFTMETAH  25                                //height
+#define TFTMETAH  30                                //height
 #define TFTMETAT  (TFTSTATIONB)                     //top      
 #define TFTMETAB  (TFTMETAT + TFTMETAH)             //bottom  277
 
