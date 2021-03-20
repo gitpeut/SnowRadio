@@ -183,7 +183,6 @@ li {
   background-color: GoldenRod;
   text-align: center;
   border-radius: 10px;
-  width: 90%;
 }
 
 .setvolume {
@@ -310,6 +309,8 @@ var jstatus;
 var dragging = null;
 pageURL = window.location;
 console.log( pageURL );
+var esource = false;
+var metakeepalive;
 
 if ( fromdisk ){
 	//var sstations = '{ "date" : "Tue Jul  2 20:17:54 2019", "stations" : [	{	 "name" : "NPO Radio 1",	 "host" : "icecast.omroep.nl",	 "path" : "/radio1-bb-aac",	 "port" : 80 },	{	 "name" : "NPO Radio 2",	 "host" : "icecast.omroep.nl",	 "path" : "/radio2-bb-aac",	 "port" : 80 },	{	 "name" : "NPO 3fm",	 "host" : "icecast.omroep.nl",	 "path" : "/3fm-bb-aac",	 "port" : 80 },	{	 "name" : "NPO Radio 4",	 "host" : "icecast.omroep.nl",	 "path" : "/radio4-bb-aac",	 "port" : 80 },	{	 "name" : "NPO Radio 5",	 "host" : "icecast.omroep.nl",	 "path" : "/radio5-bb-aac",	 "port" : 80 },	{	 "name" : "NPO Radio 6",	 "host" : "icecast.omroep.nl",	 "path" : "/radio6-bb-aac",	 "port" : 80 },	{	 "name" : "Jazz",	 "host" : "streams.greenhost.nl",	 "path" : "/jazz",	 "port" : 8080 },	{	 "name" : "Hardbop",	 "host" : "streams.greenhost.nl",	 "path" : "/hardbop",	 "port" : 8080 },	{	 "name" : "JazzNotJazz",	 "host" : "streams.greenhost.nl",	 "path" : "/jazznotjazz",	 "port" : 8080 },	{	 "name" : "BBC 1",	 "host" : "bbcmedia.ic.llnwd.net",	 "path" : "/stream/bbcmedia_radio1_mf_q",	 "port" : 80 },	{	 "name" : "BBC 2",	 "host" : "bbcmedia.ic.llnwd.net",	 "path" : "/stream/bbcmedia_radio2_mf_q",	 "port" : 80 },	{	 "name" : "BBC 3",	 "host" : "bbcmedia.ic.llnwd.net",	 "path" : "/stream/bbcmedia_radio3_mf_q",	 "port" : 80 },	{	 "name" : "BBC 4",	 "host" : "bbcmedia.ic.llnwd.net",	 "path" : "/stream/bbcmedia_radio4fm_mf_q",	 "port" : 80 },	{	 "name" : "BBC 1xtra",	 "host" : "bbcmedia.ic.llnwd.net",	 "path" : "/stream/bbcmedia_radio1xtra_mf_p",	 "port" : 80 },	{	 "name" : "FUNX",	 "host" : "icecast.omroep.nl",	 "path" : "/funx-slowjamz-sb-aac",	 "port" : 80 }	]}';
@@ -893,9 +894,151 @@ function  sendcommand( path ){
 	  thttp.send();
 }
 
+//--------------------------------------------------
 
+function act_on_jstatus( jstatus ){
 
-/*--------------------------------------------------*/
+    curstation = document.getElementById( "current_station_name");
+    curstation.innerHTML = '';
+    curstation.appendChild(document.createTextNode( jstatus.currentStation ));
+    
+    var playingElement;
+    var playingButton;
+    playingStation = jstatus.currentStationIndex;
+    
+    for( x in jstations.stations ){
+        if ( x == playingStation ){
+            playingElement =  document.getElementById( 's' + x );
+            playingElement.style['background'] = 'GoldenRod';
+            playingElement.style['color'] = 'black';
+    
+            playingButton  =  document.getElementById( 'b' + x );
+            playingButton.style['background-color'] = 'GoldenRod';
+
+        }else{
+            playingElement =  document.getElementById( 's' + x );
+            playingElement.style['background'] = 'darkgray';
+            playingElement.style['color'] = 'black';
+    
+            playingButton  =  document.getElementById( 'b' + x );
+            playingButton.style['background-color'] = 'lightyellow';
+
+        }
+    }
+    
+    selectinput = jstatus.inputSelect;
+    if ( selectinput != 1 ){
+        document.getElementById("selectinput").style.display = "none";
+    }
+    
+    document.getElementById("volume").value      = jstatus.currentVolume;
+    document.getElementById("volumevalue").innerHTML = jstatus.currentVolume;
+    
+    tonevalue = jstatus.currentTone;
+    
+    ta = parseInt( tonevalue.substring(0,1), 16 );
+    
+    // in ta the register value
+    if ( ta > 7 ){ 
+        ta = ta - 8;
+    } else {
+        ta = ta + 8; 
+    }    
+    // now in ta the step value
+    
+    //tav contains the amplification/attenuation treble
+    tav = -12 + (ta*1.5);
+    
+    tl = parseInt( tonevalue.substring(1,2), 16 ) *1000;
+    ba = parseInt( tonevalue.substring(2,3), 16 );
+    bl = parseInt( tonevalue.substring(3), 16 ) * 10;
+
+    document.getElementById("treblevolvalue").innerHTML = tav;
+    document.getElementById("treblevolume").value       = ta;
+    
+    document.getElementById("treblelimvalue").innerHTML = tl;
+    document.getElementById("treblelimit").value        = tl;
+    
+    document.getElementById("bassvolvalue").innerHTML = ba;
+    document.getElementById("bassvolume").value       = ba;
+    
+    document.getElementById("basslimvalue").innerHTML = bl;
+    document.getElementById("basslimit").value        = bl;
+    
+    spatialvalue = jstatus.currentSpatial;
+    document.getElementById("spatial"+spatialvalue).checked = true;
+    
+    for( i = 0; i<5; ++i ){           
+        var img = document.getElementById("modeimg"+i);
+        if ( img ){
+            var thisid = img.id;
+            var thismode = thisid.slice(-1);
+            
+            if ( thismode == jstatus.currentMode){
+                img.style.backgroundColor = img.pressed_color;
+            }else{
+                img.style.backgroundColor = img.normal_color;
+            }
+        }
+    }
+					
+
+}
+
+ //--------------------------------------------------------
+function initEventSource( ){
+        
+        if ( typeof esource == 'object' ){
+            console.log ( 'typeof esource '+ typeof esource );
+            console.log('adding event source if necessary');
+            if ( esource.readyState != 2 )return;
+            esource = new EventSource('/radioevents');
+        }else{
+            console.log ( 'typeof esource '+ typeof esource );
+            console.log('adding event source');
+            esource = new EventSource('/radioevents');
+        }
+
+            esource.addEventListener('open', function(e) {
+            console.log("Events Connected");
+            
+            now_playing = document.getElementById( "now_playing");
+            now_playing.innerHTML = '';
+            now_playing.appendChild(document.createTextNode( "-" ));
+          }, false);
+        
+        
+          esource.addEventListener('error', function(e) {
+            if (e.target.readyState != EventSource.OPEN) {
+              console.log("Events Disconnected");
+              
+              now_playing = document.getElementById( "now_playing");
+              now_playing.innerHTML = '';
+              now_playing.appendChild(document.createTextNode( "-- Events diconnected. Click to reconnect --" ));
+            }
+          }, false);
+
+          esource.addEventListener('radiostatus', function(e) {
+            console.log("radiostatus", e.data);
+            
+            jstatus = JSON.parse( e.data );
+            act_on_jstatus( jstatus );
+            
+          }, false);
+          
+          esource.addEventListener('meta', function(e) {
+            console.log("meta", e.data);
+            clearTimeout( metakeepalive );
+            now_playing = document.getElementById( "now_playing");
+            now_playing.innerHTML = '';
+            now_playing.appendChild(document.createTextNode( e.data ));
+            metakeepalive = setTimeout( closeandload, 80000);
+             
+          }, false);
+         
+}        
+
+//------------------------------------------------------------    
 
 function getjson( path ){
   
@@ -911,6 +1054,7 @@ function getjson( path ){
 					for( x in jstations.stations ){
 							addtolist( x );
 					}
+                    initEventSource();
 					setTimeout( loadstatus, 1000);
 	
 			}
@@ -921,83 +1065,9 @@ function getjson( path ){
 			if (thttp.readyState == 4 && thttp.status == 200 ) { 
 					jstatus = JSON.parse(thttp.responseText);
 					
-					cur = document.getElementById( "current");
-					cur.innerHTML = '';
-					cur.appendChild(document.createTextNode( jstatus.currentStation ));
-					
-					var playingElement;
-					var playingButton;
-					playingStation = jstatus.currentStationIndex;
-					
-					for( x in jstations.stations ){
-						if ( x == playingStation ){
-							playingElement =  document.getElementById( 's' + x );
-							playingElement.style['background'] = 'GoldenRod';
-							playingElement.style['color'] = 'black';
-					
-							playingButton  =  document.getElementById( 'b' + x );
-							playingButton.style['background-color'] = 'GoldenRod';
+                    act_on_jstatus( jstatus );
+                    initEventSource();
 
-						}else{
-							playingElement =  document.getElementById( 's' + x );
-							playingElement.style['background'] = 'darkgray';
-							playingElement.style['color'] = 'black';
-					
-							playingButton  =  document.getElementById( 'b' + x );
-							playingButton.style['background-color'] = 'lightyellow';
-
-						}
-					}
-					document.getElementById("volume").value      = jstatus.currentVolume;
-					document.getElementById("volumevalue").innerHTML = jstatus.currentVolume;
-					
-                    tonevalue = jstatus.currentTone;
-                    
-                    ta = parseInt( tonevalue.substring(0,1), 16 );
-                    
-                    // in ta the register value
-                    if ( ta > 7 ){ 
-                        ta = ta - 8;
-                    } else {
-                        ta = ta + 8; 
-                    }    
-                    // now in ta the step value
-                    
-                    //tav contains the amplification/attenuation treble
-                    tav = -12 + (ta*1.5);
-                    
-                    tl = parseInt( tonevalue.substring(1,2), 16 ) *1000;
-                    ba = parseInt( tonevalue.substring(2,3), 16 );
-                    bl = parseInt( tonevalue.substring(3), 16 ) * 10;
-
-                    document.getElementById("treblevolvalue").innerHTML = tav;
-                    document.getElementById("treblevolume").value       = ta;
-                    
-                    document.getElementById("treblelimvalue").innerHTML = tl;
-                    document.getElementById("treblelimit").value        = tl;
-                    
-                    document.getElementById("bassvolvalue").innerHTML = ba;
-                    document.getElementById("bassvolume").value       = ba;
-                    
-                    document.getElementById("basslimvalue").innerHTML = bl;
-                    document.getElementById("basslimit").value        = bl;
-                    
-                    spatialvalue = jstatus.currentSpatial;
-                    document.getElementById("spatial"+spatialvalue).checked = true;
-                    
-                    for( i = 0; i<5; ++i ){           
-                        var img = document.getElementById("modeimg"+i);
-                        if ( img ){
-                            var thisid = img.id;
-                            var thismode = thisid.slice(-1);
-                            
-                            if ( thismode == jstatus.currentMode){
-                                img.style.backgroundColor = img.pressed_color;
-                            }else{
-                                img.style.backgroundColor = img.normal_color;
-                            }
-                        }
-                    }
 					
 			}
 		};
@@ -1015,8 +1085,18 @@ function loadlist(){
 			getjson( 'stations.json');
 		}	
 }
+
 function loadstatus(){
 	getjson( 'status');
+}
+
+function closeandload(){
+    console.log("close event source and load status");
+    esource.close();
+    now_playing = document.getElementById( "now_playing");
+    now_playing.innerHTML = '';
+    now_playing.appendChild(document.createTextNode( "-- Radio may be off, please check. Then click to reconnect --" ));
+    loadstatus();
 }
 
 </script>
@@ -1024,126 +1104,128 @@ function loadstatus(){
 <body>
 <h1>Gele radio</h1>
 
-<div class="clickdiv modeclick" id="modeimg4">Line in</div>
-<div class="clickdiv modeclick" id="modeimg3">Bluetooth</div>
-<div class="clickdiv modeclick" id="modeimg0">Webradio</div>
-<div class="clickdiv modeclick" id="modeimg2">Poweroff</div>
-    
 
-<div id="left"style="margin: 10px;width: 80%; float: left; clear: left;">
+<div id="left" style="margin: 10px;width: 80%; float: left; clear: left;">
 
-<div id="current" class="playing">Playing station</div>
+    <div class="settone" style="background-color: Dimgray;" id="selectinput">
+        <div class="clickdiv modeclick" id="modeimg4">Line in</div>
+        <div class="clickdiv modeclick" id="modeimg3">Bluetooth</div>
+        <div class="clickdiv modeclick" id="modeimg0">Webradio</div>
+        <div class="clickdiv modeclick" id="modeimg2">Poweroff</div>
+    </div>    
 
-<div class="setvolume" title="Change volume">
-	<div class="slidecontainer">
-        <div class="voltonetxt">Volume</div> 
-        <div id="volumevalue" class="slidervalue"></div>
-		<input type="range" min="40" max="100" value="75" class="slider" id="volume">
-	</div>
-</div>
-<div class="settone" title="Tone control">
-	<div class="spatialcontainer">
-        <div class="voltonetxt">3D effect</div> 
-        <input type="radio" id="spatial0" name="earphone" value="0">
-        <label for="spatial0">0</label><br>
-        <input type="radio" id="spatial1" name="earphone" value="1">
-        <label for="spatial1">1</label><br>
-        <input type="radio" id="spatial2" name="earphone" value="2">
-        <label for="spatial2">2</label><br>
-        <input type="radio" id="spatial3" name="earphone" value="3">
-        <label for="spatial3">3</label><br>
+    <div id="current" class="playing"><div id="current_station_name">Playing station</div><div id="now_playing" class="voltonetxt">-</div> </div>
+
+    <div class="setvolume" title="Change volume">
+        <div class="slidecontainer">
+            <div class="voltonetxt">Volume</div> 
+            <div id="volumevalue" class="slidervalue"></div>
+            <input type="range" min="40" max="100" value="75" class="slider" id="volume">
+        </div>
     </div>
-	<div class="tonecontainer" title="Highest bass frequency" >
-        <div class="voltonetxt">Highest bass frequency (Hz)</div> 
-        <div id="basslimvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="150" value="130" step="10" class="slider" id="basslimit">
-	</div>
-    <div class="tonecontainer" title="Bass enhancement (dB)">
-        <div class="voltonetxt">Bass enhancement (dB)</div> 
-        <div id="bassvolvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
-	</div>
-    <div class="tonecontainer" title="Lowest treble frequency (Hz)">
-        <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
-        <div id="treblelimvalue" class="slidervalue"></div>
-		<input type="range" min="0" max="15000" value="2000" step="1000" class="slider" id="treblelimit">
-	</div>
-    <div class="tonecontainer" title="Treble enhancement (dB)">
-        <div class="voltonetxt">Treble attenuation/amplification (dB)</div> 
-        <div id="treblevolvalue" class="slidervalue">0</div>
-		<input type="range" min="0" max="15" value="8" step="1" class="slider" id="treblevolume">
-	</div>
- 
-</div>
+    <div class="settone" title="Tone control">
+        <div class="spatialcontainer">
+            <div class="voltonetxt">3D effect</div> 
+            <input type="radio" id="spatial0" name="earphone" value="0">
+            <label for="spatial0">0</label><br>
+            <input type="radio" id="spatial1" name="earphone" value="1">
+            <label for="spatial1">1</label><br>
+            <input type="radio" id="spatial2" name="earphone" value="2">
+            <label for="spatial2">2</label><br>
+            <input type="radio" id="spatial3" name="earphone" value="3">
+            <label for="spatial3">3</label><br>
+        </div>
+        <div class="tonecontainer" title="Highest bass frequency" >
+            <div class="voltonetxt">Highest bass frequency (Hz)</div> 
+            <div id="basslimvalue" class="slidervalue"></div>
+            <input type="range" min="0" max="150" value="130" step="10" class="slider" id="basslimit">
+        </div>
+        <div class="tonecontainer" title="Bass enhancement (dB)">
+            <div class="voltonetxt">Bass enhancement (dB)</div> 
+            <div id="bassvolvalue" class="slidervalue"></div>
+            <input type="range" min="0" max="15" value="0" step="1" class="slider" id="bassvolume">
+        </div>
+        <div class="tonecontainer" title="Lowest treble frequency (Hz)">
+            <div class="voltonetxt">Lowest treble frequency (Hz)</div> 
+            <div id="treblelimvalue" class="slidervalue"></div>
+            <input type="range" min="0" max="15000" value="2000" step="1000" class="slider" id="treblelimit">
+        </div>
+        <div class="tonecontainer" title="Treble enhancement (dB)">
+            <div class="voltonetxt">Treble attenuation/amplification (dB)</div> 
+            <div id="treblevolvalue" class="slidervalue">0</div>
+            <input type="range" min="0" max="15" value="8" step="1" class="slider" id="treblevolume">
+        </div>
+     
+    </div>
 
 
 
-<div>
-<ul id="list"></ul> 
-</div>
+    <div>
+    <ul id="list"></ul> 
+    </div>
 
 
 
-<div id="ed" class="edit">
-	<div id="edc" class="edit-content">
-		<button id="edclose" 	   title="close" class="delbutton" style="float:right;">X</button>
-		<span style="height: 10px; font-size: 14px; color: darkgray;">name</span>
-		<br />
-		<input id="edstationname"  type="text"  class="edit-input" style="height: 20%; font-size: 40px; text-align: center;" value="name"> </input>
-		<br />
-		<span style="height: 10px; font-size: 14px; color: darkgray;">url</span>
-		<br />
-		<input id="edstationurl"   type="text"  class="edit-input" style="height: 15%; font-size: 18px;" value="url"> </input>
-		<br />
-		<button id="delbutton" 		 type="button" class="delbutton" style="margin-top: 2%;">| |</button>
-		<button id="edstationbutton" type="button" class="clickbutton" style="float:right;margin-top: 2%;" onclick="addstation()" >Save</button> 
-		<button id="edidx" style="display: none;"></button>
-		
-	</div>
-</div>
+    <div id="ed" class="edit">
+        <div id="edc" class="edit-content">
+            <button id="edclose" 	   title="close" class="delbutton" style="float:right;">X</button>
+            <span style="height: 10px; font-size: 14px; color: darkgray;">name</span>
+            <br />
+            <input id="edstationname"  type="text"  class="edit-input" style="height: 20%; font-size: 40px; text-align: center;" value="name"> </input>
+            <br />
+            <span style="height: 10px; font-size: 14px; color: darkgray;">url</span>
+            <br />
+            <input id="edstationurl"   type="text"  class="edit-input" style="height: 15%; font-size: 18px;" value="url"> </input>
+            <br />
+            <button id="delbutton" 		 type="button" class="delbutton" style="margin-top: 2%;">| |</button>
+            <button id="edstationbutton" type="button" class="clickbutton" style="float:right;margin-top: 2%;" onclick="addstation()" >Save</button> 
+            <button id="edidx" style="display: none;"></button>
+            
+        </div>
+    </div>
 
 
-<div id="upload" class="edit">
-	<div id="uploadc" class="edit-content">
-		<button id="uploadclose" 	   title="close" class="delbutton" style="float:right;">X</button>
-		<div style="margin: 20px; margin-left: 10px; padding: 10px;height: 20px; font-size: 20px; color: darkgray;">Upload file</div>
-		<br />
-		<form id="uploadform" action="/upload" enctype="multipart/form-data">
-			<input id="uploadf"  type="file"  class="edit-input" style="font-size: 14px;" name="blob" onchange="changeupltext(event)"> </input>
-		<br />
-			<input id="uploadfname"   type="text"  class="edit-input" style="height: 18px; font-size: 14px;" name="filename"></input>
-		</form>
-		<br />
-		<button id="uploadbutton" type="button" class="clickbutton" style="float:right; margin-right:10px;" onclick="uploadfile()" >Upload</button> 
-		<div id="uploadr" style="margin-left: 20px; height: 10px; font-size: 14px; color: black;"></div>
-	</div>
-</div>
+    <div id="upload" class="edit">
+        <div id="uploadc" class="edit-content">
+            <button id="uploadclose" 	   title="close" class="delbutton" style="float:right;">X</button>
+            <div style="margin: 20px; margin-left: 10px; padding: 10px;height: 20px; font-size: 20px; color: darkgray;">Upload file</div>
+            <br />
+            <form id="uploadform" action="/upload" enctype="multipart/form-data">
+                <input id="uploadf"  type="file"  class="edit-input" style="font-size: 14px;" name="blob" onchange="changeupltext(event)"> </input>
+            <br />
+                <input id="uploadfname"   type="text"  class="edit-input" style="height: 18px; font-size: 14px;" name="filename"></input>
+            </form>
+            <br />
+            <button id="uploadbutton" type="button" class="clickbutton" style="float:right; margin-right:10px;" onclick="uploadfile()" >Upload</button> 
+            <div id="uploadr" style="margin-left: 20px; height: 10px; font-size: 14px; color: black;"></div>
+        </div>
+    </div>
 
-<div id="update" class="edit">
-	<div id="updatec" class="edit-content">
-		<button id="updateclose" 	   title="close" class="delbutton" style="float:right;">X</button>
-		<div style="margin: 10px; margin-left: 10px; padding: 10px;height: 20px; font-size: 20px; color: darkgray;">Update firmware</div>
-		<br />
-		<form id="updateform" action="/update" enctype="multipart/form-data">
-			<input id="updatef"  type="file"  class="edit-input" style="font-size: 14px;" name="update" onfocus="changeupdater(event)"> </input>		
-		</form>
-		<br />
-		<button id="updatebutton" type="button" class="clickbutton" style="float:right;" onclick="updatefw()" >Update</button> 
-		<div id="updater" style="margin-left: 20px; height: 10px; font-size: 14px; color: black;"></div>
-	</div>
-</div>
+    <div id="update" class="edit">
+        <div id="updatec" class="edit-content">
+            <button id="updateclose" 	   title="close" class="delbutton" style="float:right;">X</button>
+            <div style="margin: 10px; margin-left: 10px; padding: 10px;height: 20px; font-size: 20px; color: darkgray;">Update firmware</div>
+            <br />
+            <form id="updateform" action="/update" enctype="multipart/form-data">
+                <input id="updatef"  type="file"  class="edit-input" style="font-size: 14px;" name="update" onfocus="changeupdater(event)"> </input>		
+            </form>
+            <br />
+            <button id="updatebutton" type="button" class="clickbutton" style="float:right;" onclick="updatefw()" >Update</button> 
+            <div id="updater" style="margin-left: 20px; height: 10px; font-size: 14px; color: black;"></div>
+        </div>
+    </div>
 
-<div id="log" class="edit">
-	<div id="logc" class="edit-content" style="font-family: monospace; white-space: pre; overflow: scroll;">
-		<button id="logclose" 	   title="close" class="delbutton" style="float:right;">X</button>		
-	</div>
-</div>
+    <div id="log" class="edit">
+        <div id="logc" class="edit-content" style="font-family: monospace; white-space: pre; overflow: scroll;">
+            <button id="logclose" 	   title="close" class="delbutton" style="float:right;">X</button>		
+        </div>
+    </div>
 
-<div id="ostatus" class="edit">
-	<div id="statusc" class="edit-content" style="font-family: monospace; white-space: pre; overflow: scroll;">
-		<button id="statusclose" 	   title="close" class="delbutton" style="float:right;">X</button>		
-	</div>
-</div>
+    <div id="ostatus" class="edit">
+        <div id="statusc" class="edit-content" style="font-family: monospace; white-space: pre; overflow: scroll;">
+            <button id="statusclose" 	   title="close" class="delbutton" style="float:right;">X</button>		
+        </div>
+    </div>
 
 
 </div>
@@ -1317,7 +1399,7 @@ function redout(){
   output.style['background'] = '';
 }
 
-document.getElementById("current").onclick=loadstatus;
+document.getElementById("current").onclick=closeandload; 
 
 document.getElementById("add").onclick=edclick;
 document.getElementById("uploadk").onclick=uploadclick;
@@ -1333,6 +1415,7 @@ var eName = document.getElementById("edstationname");
 eUrl.addEventListener("focus",toblack);
 eName.addEventListener("focus",toblack);
 	
+
 
 </script>
 

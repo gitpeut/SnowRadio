@@ -1,4 +1,4 @@
-
+extern void broadcast_status();
 extern bool noMeta; // in radio.ino
 //-----------------------------------------------------
 
@@ -355,6 +355,7 @@ int i,j,rc;
             }
             Serial.printf("Now start listening to %s\n", stations[stationIdx].name );
             tft_showstation(stationIdx);
+            broadcast_status();
             return(0);
         }
         Serial.print(".");

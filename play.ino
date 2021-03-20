@@ -43,6 +43,7 @@ int       setvolume = getVolume();
         log_i("start playing again");
         vs1053player->setVolume(0);
         if ( !ModeChange ){
+          
           log_d("play stops song");
             
           if ( !vs1053player->stop_song()  ){
@@ -50,6 +51,7 @@ int       setvolume = getVolume();
             syslog((char *)"play reboots as VS1053 was confused");
             ESP.restart();
           }
+          
         }
         
         skipstartsound = SKIPSTART;
@@ -79,7 +81,7 @@ int       setvolume = getVolume();
                 vs1053player->getBands();                
                 
                 delay(10); // please the task watchdog
-                vs1053player->displaySpectrum();
+                if ( !skipstartsound )vs1053player->displaySpectrum();
 
                 bandcounter = GETBANDFREQ;         
             }

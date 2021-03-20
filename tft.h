@@ -22,6 +22,7 @@
 #define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
 #define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
 #define DATE_FONT     &FreeSansBold10pt8b
+#define META_FONT     &MetaBold11 //&MetaBold10//&FreeSansBold6pt8b //&MetaBold12
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
@@ -127,6 +128,7 @@ struct metaInfo{
 };
 
 extern struct metaInfo meta;
+extern void broadcast_meta(bool reset=false);
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();

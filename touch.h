@@ -59,7 +59,7 @@ class RadioButton : public TFT_eSPI_Button {
             }else{
               tft.setTextColor( TFT_REALGOLD, TFT_BLACK);
             }
-            log_d( "fontbutton - draw %s", longname);
+            //log_d( "fontbutton - draw %s", longname);
             tft.drawString( longname, x,y );          
         }else{ 
             tft.setFreeFont( STATION_FONT );

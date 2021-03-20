@@ -190,8 +190,7 @@ void draw_buttons( int startidx ){
       log_i("-- draw_buttons %d (max = %d)", startidx, stationCount);
       startbutton = BUTTON_ITEM0;
       endbutton   = (int)BUTTON_DOWN;
-      //int playing_station = getStation();
-      
+            
       stationidx  = startidx;
       int playing_station = getStation();
       
@@ -269,7 +268,7 @@ void drawRadioScreen(){
   releaseTft();
     
    
-    if ( playingStation >= 0 )tft_showstation( getStation() );
+  if ( playingStation >= 0 )tft_showstation( getStation() );
 
   
 }

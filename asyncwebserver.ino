@@ -9,6 +9,8 @@
 #include "owm.h"
 
 AsyncWebServer    fsxserver(80);
+AsyncEventSource  radioevents("/radioevents");
+
 TaskHandle_t      FSXServerTask;
 static const char* updateform PROGMEM= "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 static const char* uploadpage PROGMEM =
@@ -171,11 +173,9 @@ String getAContentType(String filename) {
   }
   return "text/plain";
 }
-
-
 /*-----------------------------------------------------------------*/
-void send_json_status(AsyncWebServerRequest *request)
-{
+void make_json_status( String &output ){
+
 char uptime[32];
 int sec = millis() / 1000;
 int upsec,upminute,uphr,updays;
@@ -188,7 +188,7 @@ upsec    = sec % 60;
 
 sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
 
-  String output = "{\r\n";
+  output = "{\r\n";
 
   output += "\t\"Application\" : \"";
   output += APNAME " " APVERSION;
@@ -198,6 +198,10 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += __DATE__  " " __TIME__ ;
   output += "\",\r\n";
 
+  output += "\t\"IPaddress\" : \"";
+  output += WiFi.localIP().toString();
+  output += "\",\r\n";
+  
   output += "\t\"uptime\" : \"";
   output += uptime;
   output += "\",\r\n";
@@ -255,6 +259,14 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
   output += getStation();
   output += ",\r\n";
 
+  output += "\t\"inputSelect\" : ";
+#ifdef USEINPUTSELECT
+  output += (int) 1;
+#else
+  output += (int) 0;
+#endif  
+  output += ",\r\n";
+
   output += "\t\"currentMode\" : ";
   output += (int)currDisplayScreen;
   output += ",\r\n";
@@ -271,13 +283,26 @@ sprintf( uptime, "%d %02d:%02d:%02d", updays, uphr, upminute,upsec);
    
   output += "\t\"currentVolume\" : ";
   output += getVolume();
-  output += ",\r\n";
-
-  output += json_owmdata();
-  output += "\r\n";
+  if ( owmdata.valid ){
+    output += ",\r\n";
+    output += json_owmdata();
+    output += "\r\n";
+  }else{
+    output += "\r\n";
+  }
   output += "}" ;
-    
+
+
+
+}
+/*-----------------------------------------------------------------*/
+void send_json_status(AsyncWebServerRequest *request)
+{
+String  output;
+  make_json_status( output );    
   request->send(200, "application/json;charset=UTF-8", output);
+
+  broadcast_meta();
 }
 
 //------------------------------------------------------------------
@@ -774,8 +799,66 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
     }
   }
 }
+//------------------------------------------------------------------
+void latin2utf( unsigned char *latin, unsigned char **utf ){
+unsigned char *l, *u;
 
+*utf = (unsigned char *)gr_calloc( strlen( (char *)latin ) * 4, 1 );
 
+u   = *utf;
+l  = latin;
+
+    while (*l){
+      if (*l<128){
+          *u = *l;
+      }else{
+          *u = 0xc0 | (*l >> 6);
+          ++u;
+          *u = 0x80 | (*l & 0x3f);
+      }
+      ++l;
+      ++u;
+    }    
+    *u = 0;
+return;  
+}
+//------------------------------------------------------------------
+void broadcast_meta( bool reset){
+static unsigned char *lastmeta = NULL;
+
+  
+  if ( reset ) { // remove metadata at or before disconnect
+       if ( lastmeta != NULL ) free(lastmeta);
+       lastmeta = NULL; 
+       //log_d("reset broadcast meta");           
+  }else{ // meta.metadata is refreshed after connect, make sure after a reset this stale data is not sent          
+      if ( meta.metadata[0] != 0 ){
+         if ( lastmeta != NULL ) free(lastmeta);
+            // apparently, most stations send meta data in ascii or even latin-1.
+            // events must be utf-8, so a conversion is necessary for non-ascii characters.
+         if ( !meta.intransit ) latin2utf( (unsigned char *)meta.metadata, &lastmeta );
+         log_d("fill broadcast meta");                     
+      }
+  }
+  
+  if ( lastmeta != NULL ){   
+    //log_d( "sending lastmeta: %s", lastmeta);
+    radioevents.send( (char *)lastmeta ,"meta", millis() );
+  }else{
+    radioevents.send( "-" ,"meta", millis() );  
+  }
+  
+  
+}
+//------------------------------------------------------------------
+void broadcast_status(){
+    log_d( "broadcast status");  
+    String output;
+    make_json_status( output );
+    radioevents.send( output.c_str(),"radiostatus", millis() );
+
+    broadcast_meta();  
+}
 //------------------------------------------------------------------
 void startWebServer( void *param ){
  
@@ -783,7 +866,18 @@ void startWebServer( void *param ){
  
   MDNS.begin( APNAME);
 
+  radioevents.onConnect([](AsyncEventSourceClient *eventclient){
+    if(eventclient->lastId()){
+      Serial.printf("Event client reconnected! Last message ID that it got is: %u\n", eventclient->lastId());
+    }
+    String output;
+    make_json_status( output );
+    eventclient->send( output.c_str(),"radiostatus",millis(),1000);
+
+    broadcast_meta();
+  });
   
+  fsxserver.addHandler(&radioevents);
 
   fsxserver.serveStatic("/stations.json", RadioFS, "/stations.json");
   fsxserver.on("/favicon.ico", HTTP_GET, handleFileRead);
@@ -830,6 +924,7 @@ void startWebServer( void *param ){
   int     timecount = (1000/delaytime);
   int     weathercount  = 0;  // open weather, every hour, but also at start
   int     forecastcount = 0;
+  int     broadcast_metacount = 0;
   
  #ifdef SHOWMETA
     int     metacount    = 0;
@@ -849,7 +944,13 @@ void startWebServer( void *param ){
     --timecount;
     if ( timecount <= 0  ){
            showClock();
-           timecount = (1000/delaytime); 
+           timecount = (1000/delaytime);           
+    }
+
+    --broadcast_metacount;
+    if ( broadcast_metacount <= 0  ){
+           broadcast_meta();
+           broadcast_metacount = (60000/delaytime);           
     }
 
      #ifdef USEOWM
@@ -878,7 +979,7 @@ void startWebServer( void *param ){
     #ifdef SHOWMETA
      --metacount;
      if ( metacount<= 0 ){ 
-      tft_showmeta();
+      tft_showmeta();      
       metacount = 2;
      }
      #endif

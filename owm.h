@@ -10,6 +10,20 @@
 
 extern TFT_eSPI tft;
 extern screenPage currDisplayScreen;
+
+struct Owmdata{
+    float temperature;
+    float humidity;
+    float pressure;
+    float windspeed;
+    float feelslike;
+    char  *description  = NULL;
+    char  *iconfilename = NULL;
+    char  *city         = NULL;
+    bool  valid         = false;
+    char  iconchar;  
+  };
+extern struct Owmdata owmdata;  
 extern char  *jsonowm; 
     void init_owm();
     bool getWeather();

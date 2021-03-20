@@ -1,4 +1,3 @@
- 
 // Gele radio
 // Jose Baars, Alexander Semenow, 2020-2021
 // public domain
@@ -13,7 +12,6 @@
 // ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer.git )
 // Thanks to all the authors 
 //
-
 /*define or undef */
 #define USEOWM // to enable Open weathermap owm_key, 
                // owm_id (city id), owm_lang (language),
@@ -46,7 +44,7 @@ const char *daynames[]   = {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "С�
 const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
 #else
-const char *monthnames[] = {"januari","februari","maart","april","may","juni","juli","augustus","september","october","november","december"};
+const char *monthnames[] = {"januari","februari","maart","april","mei","juni","juli","augustus","september","october","november","december"};
 const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
 #endif
 
@@ -159,6 +157,7 @@ TFT_eSprite msg     = TFT_eSprite(&tft);
 TFT_eSprite bats    = TFT_eSprite(&tft); 
 TFT_eSprite vols    = TFT_eSprite(&tft);  
 TFT_eSprite clocks  = TFT_eSprite(&tft); 
+TFT_eSprite station_sprite = TFT_eSprite(&tft); 
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
 TFT_eSprite gest    = TFT_eSprite(&tft); 
 TFT_eSprite weather_sprite  = TFT_eSprite(&tft);    
@@ -191,7 +190,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.4"
+#define APVERSION "V5.5"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

@@ -31,18 +31,7 @@
   int fcy=0;
 
 //----------------------------------------------------------------------------  
-  struct {
-    float temperature;
-    float humidity;
-    float pressure;
-    float windspeed;
-    float feelslike;
-    char  *description  = NULL;
-    char  *iconfilename = NULL;
-    char  *city         = NULL;
-    bool  valid         = false;
-    char  iconchar;  
-  }owmdata;
+  struct Owmdata owmdata;
 
   struct {
       time_t stamp[3];      // UTC timestamp requested
@@ -124,7 +113,8 @@ void print_owmdata(){
 
 
 char *json_owmdata(){
-  
+
+  if ( !owmdata.valid ) return( NULL ); 
   if ( !jsonowm ) jsonowm = (char *)gr_calloc( 2048,1);
   
   sprintf( jsonowm,"\t\"openweathermap\" : {\n\t\t\"temperature\" : %2.2f,\n \t\t\"feelslike\" : %2.2f,\n\

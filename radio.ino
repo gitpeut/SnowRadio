@@ -39,7 +39,17 @@ void reset_meta(){
 
   tft_fillmeta();
 }
+//---------------------------------------------------------------------------
+void dump_meta( char *m ){
+char *s = m;
 
+Serial.printf( "\n");
+for ( ; *s; ++s ){
+  Serial.printf( "%02x ", (int) *s);  
+}
+Serial.printf( "\n");
+
+}
 //---------------------------------------------------------------------------
 int extractMeta ( uint8_t *r ){
 
@@ -98,9 +108,10 @@ int extractMeta ( uint8_t *r ){
        meta.metar   = NULL;
        meta.qoffset =0;                       
        log_d( "Metadata:\n%s", meta.metadata);
-       
+       //dump_meta( meta.metadata );
        tft_fillmeta();
-       meta.intransit = false;                                                                                             
+       meta.intransit = false;
+       broadcast_meta();                                                                                             
      }     
   }else{
     if ( stationMetaInt && (meta.metacount >= stationMetaInt) ){
@@ -274,7 +285,7 @@ void radio( void *param) {
         log_d("stop song before waiting for radio semaphore");        
         vs1053player->stop_song();
 
-        
+        broadcast_meta( true );
         
         playingStation = -1;
         log_d("volume when stopping radiotask %d", vs1053player->getVolume()); 
@@ -351,6 +362,7 @@ void radio( void *param) {
         }
         delay(20);
         
+        
         if(!radioclient->connected() ){
                         
             Serial.printf("Connect (again?) to %s, totalbytes %d\n",stations[ getStation() ].name, totalbytes);
@@ -377,9 +389,10 @@ void radio( void *param) {
               reset_chunkstate();
               lowqueue = 0;
               tellPixels( PIX_DECO );
+              broadcast_meta( true );
               
               xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
-
+              
             }else{
               
               bool tonextstation=false;
@@ -419,8 +432,10 @@ void radio( void *param) {
         Serial.printf("playingStation %d != currentStation %d (lowqueue %d unavailable %d) reconnect...\n", playingStation, getStation(), lowqueue, unavailablecount );        
         //radioclient->flush();
         log_d ( "station change, disconnect from playingStation");
+        broadcast_meta( true );
         disconnect_radioclient();
         lowqueue = 0;
+       
         
         if ( unavailablecount > MAXUNAVAILABLE ){
             Serial.printf("errno %d unavailable more than %d. reconnect...\n", errno, MAXUNAVAILABLE );

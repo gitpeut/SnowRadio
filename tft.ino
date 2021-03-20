@@ -99,10 +99,10 @@ if ( !progress ){
 }
 
 msg.drawString( message1, 0, yposition, 2);  
-yposition += 18;
+yposition += 16;
 if (message2 ){
   msg.drawString( message2, 0, yposition, 2);  
-  yposition += 20;
+  yposition += 16;
 }
 
  
@@ -123,7 +123,7 @@ char  geststring[4];
 
    if ( currDisplayScreen != RADIO) return;
 
-   gest.createSprite(w,h);
+   if ( !gest.created() )gest.createSprite(w,h);
    gest.fillSprite(TFT_BLACK);          
 
    if ( showonscreen ){
@@ -139,7 +139,6 @@ grabTft();
   gest.pushSprite( xpos, ypos);
 releaseTft();  
 
-gest.deleteSprite();  
 }
 //----------------------------------------------------------
 
@@ -187,7 +186,7 @@ void showBattery(bool force ){
   batstring[0]= 'L' + percentage/25;
   batstring[1]= 0;
  
-    bats.createSprite(32,24);
+    if ( !bats.created() ) bats.createSprite(32,24);
     bats.setFreeFont( &indicator );
     bats.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
     bats.fillSprite(TFT_BLACK);          
@@ -198,7 +197,6 @@ void showBattery(bool force ){
     bats.pushSprite( xpos, ypos);
     releaseTft();
 
-    bats.deleteSprite();
 
 }
 
@@ -220,7 +218,7 @@ void showVolume( int percentage, bool force){
   volstring[0]= 'A' + percentage/10;
   volstring[1]= 0;
     
-  vols.createSprite(32,24);
+  if ( ! vols.created() )vols.createSprite(32,24);
   vols.setFreeFont( &indicator );
   vols.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
   vols.fillSprite(TFT_BLACK);  
@@ -233,7 +231,6 @@ void showVolume( int percentage, bool force){
   vols.pushSprite( BUTOFFSET, ypos);
   releaseTft();
 
-  vols.deleteSprite();
  
   return;  
 }
@@ -432,25 +429,33 @@ void tft_showstation( int stationIdx){
                if ( *s ) ++s; 
   }
   
-  img.createSprite(tft.width(), station_scroll_h );
-  img.fillSprite(TFT_BLACK);
-  img.setTextColor( TFT_WHITE, TFT_BLACK ); 
-  img.setFreeFont( STATION_FONT );
+  if( !station_sprite.created() ) station_sprite.createSprite(tft.width(), station_scroll_h );
+  station_sprite.fillSprite(TFT_BLACK);
+  station_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
+  station_sprite.setFreeFont( STATION_FONT );
   
-  int wholew = img.textWidth( s, 1 );
+  int wholew = station_sprite.textWidth( s, 1 );
   
   xpos = (tft.width() - wholew)/2; 
   ypos = 2;
-  img.drawString( s , xpos, ypos,1);
+  station_sprite.drawString( s , xpos, ypos,1);
   
   
   grabTft();
-  img.pushSprite( 0, TFTSTATIONT );
+  station_sprite.pushSprite( 0, TFTSTATIONT );
   releaseTft();
   
-  img.deleteSprite();
+ 
   xSemaphoreGive( stationSemaphore );
 }
+
+
+//---------------------------------------------------------------------
+
+const int nonscroll_metawidth = tft.width() - 20;
+const int meta_height          = TFTMETAH;
+const int meta_xposition        = 0 + 10;
+const int meta_yposition        = TFTMETAT;
 
 //---------------------------------------------------------------------
 void tft_create_meta( int spritew){
@@ -460,13 +465,14 @@ void tft_create_meta( int spritew){
     
   if ( meta_sprite.created() )return;
 
-  meta_sprite.createSprite(spritew?spritew:tft.width(), TFTMETAH );
+  meta_sprite.createSprite(spritew?spritew:nonscroll_metawidth, meta_height );
   meta_sprite.fillSprite(TFT_BLACK);
   meta_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
-  meta_sprite.setFreeFont( LABEL_FONT );
+  meta_sprite.setFreeFont( META_FONT );
 
 
 }
+
 //---------------------------------------------------------------------
 void tft_fillmeta(){
   int   textw, textx=0, spritew;
@@ -476,17 +482,40 @@ void tft_fillmeta(){
 #ifndef SHOWMETA
   return;
 #endif
-
+  
+  log_d("%s", meta.metadata);
+  
   tft_create_meta();
+
+     String mymeta = String( meta.metadata);
+     
+     // Alex's customizations
+        mymeta.replace("Chromanova.fm presents - ", "");
+        mymeta.replace(" [1Rdf]", "");
+        mymeta.replace(" - 0:00", "");
+        mymeta.replace("MegaNight RADIO | ", "");
+       
+        int f_1 = mymeta.indexOf("[");
+        int f_2 = mymeta.indexOf("]");
+        if (f_1 > 0 && f_2 > 0){
+            String f_4 = mymeta.substring (f_1 - 1, f_2 + 1);
+            Serial.print ("f_4 = "); Serial.println (f_4);  
+            mymeta.replace(f_4, "");
+        }
+
+        strcpy ( meta.metadata, mymeta.c_str() );
+
+
+  
   textw   = meta_sprite.textWidth( meta.metadata, 1 ); 
-  if ( textw < tft.width() ){
-     textx    = ( tft.width() - textw )/2;
-     spritew  = tft.width();
-  }else if ( textw < ( 2*tft.width() ) ){
+  if ( textw < nonscroll_metawidth ){
+     textx    = ( nonscroll_metawidth - textw )/2;
+     spritew  = nonscroll_metawidth;
+  }else if ( textw < ( 2*nonscroll_metawidth ) ){
 
      middle = meta.metadata + strlen( meta.metadata ) / 2;
      for( ; middle > meta.metadata && *middle != ' '; --middle);
-     if ( middle - meta.metadata < strlen( meta.metadata ) / 4 ){
+     if ( middle - meta.metadata < strlen( meta.metadata ) / 3 ){
         middle = meta.metadata + strlen( meta.metadata ) / 2;
         for( ; middle > meta.metadata && *middle != ' '; ++middle);
      }
@@ -499,13 +528,13 @@ void tft_fillmeta(){
       longest = txt[1];
      }
      
-     textx   = (tft.width() - meta_sprite.textWidth( longest, 1 ))/2;
+     textx   = ( nonscroll_metawidth - meta_sprite.textWidth( longest, 1 ))/2;
      if ( textx < 0 ) textx = 0;
       
-     spritew = tft.width();   
+     spritew = nonscroll_metawidth;   
   }else{  
      textx    = 0;
-     spritew  = textw + tft.width();
+     spritew  = textw + nonscroll_metawidth;
   }
   
   meta_sprite.deleteSprite();
@@ -513,20 +542,25 @@ void tft_fillmeta(){
   
   if ( txt[0] != NULL ){ 
     meta_sprite.drawString( txt[0], textx, 0, 1);
+    Serial.printf( "txt 0 : %s\n", txt[0] );
     free( txt[0]);
     if ( txt[1] != NULL){
-      meta_sprite.drawString( txt[1],textx, 12, 1);
+      Serial.printf( "txt 1 : %s\n", txt[1] );
+      meta_sprite.drawString( txt[1],textx,12, 1);
       free( txt[1] );
     } 
   }else{
-    meta_sprite.drawString( meta.metadata, textx, 3, 1);
+    meta_sprite.drawString( meta.metadata, textx, 6, 1);
   }
   tft_showmeta( true );
 }
 //---------------------------------------------------------------------
 void tft_showmeta(bool resetx){
-static int currentx=0, onscreen=0; 
+static int currentx=0;
+static int onscreen=0; 
 
+  //log_d("onscreen %d", onscreen);
+  
   if ( resetx ){
     currentx = 0;
     onscreen = 0;
@@ -537,8 +571,8 @@ static int currentx=0, onscreen=0;
   if ( meta.intransit ) return;
   if ( onscreen )return;
    
-  if ( meta_sprite.width() == tft.width() ){  
-       currentx = tft.width();
+  if ( meta_sprite.width() == nonscroll_metawidth ){  
+       currentx = nonscroll_metawidth;
        onscreen = 1;
   }else{
       if ( currentx < meta_sprite.width() ){
@@ -549,7 +583,9 @@ static int currentx=0, onscreen=0;
   }
 
   grabTft();
-    meta_sprite.pushSprite( tft.width() - currentx, TFTMETAT );        
+    tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, false );    
+    meta_sprite.pushSprite( meta_xposition + nonscroll_metawidth - currentx, meta_yposition );
+    tft.resetViewport();         
   releaseTft();
 }
 
@@ -828,7 +864,7 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
 
-  //uint32_t startTime = millis();
+  uint32_t startTime = millis();
   bmpFile *cachedbmp = findBmpInCache( (char *) filename );
   
   if ( cachedbmp == NULL ){
@@ -931,14 +967,14 @@ void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite, bo
        tft.setSwapBytes(true);   
        grabTft();
             if ( sprite == NULL ){
-              tft.pushImage( x, y, cachedbmp->w, cachedbmp->h, (uint16_t *)cachedbmp->data);
+              tft.pushImage( x, y, cachedbmp->w, cachedbmp->h, (uint16_t *)cachedbmp->data);              
             }else{
               sprite->pushImage( x, y, cachedbmp->w, cachedbmp->h, (uint16_t *)cachedbmp->data);
             }
        releaseTft();       
        tft.setSwapBytes( false );
 
-       //log_d("Image rendered from cache in %u ms", millis() - startTime);
+       log_d("Image rendered from cache in %u ms", millis() - startTime);
     }      
   }
 }
@@ -961,16 +997,6 @@ uint32_t read32(fs::File &f) {
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
 }
-//------------------------------------------------------
-
-void tft_backlight( int onoff ){ 
-
-  if ( onoff ){
-    digitalWrite( TFT_LED , HIGH);
-  }else{
-    digitalWrite( TFT_LED , LOW);
-  }
-}
 
 //------------------------------------------------------
 
@@ -988,7 +1014,8 @@ void tft_init(){
 
   //PSRAM_ENABLE == 3 psramFound test is already done by tft_espi,
   //no need to duplicate.
-  tft.setAttribute( 3,1);
+  tft.setAttribute( 3,1);//enable PSRAM
+  tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
   tft.init();
   
   //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 
