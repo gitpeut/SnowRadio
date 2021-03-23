@@ -624,13 +624,14 @@ void handleFileRead(  AsyncWebServerRequest *request ) {
     path += "index.html";
   }
   path = urldecode( path);
-  
+
   FBuf *pathbuf = findFBuf( path );
   
   fs::FS  *ff = &RadioFS;
 
   String contentType = getAContentType(path);
-
+  
+  
   if ( !pathbuf ){
     
       String pathWithGz = path + ".gz";
@@ -648,11 +649,12 @@ void handleFileRead(  AsyncWebServerRequest *request ) {
 
   if ( pathbuf ){
     AsyncWebServerResponse *response = request->beginResponse_P(200, contentType, pathbuf->buffer, pathbuf->size );
+    //response->addHeader("Cache-Control", "no-store, max-age=0");  
     request->send(response);
-    log_i("File has been streamed from buffer");
+    log_i("File has been streamed from buffer (content type %s)", contentType.c_str());
   }else{
     request->send( *ff, path, contentType );
-    log_i("File has been streamed from filesystem");
+    log_i("File has been streamed from filesystem (content type %s)", contentType.c_str() );
   }  
   
   return;
@@ -812,9 +814,16 @@ l  = latin;
       if (*l<128){
           *u = *l;
       }else{
-          *u = 0xc0 | (*l >> 6);
-          ++u;
-          *u = 0x80 | (*l & 0x3f);
+                          
+          if ( *(l+1) < 128 ){ // detect UTF-8 input. Will not always work 
+            *u = 0xc0 | (*l >> 6);
+            ++u;
+            *u = 0x80 | (*l & 0x3f);
+          }else{
+            *u = *l;
+            ++u; ++l;
+            *u = *l;            
+          }
       }
       ++l;
       ++u;
@@ -879,7 +888,7 @@ void startWebServer( void *param ){
   
   fsxserver.addHandler(&radioevents);
 
-  fsxserver.serveStatic("/stations.json", RadioFS, "/stations.json");
+  //fsxserver.serveStatic("/stations.json", RadioFS, "/stations.json");
   fsxserver.on("/favicon.ico", HTTP_GET, handleFileRead);
   fsxserver.on("/index.html", HTTP_GET, handleFileRead);
   
@@ -915,7 +924,7 @@ void startWebServer( void *param ){
   Update.onProgress(printProgress);
 
 
-    MDNS.addService("http", "tcp", 80);
+  MDNS.addService("http", "tcp", 80);
 
 
   // loop for frequent updates

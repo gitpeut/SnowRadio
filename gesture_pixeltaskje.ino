@@ -185,6 +185,7 @@ int current_station;
     
       current_station = getStation();
       current_station += dir;  
+      nextprevChannel  = dir;
       
       Serial.printf( "Changing station\n"); 
       while(1){
@@ -193,9 +194,13 @@ int current_station;
         if ( stations[ current_station].status == 1 ) break; 
         current_station += dir;
       }
+       
+      vs1053player->displaySpectrum();
+      
       Serial.printf( "Changing station to %d-%s\n", current_station,stations[ current_station].name ); 
            
       setStation( current_station, -1 );
+
       
   }
   

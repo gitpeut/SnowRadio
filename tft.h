@@ -2,8 +2,6 @@
 #define TFT_H
 
 #include <TFT_eSPI.h>
-
-#define TFT_OLDREALGOLD       0xC676 //0xE5EC
     
 #define TFT_MY_GOLD        0xE68E
 #define TFT_MY_SILVER      0xC615
@@ -87,7 +85,7 @@ extern SemaphoreHandle_t tftSemaphore;
 #define BUTOFFSET ((tft.width() - 4*BUTW)/5)
 
 // neopixel 
-#define NEONUMBER   10
+#define NEONUMBER    10
 
 #define PIX_BLACKC    0
 #define PIX_WAKEUP    1
@@ -129,6 +127,8 @@ struct metaInfo{
 
 extern struct metaInfo meta;
 extern void broadcast_meta(bool reset=false);
+extern bool screenUpdateInProgress;
+extern int  nextprevChannel;
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();

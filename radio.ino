@@ -390,7 +390,13 @@ void radio( void *param) {
               lowqueue = 0;
               tellPixels( PIX_DECO );
               broadcast_meta( true );
-              
+
+              if ( nextprevChannel ){
+                if (nextprevChannel == -1 )touchbutton[BUTTON_PREV ].draw( false );  
+                if (nextprevChannel ==  1 )touchbutton[BUTTON_NEXT ].draw( false );  
+                nextprevChannel = 0;
+              }
+
               xQueueSend( playQueue, "ChangeStationSoStartANewSongNow!" , portMAX_DELAY);
               
             }else{

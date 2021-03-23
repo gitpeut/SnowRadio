@@ -9,7 +9,7 @@
 #define GINTPIN       25
 
 //vs1053
-#define VS_CS_PIN     5
+#define VS_CS_PIN     4
 //SCLK                18
 //MISO                19
 #define VS_DCS_PIN    15
@@ -20,19 +20,22 @@
 //battery
 #define BATPIN        36
 
-//tft
-//SDO(MISO) TFT_MISO  19 // defined in TFT_eSPI header 
-//SDI(MOSI) TFT_MOSI  23
-//SCK       TFT_SCLK  18
-//#define TFT_CS         4
-//#define TFT_RST       -1  // connects to the ESP32 reset pin
-//#define TFT_DC        13
-//#define TFT_LED       32
-//#define TFT_BL        TFT_LED
+//tft on HSPI bus, in an attempt to reduce possible hardware and 
+// software crosstalk all pins defined in the tft_eSPI user setup.h
+//HSPI
+//    #define TFT_MOSI       13 
+//    #define TFT_SCLK       14
+//    #define TFT_MISO       12
+//    #define TFT_CS          5 
+//    #define TFT_DC          2 
+    //touch 
+//    #define TOUCH_IRQ      35 
+//    #define TOUCH_CS       33
 
-//touch 
-//TOUCH_IRQ           35 // defined in TFT_eSPI header 
-//TOUCH_CS            33 
+//#define USE_HSPI_PORT
 
+//    #define TFT_LED       32
+//    #define TFT_BL        TFT_LED
+//    #define TFT_RST       -1 
 
 #endif

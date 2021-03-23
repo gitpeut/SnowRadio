@@ -33,6 +33,7 @@
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.
+#define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
                      
 //#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
@@ -190,7 +191,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "GeleRadio"
-#define APVERSION "V5.5"
+#define APVERSION "V5.6"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -567,8 +568,8 @@ void setup () {
      // position and colors for the spectrum analyzer
      vs1053player->spectrum_height    = TFTSPECTRUMH;
      vs1053player->spectrum_top       = TFTSPECTRUMT;
-     vs1053player->setSpectrumBarColor(TFT_REALGOLD);
-     vs1053player->setSpectrumPeakColor(TFT_WHITE);
+     vs1053player->setSpectrumBarColor(TFT_SKYBLUE);
+     vs1053player->setSpectrumPeakColor(TFT_REALGOLD);
      
   
      Serial.println("Start File System...");

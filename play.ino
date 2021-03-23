@@ -81,7 +81,8 @@ int       setvolume = getVolume();
                 vs1053player->getBands();                
                 
                 delay(10); // please the task watchdog
-                if ( !skipstartsound )vs1053player->displaySpectrum();
+                if ( !skipstartsound && !screenUpdateInProgress 
+                )vs1053player->displaySpectrum();
 
                 bandcounter = GETBANDFREQ;         
             }

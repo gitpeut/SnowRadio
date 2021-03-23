@@ -182,42 +182,53 @@ void VS1053g::displaySpectrum() {
 
   if ( ! spectrum_sprite.created() ){
     spectrum_sprite.createSprite( tft.width(), spectrum_height );  
+    spectrum_sprite.setFreeFont( &radio_button_font );
+    spectrum_sprite.setTextColor( TFT_BLUE, TFT_BLACK );    
   }
   
   if (bands != prevbands) {
     prevbands = bands;
     if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
   }
-  
-  for (uint8_t i = 0; i < bands; i++) // Handle all sections
-  {
-    if (visual) {
-      if (spectrum[i][0] > spectrum[i][1]) {
-        spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
-        spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-      } else {
-        spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-      }  
-    }
-    if (spectrum[i][2] > 0) { 
-      spectrum[i][2]--;
-    }
-    if (spectrum[i][0] > spectrum[i][2]) {
-      spectrum[i][2] = spectrum[i][0];
-    }
-    if (visual) { 
-      spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
-    }
-    
-    spectrum[i][1] = spectrum[i][0];
-    barx += bar_width + 2;
+
+  if ( nextprevChannel ){
+    log_d("drawstring nextprev");
+    prevbands = 0;
+    spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
+    spectrum_sprite.drawString( (nextprevChannel>0)?"6":"4", (tft.width() -50)/2 , 0, 1);
+  }else{
+        for (uint8_t i = 0; i < bands; i++) // Handle all sections
+        {
+          if (visual) {
+            if (spectrum[i][0] > spectrum[i][1]) {
+              spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
+              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+            } else {
+              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+            }  
+          }
+          if (spectrum[i][2] > 0) { 
+            spectrum[i][2]--;
+          }
+          if (spectrum[i][0] > spectrum[i][2]) {
+            spectrum[i][2] = spectrum[i][0];
+          }
+          if (visual) { 
+            spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
+          }
+          
+          spectrum[i][1] = spectrum[i][0];
+          barx += bar_width + 2;
+        }
   }
-  
+    
   if ( currDisplayScreen == RADIO && xSemaphoreGetMutexHolder( tftSemaphore ) == NULL){
      if ( xSemaphoreTake( tftSemaphore, 10 ) == pdTRUE ){
       spectrum_sprite.pushSprite( 0, spectrum_top);
       releaseTft();  
-    }  
+    }else{
+      log_d("failed to get tft semaphore");  
+    }
   }
 }
 

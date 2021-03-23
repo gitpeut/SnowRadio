@@ -1,0 +1,113 @@
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<head>
+<style>
+
+ul.dirlist{
+    list-style-type: none;
+    list-style-position: inside;
+
+    margin-left: 0px;
+    padding-left: 20px;
+}
+
+li.zebra{
+    
+}
+span.sizeright{
+    float: right;
+    margin-right: 20px;
+}
+
+li.zebra:nth-child(2n+2) {background: #CCC}
+
+</style>
+
+<script>
+
+var fstxt = '{"fs": [{"filename": "/", "type": "directory", "files": [{ "filename": "/TouchCal.dat","type": "file", "size": 14},{ "filename": "/favicon.ico", "type": "file", "size": 8062},{ "filename": "/images","type": "directory","files": [{"filename": "/images/GoldRadio.bmp", "type": "file","size": 7654 } ] },{ "filename": "/index.html","type": "file", "size": 43310 },{ "filename": "/last_mode.txt", "type": "file", "size": 1 },{ "filename": "/last_station.txt","type": "file", "size": 1 },{ "filename": "/last_tone.txt", "type": "file", "size": 4 },{ "filename": "/last_volume.txt", "type": "file", "size": 2 },{ "filename": "/netpass", "type": "file", "size": 112 },{ "filename": "/patches", "type": "directory","files": [{"filename": "/patches/spectrum1053b-2.plg.bin","type": "file","size": 2000 },{"filename": "/patches/spectrum1053b.plg","type": "file","size": 10368},{"filename": "/patches/vs1053b-flac-latm.plg","type": "file","size": 63371},{"filename": "/patches/vs1053b-patch270-flac.plg","type": "file","size": 60550},{"filename": "/patches/vs1053b-patch290-flac.plg","type": "file","size": 62165},{"filename": "/patches/vs1053b-patches.plg.bin","type": "file","size": 9334 } ] },{ "filename": "/settings.html", "type": "file", "size": 1509},{ "filename": "/stations.json", "type": "file", "size": 7371},{ "filename": "/style.css", "type": "file", "size": 4010},{ "filename": "/syslog.txt","type": "file", "size": 5810},{ "filename": "/upload.html", "type": "file", "size": 1514},{ "filename": "/weather_icon","type": "directory","files": [{"filename": "/weather_icon/cloudy.bmp","type": "file","size": 7502 },{"filename": "/weather_icon/fog.bmp", "type": "file","size": 7890 },{"filename": "/weather_icon/partlycloudy.bmp","type": "file","size": 7738 },{"filename": "/weather_icon/partlysunny.bmp", "type": "file","size": 7738 },{"filename": "/weather_icon/rain.bmp","type": "file","size": 7738 },{"filename": "/weather_icon/snow.bmp","type": "file","size": 7738 },{"filename": "/weather_icon/sunny.bmp", "type": "file","size": 7586 },{"filename": "/weather_icon/tstorms.bmp", "type": "file","size": 7890 },{"filename": "/weather_icon/unknown.bmp", "type": "file","size": 7738 } ] }]} ] }';
+
+
+</script>
+<body>
+<div style="width: 100%; border: 1px solid black;"> <ul id ="directory" class="dirlist"></ul></div>
+
+<script>
+
+var dirtotal  = 0;
+
+
+function traverse( jsonObj,ul) {
+
+    
+    if( jsonObj !== null && typeof jsonObj == "object" ) {
+        
+        
+        var li = document.createElement("li");
+        li.setAttribute('class', 'zebra'); 
+        
+        Object.entries(jsonObj).forEach(([key, value]) => {
+                
+                if ( key == 'filename' ){
+                    li.appendChild(document.createTextNode( jsonObj.filename ));
+                }
+                if ( key == 'size' ){
+                    
+                    dirtotal += jsonObj.size;
+                    
+                    sizespan = document.createElement( "span" );
+                    sizetxt  = document.createTextNode( jsonObj.size );
+                    sizespan.appendChild( sizetxt );
+                    sizespan.setAttribute('class', 'sizeright');     
+                    li.appendChild( sizespan);
+                    ul.appendChild(li);
+                } 
+                
+                if ( key == 'files' ){
+                    
+                        ul.appendChild(li);
+                        
+                        var uul = document.createElement("ul");
+                        uul.setAttribute('class', 'dirlist'); 
+                        ul.appendChild( uul );
+                        traverse( value, uul );
+                        return;
+                }
+                if ( key == 'fs'){
+                }    
+                traverse( value, ul);
+        });
+    }
+ 
+}
+
+function showdir(){
+
+dirtotal = 0;
+
+fsjson = JSON.parse(fstxt);
+
+var dirlist = document.getElementById("directory");
+traverse( fsjson, dirlist );
+
+var li = document.createElement("li");
+li.setAttribute('class', 'zebra'); 
+
+var sizetxt  = document.createTextNode( 'Total : ' + dirtotal );
+var sizespan = document.createElement( "span" );
+
+sizespan.appendChild( sizetxt );
+sizespan.setAttribute('class', 'sizeright');     
+li.appendChild( sizespan);
+dirlist.appendChild(li);
+}
+
+showdir();
+
+</script>
+</body>
+</html>
+
+

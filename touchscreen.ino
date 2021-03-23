@@ -5,8 +5,8 @@
 #include "owm.h"
 
 RadioButton touchbutton [ TOUCHBUTTONCOUNT  ] ;
-
-
+bool screenUpdateInProgress = false;
+int  nextprevChannel = 0;
 //------------------------------------------------------------------------------------------
 // from Bodmer's example.
 
@@ -355,8 +355,7 @@ void drawScreen( screenPage newscreen){
 
   }
   
- 
-    
+  screenUpdateInProgress = true;
   currDisplayScreen = newscreen;                  
 
 // make sure screens are displayed after setting currDisplayScreen
@@ -394,6 +393,8 @@ void drawScreen( screenPage newscreen){
   if ( newscreen != STNSELECT ){
       if ( MuteActive ) toggleMute();
   }
+
+  screenUpdateInProgress = false;
 
   toggleStop();
 
@@ -479,11 +480,15 @@ void touch_process( void *param){
              break;      
         case BUTTON_PREV:
              log_i("previous station");
+             
              change_volstat( -1, gStation );
+             noreset = true;
              break;
         case BUTTON_NEXT:
              log_i("next station");
+             
              change_volstat( 1, gStation );
+             noreset = true;
              break;
         case BUTTON_MUTE:
              log_d("mute - toggle from %d",  MuteActive );

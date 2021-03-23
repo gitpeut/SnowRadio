@@ -120,9 +120,10 @@ int   h    = 20;
 int   xpos = BUTOFFSET;
 int   ypos = TFTCLOCKT + 12 + h; 
 char  geststring[4];
-
+    
    if ( currDisplayScreen != RADIO) return;
-
+   if (   screenUpdateInProgress ) return;
+ 
    if ( !gest.created() )gest.createSprite(w,h);
    gest.fillSprite(TFT_BLACK);          
 
@@ -180,6 +181,7 @@ void showBattery(bool force ){
   char  batstring[2]; 
 
   if ( currDisplayScreen == STNSELECT )return;
+  if (   screenUpdateInProgress ) return;
   if ( percentage == previous_percentage && !force ) return;
   previous_percentage = percentage;
   
@@ -209,6 +211,7 @@ void showVolume( int percentage, bool force){
   static int previous_percentage=-1; 
   
   if ( currDisplayScreen == STNSELECT )return;
+  if (   screenUpdateInProgress ) return;
   if ( force == false){
     if ( percentage == previous_percentage ) return;
   }
@@ -247,7 +250,8 @@ void showCloud( bool force){
     return;
   }
   if ( currDisplayScreen == STNSELECT )return;
-
+  if (   screenUpdateInProgress ) return;
+ 
   if ( force == false ){
     if ( owmdata.iconchar == previous_char )return;
   }  
@@ -284,8 +288,8 @@ void showClock ( bool force ){
   struct tm tinfo;    
         
   if ( currDisplayScreen == STNSELECT )return;
-
-  
+  if (   screenUpdateInProgress ) return;
+   
   tinfo.tm_year = 0;
   time( &rawt );
   localtime_r( &rawt, &tinfo);
@@ -456,126 +460,108 @@ void tft_create_meta( int spritew){
 
 
 }
+
+
 #ifdef METASPRITE
                     
-                          //---------------------------------------------------------------------
-                          void tft_fillmeta(){
-                            int   textw, textx=0, spritew;
-                            char  *txt[2] = {NULL,NULL};
-                            char  *middle;
-                          
-                          #ifndef SHOWMETA
-                            return;
-                          #endif
-                            
-                            log_d("%s", meta.metadata);
-                            
-                            tft_create_meta();
-                          
-                          /*
-                               String mymeta = String( meta.metadata);
-                               
-                               // Alex's customizations
-                                  mymeta.replace("Chromanova.fm presents - ", "");
-                                  mymeta.replace(" [1Rdf]", "");
-                                  //mymeta.replace(" - 0:00", "");
-                                  mymeta.replace("MegaNight RADIO | ", "");
-                                 
-                          
-                                  int f_1 = mymeta.indexOf("[");
-                                  int f_2 = mymeta.indexOf("]");
-                                  if (f_1 > 0 && f_2 > 0){
-                                      String f_4 = mymeta.substring (f_1 - 1, f_2 + 1);
-                                      Serial.print ("f_4 = "); Serial.println (f_4);  
-                                      mymeta.replace(f_4, "");
-                                  }
-                                  strcpy ( meta.metadata, mymeta.c_str() );
-                          */
-                          
-                            
-                            textw   = meta_sprite.textWidth( meta.metadata, 1 ); 
-                            if ( textw < nonscroll_metawidth ){
-                               textx    = ( nonscroll_metawidth - textw )/2;
-                               spritew  = nonscroll_metawidth;
-                            }else if ( textw < ( 2*nonscroll_metawidth ) ){
-                          
-                               middle = meta.metadata + strlen( meta.metadata ) / 2;
-                               for( ; middle > meta.metadata && *middle != ' '; --middle);
-                               if ( middle - meta.metadata < strlen( meta.metadata ) / 3 ){
-                                  middle = meta.metadata + strlen( meta.metadata ) / 2;
-                                  for( ; middle > meta.metadata && *middle != ' '; ++middle);
-                               }
-                               txt[0] = ps_strndup( meta.metadata, middle - meta.metadata );
-                               txt[1] = ps_strdup( middle + 1);
-                          
-                                
-                               char *longest = txt[0];
-                               if ( strlen( txt[1]) > strlen(txt[0]) ){
-                                longest = txt[1];
-                               }
-                               
-                               textx   = ( nonscroll_metawidth - meta_sprite.textWidth( longest, 1 ))/2;
-                               if ( textx < 0 ) textx = 0;
-                                
-                               spritew = nonscroll_metawidth;   
-                            }else{  
-                               textx    = 0;
-                               spritew  = textw + nonscroll_metawidth;
-                            }
-                            
-                            meta_sprite.deleteSprite();
-                            tft_create_meta( spritew );
-                            
-                            if ( txt[0] != NULL ){ 
-                              meta_sprite.drawString( txt[0], textx, 0, 1);
-                              Serial.printf( "txt 0 : %s\n", txt[0] );
-                              free( txt[0]);
-                              if ( txt[1] != NULL){
-                                Serial.printf( "txt 1 : %s\n", txt[1] );
-                                meta_sprite.drawString( txt[1],textx,12, 1);
-                                free( txt[1] );
-                              } 
-                            }else{
-                              meta_sprite.drawString( meta.metadata, textx, 6, 1);
-                            }
-                            tft_showmeta( true );
-                          }
-                          //---------------------------------------------------------------------
-                          void tft_showmeta(bool resetx){
-                          static int currentx=0;
-                          static int onscreen=0; 
-                          
-                            //log_d("onscreen %d", onscreen);
-                            
-                            if ( resetx ){
-                              currentx = 0;
-                              onscreen = 0;
-                              return;
-                            }
-                            
-                            if ( currDisplayScreen != RADIO ) return;
-                            if ( meta.intransit ) return;
-                            if ( onscreen )return;
-                             
-                            if ( meta_sprite.width() == nonscroll_metawidth ){  
-                                 currentx = nonscroll_metawidth;
-                                 onscreen = 1;
-                            }else{
-                                if ( currentx < meta_sprite.width() ){
-                                  currentx += 1;
-                                }else{
-                                  currentx = 0;
-                                }
-                            }
-                          
-                            grabTft();
-                              tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, false );
-                              //tft.frameViewport(TFT_DARKGREY,  -1);     
-                              meta_sprite.pushSprite( meta_xposition + nonscroll_metawidth - currentx, meta_yposition );
-                              tft.resetViewport();         
-                            releaseTft();
-                          }
-#endif 
+          //---------------------------------------------------------------------
+          void tft_fillmeta(){
+            int   textw, textx=0, spritew;
+            char  *txt[2] = {NULL,NULL};
+            char  *middle;
+          
+          #ifndef SHOWMETA
+            return;
+          #endif
+            
+            log_d("%s", meta.metadata);
+            
+            tft_create_meta();
+            
+            textw   = meta_sprite.textWidth( meta.metadata, 1 ); 
+            if ( textw < nonscroll_metawidth ){
+               textx    = ( nonscroll_metawidth - textw )/2;
+               spritew  = nonscroll_metawidth;
+            }else if ( textw < ( 2*nonscroll_metawidth ) ){
+          
+               middle = meta.metadata + strlen( meta.metadata ) / 2;
+               for( ; middle > meta.metadata && *middle != ' ' && middle > meta.metadata; --middle);
+               if ( middle - meta.metadata < strlen( meta.metadata ) / 3 ){
+                  middle = meta.metadata + strlen( meta.metadata ) / 2;
+                  for( ; middle > meta.metadata && *middle != ' ' && *middle; ++middle);
+               }
+               txt[0] = ps_strndup( meta.metadata, middle - meta.metadata );
+               txt[1] = ps_strdup( middle + 1);
+          
+                
+               char *longest = txt[0];
+               if ( strlen( txt[1]) > strlen(txt[0]) ){
+                longest = txt[1];
+               }
+               
+               textx   = ( nonscroll_metawidth - meta_sprite.textWidth( longest, 1 ))/2;
+               if ( textx < 0 ) textx = 0;
+                
+               spritew = nonscroll_metawidth;   
+            }else{  
+               textx    = 0;
+               spritew  = textw + nonscroll_metawidth;
+            }
+            
+            meta_sprite.deleteSprite();
+            tft_create_meta( spritew );
+            
+            if ( txt[0] != NULL ){ 
+              meta_sprite.drawString( txt[0], textx, 0, 1);
+              Serial.printf( "txt 0 : %s\n", txt[0] );
+              free( txt[0]);
+              if ( txt[1] != NULL){
+                Serial.printf( "txt 1 : %s\n", txt[1] );
+                meta_sprite.drawString( txt[1],textx,12, 1);
+                free( txt[1] );
+              } 
+            }else{
+              meta_sprite.drawString( meta.metadata, textx, 6, 1);
+            }
+            tft_showmeta( true );
+          }
+          //---------------------------------------------------------------------
+          void tft_showmeta(bool resetx){
+          static int currentx=0;
+          static int onscreen=0; 
+          
+            //log_d("onscreen %d", onscreen);
+            if (   screenUpdateInProgress ) return;
+ 
+            if ( resetx ){
+              currentx = 0;
+              onscreen = 0;
+              return;
+            }
+            
+            if ( currDisplayScreen != RADIO ) return;
+            if ( meta.intransit ) return;
+            if ( onscreen )return;
+             
+            if ( meta_sprite.width() == nonscroll_metawidth ){  
+                 currentx = nonscroll_metawidth;
+                 onscreen = 1;
+            }else{
+                if ( currentx < meta_sprite.width() ){
+                  currentx += 1;
+                }else{
+                  currentx = 0;
+                }
+            }
+          
+            grabTft();
+              tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, false );
+              //tft.frameViewport(TFT_DARKGREY,  -1);     
+              meta_sprite.pushSprite( meta_xposition + nonscroll_metawidth - currentx, meta_yposition );
+              tft.resetViewport();         
+            releaseTft();
+          }
+#else // METASPRITE NOT DEFINED
 
 //---------------------------------------------------------------------
 void tft_fillmeta(){
@@ -680,6 +666,7 @@ static int onscreen=0;
     return;
   }
   
+  if (   screenUpdateInProgress ) return;
   if ( currDisplayScreen != RADIO ) return;
   if ( meta.intransit ) return;
   if ( onscreen )return;
@@ -693,7 +680,7 @@ static int onscreen=0;
     tft.setTextColor( TFT_WHITE, TFT_BLACK );
     tft.setFreeFont( META_FONT );   
 
-    if ( metatxt[0] != NULL )tft.drawString( metatxt[0], metatextx, 2, 1);
+    if ( metatxt[0] != NULL )tft.drawString( metatxt[0], metatextx, (metatxt[1] == NULL)?8:2, 1);
     if ( metatxt[1] != NULL )tft.drawString( metatxt[1], metatextx, 15, 1);
     
     tft.resetViewport();             
@@ -702,7 +689,7 @@ static int onscreen=0;
  onscreen = 1;
  
 }
-
+#endif
 //---------------------------------------------------------------------
 
 #ifdef MULTILEVELGESTURES

@@ -18,14 +18,14 @@ h1 {
     margin-left: 15px;
 }
 
-ul {
+ul.stationlist {
   margin:0;
   padding:0;
   margin-top:20px;
   width: 100%;
 }
 
-li {
+li.station {
   cursor:move;
   display:block;
   /*width: 240px;*/
@@ -57,6 +57,7 @@ li {
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
+
 .clickdiv{
     margin: 5px; 
     margin-top: 20px;
@@ -82,9 +83,9 @@ li {
   padding: 0;
   border: 1px solid #888;
   border-radius: 5px;
-  width: 70%;
+  width: 100%;
   height: 50%;
-  left: -10%;
+  left: 0;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
 }
 
@@ -177,7 +178,7 @@ li {
   margin: 5px;
   margin-top: 10px;
   padding: 5px;	
-  width: 90%;
+  width: 91%;
   color: black;
   font-weight: bold;border:1px solid gray;
   background-color: GoldenRod;
@@ -188,7 +189,7 @@ li {
 .setvolume {
   margin: 5px;
   margin-top: 10px;
-  width:  90%;  
+  width:  91%;  
   padding: 5px;	
   background-color: white;
   border-radius: 10px;
@@ -198,7 +199,7 @@ li {
 .settone{
   margin: 5px;
   margin-top: 10px;
-  width:  90%;  
+  width:  91%;  
   padding: 5px;	
   background-color: darkgray;
   border-radius: 10px;
@@ -213,6 +214,7 @@ li {
     margin-top: 2px;
     margin-left: 15px;
     margin-right: auto;
+    width: 100px;
     /* display: none;*/
 /*    if mode buttons should not be visible and working uncomment this,
       and comment out  setup_modediv(); below */
@@ -299,6 +301,24 @@ li {
   background: GoldenRod;
   cursor: pointer;
 }
+
+ul.dirlist{
+    list-style-type: none;
+    list-style-position: inside;
+
+    margin-left: 0px;
+    padding-left: 15px;
+}
+
+li.zebra{
+    font-size: 10px;    
+}
+span.sizeright{
+    float: right;
+    margin-right: 20px;
+}
+
+li.zebra:nth-child(2n+2) {background: #CCC}
 
 </style>
 <script>
@@ -673,6 +693,7 @@ function logclick()
   xhr.send();
   
 }
+
 //--------------------------------------------------------------------------------
 
 function statusclick()
@@ -688,13 +709,161 @@ function statusclick()
   xhr.open("GET", '/status' );
   xhr.onreadystatechange = function() {
 			if ( xhr.readyState == 4 && xhr.status == 200 ){			
-				var sj = JSON.parse( xhr.responseText);
+				var sj = JSON.parse( xhr.responseText);                                
 				logc.innerHTML += JSON.stringify( sj, null,'\t')  + '</code>';
 			}
   }
 
   xhr.send();
   
+}
+//--------------------------------------------------------------------------------
+
+var dirtotal  = 0;
+
+
+function traverse( jsonObj,ul) {
+
+    
+    if( jsonObj !== null && typeof jsonObj == "object" ) {
+        
+        
+        var li = document.createElement("li");
+        li.setAttribute('class', 'zebra'); 
+        
+        Object.entries(jsonObj).forEach(([key, value]) => {
+                
+                if ( key == 'filename' ){
+                    li.appendChild(document.createTextNode( jsonObj.filename ));
+                }
+                if ( key == 'size' ){
+                    
+                    dirtotal += jsonObj.size;
+                    
+                    sizespan = document.createElement( "span" );
+                    sizetxt  = document.createTextNode( jsonObj.size );
+                    sizespan.appendChild( sizetxt );
+                    sizespan.setAttribute('class', 'sizeright');     
+                    li.appendChild( sizespan);
+                    ul.appendChild(li);
+                } 
+                
+                if ( key == 'files' ){
+                    
+                        ul.appendChild(li);
+                        
+                        var uul = document.createElement("ul");
+                        uul.setAttribute('class', 'dirlist'); 
+                        ul.appendChild( uul );
+                        traverse( value, uul );
+                        return;
+                }
+                if ( key == 'fs'){
+                }    
+                traverse( value, ul);
+        });
+    }
+ 
+}
+
+
+//--------------------------------------------------------------------------------
+
+function dirclick()
+{
+ 
+  document.getElementById("ostatus").style.display = "block";		
+  logc = document.getElementById("statusc");
+  
+  logc.innerHTML = '<button id="statusclose" title="close" class="delbutton" style="float:right;">X</button><code>';
+  logc.innerHTML += '<div style="width: 100%; border: 1px solid black;"> <ul id ="directory" class="dirlist"></ul></div>';
+  
+  var xhr = new XMLHttpRequest();
+  
+  xhr.open("GET", '/list' );
+  xhr.onreadystatechange = function() {
+  
+			if ( xhr.readyState == 4 && xhr.status == 200 ){			
+				var sj = JSON.parse( xhr.responseText);
+
+                dirtotal = 0;
+
+                var dirlist = document.getElementById("directory");
+                traverse( sj, dirlist );
+
+                var li = document.createElement("li");
+                li.setAttribute('class', 'zebra'); 
+
+                var sizetxt  = document.createTextNode( 'Total : ' + dirtotal );
+                var sizespan = document.createElement( "span" );
+
+                sizespan.appendChild( sizetxt );
+                sizespan.setAttribute('class', 'sizeright');     
+                li.appendChild( sizespan);
+                dirlist.appendChild(li);
+
+			}
+  }
+
+  xhr.send();
+  
+}
+//-------------------------------------------------------------------------------------------------
+function savestationsclick()
+{
+    previous_iframe = document.getElementById( "download_iframe") 
+    if ( previous_iframe != null ){
+        previous_iframe.remove();
+    }
+    
+    downloadframe               = document.createElement("iframe"); 
+    downloadframe.id            = "download_iframe";
+    downloadframe.style.display = "none";
+    downloadframe.src           = "/stations.json?download=1";
+  
+    document.body.appendChild( downloadframe );
+        
+  
+}
+//-------------------------------------------------------------------------------------------------
+function remtouchcalclick()
+{
+ 
+  if ( !confirm( "This will delete you current calibration data. Are you sure?" ) ){   
+       return; 
+  }
+  
+  document.getElementById("ostatus").style.display = "block";		
+  logc = document.getElementById("statusc");
+  
+  logc.innerHTML = '<button id="statusclose" title="close" class="delbutton" style="float:right;">X</button><code>';
+  logc.innerHTML += '<div id="delstatus" style="width: 100%;padding: 50px;"></div>';
+  
+  var xhr = new XMLHttpRequest();
+  
+  xhr.open("GET", '/delete?file=/TouchCal.dat' );
+  xhr.onreadystatechange = function() {
+  
+			if ( xhr.readyState == 4 ){
+                if ( xhr.status == 200 ){			
+                    ds = document.getElementById("delstatus");
+                    ds.innerHTML = "Calibration data of the touchscreen has been removed.";
+                    ds.innerHTML += "<p />";
+                    ds.innerHTML += "At the next reboot of Gele Radio you will be asked to enter new calibration points.";
+                   
+                }else{
+                    ds = document.getElementById("delstatus");
+                    ds.innerHTML = "Calibration data touchscreen could not be removed.";
+                    ds.innerHTML += "<p />";
+                    ds.innerHTML += "Maybe it was already removed before.";
+                   
+                }
+                
+			}
+  }
+  
+  xhr.send();
+ 
 }
 
 
@@ -771,6 +940,7 @@ function butclick( e ){
 function addtolist( idx ) {
   var ul = document.getElementById("list");
   var li = document.createElement("li");
+  li.setAttribute('class', 'station'); 
   
   var but = document.createElement( "button" );
   but.setAttribute('id', 'b'+idx); 
@@ -1105,7 +1275,7 @@ function closeandload(){
 <h1>Gele radio</h1>
 
 
-<div id="left" style="margin: 10px;width: 80%; float: left; clear: left;">
+<div id="left" style="margin: 10px;width: 98%; float: left; clear: left;">
 
     <div class="settone" style="background-color: Dimgray;" id="selectinput">
         <div class="clickdiv modeclick" id="modeimg4">Line in</div>
@@ -1161,7 +1331,7 @@ function closeandload(){
 
 
     <div>
-    <ul id="list"></ul> 
+    <ul id="list" class="stationlist"></ul> 
     </div>
 
 
@@ -1240,6 +1410,15 @@ Show<br />log
 </div>
 <div id="statusk" class="clickdiv">
 Show<br />status		
+</div>
+<div id="dirk" class="clickdiv">
+Directory		
+</div>
+<div id="savestations" class="clickdiv">
+Backup<br />stations		
+</div>
+<div id="remtouchcal" class="clickdiv">
+Delete Touch<br />Calibration		
 </div>
 <div id="uploadk" class="clickdiv">
 Upload<br />file		
@@ -1407,7 +1586,9 @@ document.getElementById("updatek").onclick=updateclick;
 document.getElementById("rebootk").onclick=rebootclick;
 document.getElementById("logk").onclick=logclick;
 document.getElementById("statusk").onclick=statusclick;
-
+document.getElementById("dirk").onclick=dirclick;
+document.getElementById("savestations").onclick=savestationsclick;
+document.getElementById("remtouchcal").onclick=remtouchcalclick;
 
 var eUrl  = document.getElementById("edstationurl"); 
 var eName = document.getElementById("edstationname");
