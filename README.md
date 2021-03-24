@@ -61,6 +61,10 @@ Thanks to all the authors
 An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 SPI ( NOT parallel, you 
 will run out of pins) screen is used. All VS1053 breakouts should work ok, consult the 0pins.h file for a 
 possible way of connecting this hardware.
+<p />
+In the current version, a saparate SPI bus is used for the VS1053 (VSPI) and the screen (HSPI).
+This works but so far, there is no evidence this improves speed or reliability, so feel free
+to operate both devices on the same SPI bus. 
 
 <h2>compiling</h2>
 Should compile with the Arduino IDE, but make sure a file
@@ -124,6 +128,8 @@ Currently, the following options are defined:
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.</pre>
+#define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
+                    // in some configurations this has been seen to cause garbage on the screen for unknown reasons.                    
 </pre>
 <h2>sundry</h2>
 
