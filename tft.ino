@@ -531,7 +531,7 @@ void tft_create_meta( int spritew){
           static int onscreen=0; 
           
             //log_d("onscreen %d", onscreen);
-            if (   screenUpdateInProgress ) return;
+            
  
             if ( resetx ){
               currentx = 0;
@@ -666,7 +666,7 @@ static int onscreen=0;
     return;
   }
   
-  if (   screenUpdateInProgress ) return;
+  
   if ( currDisplayScreen != RADIO ) return;
   if ( meta.intransit ) return;
   if ( onscreen )return;
