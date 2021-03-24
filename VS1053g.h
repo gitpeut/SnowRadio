@@ -4,7 +4,21 @@
 #include <sys/stat.h>
 #include <VS1053.h>
 #include "tft.h"  // include definitions for TFT_eSPI lib and screenPage
+// stations
 
+typedef struct {
+char *name;
+int  protocol;
+char *host;
+char *path;
+int   port;
+int   status;
+unsigned int   position;
+}Station;
+
+#define STATIONSSIZE 100
+extern Station *stations; 
+extern volatile int   currentStation;
 extern TFT_eSPI tft;
 extern screenPage currDisplayScreen;
 

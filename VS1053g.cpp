@@ -183,8 +183,8 @@ void VS1053g::displaySpectrum() {
   
   if ( ! spectrum_sprite.created() ){
     spectrum_sprite.createSprite( tft.width(), spectrum_height );  
-    spectrum_sprite.setFreeFont( &radio_button_font );
-    spectrum_sprite.setTextColor( TFT_BLUE, TFT_BLACK );    
+    spectrum_sprite.setFreeFont( LABEL_FONT );
+    spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
   }
   
   if (bands != prevbands) {
@@ -199,16 +199,19 @@ void VS1053g::displaySpectrum() {
     nextx += 10;
     int curx = (nextprevChannel>0)?50+nextx:tft.width()-50-nextx;
     if( curx > tft.width() || curx < 0 ) nextx = 0;    
-      int sline_y     = spectrum_height/2;
+      int sline_y     = 2*(spectrum_height/3);
       int sline_start = 10;
       int sline_end   = tft.width()-10;
-       
+
+      spectrum_sprite.drawString( stations[ currentStation].name,
+                                (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
+ 
       spectrum_sprite.drawLine( sline_start, sline_y, sline_end,sline_y, TFT_GREEN);
       for( int i = 0; i < (tft.width() - 10); i += 20 ){
            spectrum_sprite.drawLine( sline_start + i, sline_y -10 , sline_start+i, sline_y, TFT_GREEN);        
       }
   
-      spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 5, spectrum_height - sline_y + 20, spectrum_barcolor );
+      spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 3, spectrum_height - sline_y + 20, TFT_RED );
           
 
 //    spectrum_sprite.drawString( (nextprevChannel>0)?"6":"4", 

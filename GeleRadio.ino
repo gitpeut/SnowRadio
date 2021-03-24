@@ -235,21 +235,9 @@ QueueHandle_t playQueue;
 
 // stations
 
-typedef struct {
-char *name;
-int  protocol;
-char *host;
-char *path;
-int   port;
-int   status;
-unsigned int   position;
-}Station;
-
-
-#define STATIONSSIZE 100
 Station *stations; 
 
-static volatile int     currentStation = -1;
+volatile int            currentStation = -1;
 static volatile int     stationCount;
 int                     playingStation = -1;
 int                     chosenStation = 0;
