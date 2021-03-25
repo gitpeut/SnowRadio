@@ -21,6 +21,7 @@ extern Station *stations;
 extern volatile int   currentStation;
 extern TFT_eSPI tft;
 extern screenPage currDisplayScreen;
+extern bool MuteActive;
 
 class VS1053g: public VS1053{
 private:

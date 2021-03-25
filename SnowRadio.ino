@@ -1,4 +1,4 @@
-// Gele radio
+// Snow Radio/Снежное радио
 // Jose Baars, Alexander Semenow, 2020-2021
 // public domain
 // uses the follwing libraries:
@@ -34,7 +34,17 @@
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.
 #define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
-                     
+#define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
+                      //for some this is very user friendly, for others it is a source of frustration. 
+#undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
+                      // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
+                      // For this to work, in wificredentials.h,  
+                      // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
+                      // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
+                      // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
+                      // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
+                      // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
+                      //                    
 //#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
@@ -190,8 +200,8 @@ int   topunavailable=0;
 //  int8_t         vs_shutdownx_pin ;                   // GPIO to shut down the amplifier (inversed logic)
 
 //OTA password
-#define APNAME   "GeleRadio"
-#define APVERSION "V5.6"
+#define APNAME   "SnowRadio"
+#define APVERSION "V5.7"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

@@ -5,8 +5,8 @@
 #include "owm.h"
 
 RadioButton touchbutton [ TOUCHBUTTONCOUNT  ] ;
-bool screenUpdateInProgress = false;
-int  nextprevChannel = 0;
+volatile bool screenUpdateInProgress = false;
+volatile int  nextprevChannel = 0;
 //------------------------------------------------------------------------------------------
 // from Bodmer's example.
 
@@ -395,7 +395,9 @@ void drawScreen( screenPage newscreen){
   }
 
   screenUpdateInProgress = false;
-
+  
+  if ( newscreen == RADIO )tft_showmeta();
+  
   toggleStop();
 
 }

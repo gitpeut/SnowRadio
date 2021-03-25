@@ -56,6 +56,7 @@ void add2netp( String nssid = WiFi.SSID(), String npsk = WiFi.psk() ){
   }
   
   if ( !foundssid ) {
+    log_i( "add network %s", nssid.c_str() );
     struct netp n;
     
     strcpy( (char *)n.pass, npsk.c_str() );
@@ -99,12 +100,26 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
 void runWiFi( void *param){
 
-  //deleteFile(multifs, "/netpass");
+   //deleteFile(RadioFS, "/netpass");
 
+   #ifdef LOADSSIDS   
+    log_d ("load ssids");
+    // this will crash if the arrays have no "" as last element.
+    for ( int i=0; wifiSsid[i][0] ; ++i ){
+      add2netp( wifiSsid[i] , wifiPassword[i] ); // add wifi and password in wificredentials 
+    }
+
+    netpass.clear();
+    netpass.shrink_to_fit();
+  
+  #endif
+  
   file2netp();
   //displaynetp();
+ 
 
-  //add2netp( ssid , password ); // add wifi and password in wificredentials 
+ 
+
   WiFi.setHostname( APNAME );  
   WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP); 
   WiFi.onEvent(WiFiLostIP, WiFiEvent_t::SYSTEM_EVENT_STA_LOST_IP); 
@@ -121,10 +136,12 @@ void runWiFi( void *param){
     delay(2000);
   }
     
+#ifdef USEESPTOUCH 
+
   if ( WiFi.status() != WL_CONNECTED  ){
     
     //Init WiFi as Station, start SmartConfig
-     //WiFi.mode(WIFI_AP_STA);
+    //WiFi.mode(WIFI_AP_STA);
     tft_message("No network", "Use ESP Touch" );  
     WiFi.beginSmartConfig();
 
@@ -139,8 +156,13 @@ void runWiFi( void *param){
     if ( !WiFi.smartConfigDone() ){
       Serial.printf( "\n%s stop of smartconfig. No WiFi.", WiFi.stopSmartConfig()?"Successful":"Failed");    
     }
-      
   }
+#else
+  if ( WiFi.status() != WL_CONNECTED  ){
+      tft_message("No known network found", "define more in wificredentials.h" );       
+  }
+#endif      
+  
 
   delay(100);
   netpass.clear();
@@ -193,9 +215,9 @@ void netp2file(){
 
   File file = multifs.open("/netpass", FILE_WRITE);
   if(!file){
-    log_e("- failed to open file for writing");
+    log_e("- failed to open /netpass for writing");
   }else{
-    log_i("written %d bytes to file", file.write( cryptbuf, netpsize ) );    
+    log_i("written %d bytes to /netpass", file.write( cryptbuf, netpsize ) );    
   }
     
 free( cryptbuf );
@@ -216,7 +238,7 @@ snprintf( (char *)key, sizeof( key), gr_key); // to be defined in wificredential
 
 File file = multifs.open("/netpass");
 if ( ! file ) {
-    log_e( "No file found ");
+    log_e( "No netpass file found ");
     return;
 }
 size_t filesize = file.size();
@@ -248,10 +270,11 @@ size_t  plaincount = filesize / sizeof ( struct netp);
 
 for ( int i = 0; i < plaincount; ++i ){
     netpass.push_back( *n );
+    //log_i("Adding ssid %s", (char *)n->ssid);
     wifiMulti.addAP((char *)n->ssid, (char *)n->pass);
     ++n;
 }
-log_i("read the following networks from file");
+//log_i("read the following networks from file");
 //displaynetp();
 
 esp_aes_free( &ctx );
@@ -273,10 +296,10 @@ void displaynetp(){
   log_i("Found %d networks\n", count);
   
 }
-*/
+
 
 //----debug-----------------------------------------------------------------------------
-/*void deleteFile(fs::FS &fs, const char * path){
+void deleteFile(fs::FS &fs, const char * path){
     Serial.printf("Deleting file: %s\r\n", path);
     if(fs.remove(path)){
         Serial.println("- file deleted");

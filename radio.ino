@@ -108,7 +108,7 @@ int extractMeta ( uint8_t *r ){
        meta.metar   = NULL;
        meta.qoffset =0;                       
        log_d( "Metadata:\n%s", meta.metadata);
-       //dump_meta( meta.metadata );
+       dump_meta( meta.metadata );
        tft_fillmeta();
        meta.intransit = false;
        broadcast_meta();                                                                                             

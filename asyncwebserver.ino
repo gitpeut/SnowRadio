@@ -389,7 +389,8 @@ void handleAdd( AsyncWebServerRequest *request ){
   }else{
     
     save_stations(); 
-    read_stations();//added               
+    if ( delFBuf( "/stations.json" ) ) addFBuf( "/stations.json" );
+    read_stations();               
     return_status = 200;
     sprintf( message,"Added station %s", request->getParam("name")->value().c_str() );      
   }
@@ -805,6 +806,11 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
 void latin2utf( unsigned char *latin, unsigned char **utf ){
 unsigned char *l, *u;
 
+if ( latin == NULL || *latin ==  0 ){
+  *utf = (unsigned char *)gr_calloc( 1, 1 );
+  return;  
+}
+
 *utf = (unsigned char *)gr_calloc( strlen( (char *)latin ) * 4, 1 );
 
 u   = *utf;
@@ -813,13 +819,12 @@ l  = latin;
     while (*l){
       if (*l<128){
           *u = *l;
-      }else{
-                          
-          if ( *(l+1) < 128 ){ // detect UTF-8 input. Will not always work 
+      }else{                          
+          if ( *(l+1) < 128 || *l < 192 ){ // probably extended ASCII input, UTF-8 wants >128            
             *u = 0xc0 | (*l >> 6);
             ++u;
             *u = 0x80 | (*l & 0x3f);
-          }else{
+          }else{ // apparently, this is UTF-8 input
             *u = *l;
             ++u; ++l;
             *u = *l;            

@@ -182,8 +182,7 @@ void VS1053g::displaySpectrum() {
   static int nextx = 0;
   
   if ( ! spectrum_sprite.created() ){
-    spectrum_sprite.createSprite( tft.width(), spectrum_height );  
-    spectrum_sprite.setFreeFont( LABEL_FONT );
+    spectrum_sprite.createSprite( tft.width(), spectrum_height );     
     spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
   }
   
@@ -192,30 +191,32 @@ void VS1053g::displaySpectrum() {
     if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
   }
 
-  if ( nextprevChannel ){
-    log_d("drawstring nextprev");
+  if ( nextprevChannel || MuteActive ){
     prevbands = 0;
     spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
-    nextx += 10;
-    int curx = (nextprevChannel>0)?50+nextx:tft.width()-50-nextx;
-    if( curx > tft.width() || curx < 0 ) nextx = 0;    
-      int sline_y     = 2*(spectrum_height/3);
-      int sline_start = 10;
-      int sline_end   = tft.width()-10;
-
-      spectrum_sprite.drawString( stations[ currentStation].name,
-                                (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
- 
-      spectrum_sprite.drawLine( sline_start, sline_y, sline_end,sline_y, TFT_GREEN);
-      for( int i = 0; i < (tft.width() - 10); i += 20 ){
-           spectrum_sprite.drawLine( sline_start + i, sline_y -10 , sline_start+i, sline_y, TFT_GREEN);        
-      }
-  
-      spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 3, spectrum_height - sline_y + 20, TFT_RED );
-          
-
-//    spectrum_sprite.drawString( (nextprevChannel>0)?"6":"4", 
-//                                (nextprevChannel>0)?50+nextx:tft.width()-50-nextx, 0, 1);
+    if ( nextprevChannel ){
+        spectrum_sprite.setFreeFont( LABEL_FONT );
+        nextx += 10;
+        int curx = (nextprevChannel>0)?50+nextx:tft.width()-50-nextx;
+        if( curx > tft.width() || curx < 0 ) nextx = 0;    
+          int sline_y     = 2*(spectrum_height/3);
+          int sline_start = 10;
+          int sline_end   = tft.width()-10;
+    
+          spectrum_sprite.drawString( stations[ currentStation].name,
+                                    (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
+     
+          spectrum_sprite.drawLine( sline_start, sline_y, sline_end,sline_y, TFT_GREEN);
+          for( int i = 0; i < (tft.width() - 10); i += 20 ){
+               spectrum_sprite.drawLine( sline_start + i, sline_y -10 , sline_start+i, sline_y, TFT_GREEN);        
+          }
+      
+          spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 3, spectrum_height - sline_y + 20, TFT_RED );
+    }          
+    if ( MuteActive ){
+      spectrum_sprite.setFreeFont( &radio_button_font );
+      spectrum_sprite.drawString( "8", (tft.width() - 50)/2 , 0, 1);
+    }  
   }else{
         nextx = 0;
         for (uint8_t i = 0; i < bands; i++) // Handle all sections

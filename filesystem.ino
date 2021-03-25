@@ -32,8 +32,10 @@ bool delFBuf( String filename ){
     dbuf->size = 0;
     free( dbuf->buffer );
     dbuf->buffer = NULL;
+    log_d("deleted buffer for %s", filename.c_str() );
     return( true );
   }
+  log_d("could not find buffer for %s", filename.c_str() );
   return( false );
 }
 //--------------------------------------------------------------------------------
@@ -47,7 +49,7 @@ FBuf *addFBuf( String filename ){
   
   FBuf *fb = findFBuf( filename );
   if ( fb ){
-    //log_i( "%s already buffered", filename.c_str() );
+    log_i( "%s already buffered", filename.c_str() );
     return fb;
   }
 

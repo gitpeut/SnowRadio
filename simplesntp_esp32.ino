@@ -6,8 +6,8 @@
 // in wificredentials the following are define:
 // char* ntpServers[] = { "nl.pool.ntp.org", "be.pool.ntp.org", "de.pool.ntp.org"};
 // const char* ntpTimezone   = "CET-1CEST,M3.5.0/2,M10.5.0/3";
-// const char* wifiSsid   = "yourssid";
-// const char* wifiPassword  = "yourWiFipassword";
+// const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmothersssi"};
+// const char* wifiPassword[]  =  ("yourWiFipassword","passwordOfyourOtherssid","yourmotherssidspassword"} ;
 
 #include "WiFi.h"
 #include "time.h"

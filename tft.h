@@ -126,9 +126,9 @@ struct metaInfo{
 };
 
 extern struct metaInfo meta;
-extern void broadcast_meta(bool reset=false);
-extern bool screenUpdateInProgress;
-extern int  nextprevChannel;
+extern void          broadcast_meta(bool reset=false);
+extern volatile bool screenUpdateInProgress;
+extern volatile int  nextprevChannel;
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
@@ -142,5 +142,6 @@ void tft_create_meta( int spritew = 0);
 void tft_fillmeta();
 void tft_showmeta(bool resetx=false);
 
+void latin2utf( unsigned char *latin, unsigned char **utf ); // in asyncwebserver.ino
 
 #endif

@@ -468,30 +468,33 @@ void tft_create_meta( int spritew){
           void tft_fillmeta(){
             int   textw, textx=0, spritew;
             char  *txt[2] = {NULL,NULL};
-            char  *middle;
-          
+            char  *middle=NULL, *mymeta=NULL;
+            unsigned char  *utfmeta=NULL;
+            
           #ifndef SHOWMETA
             return;
           #endif
-            
-            log_d("%s", meta.metadata);
+            log_d( "- fillmeta %d -", meta.intransit);
             
             tft_create_meta();
-            
-            textw   = meta_sprite.textWidth( meta.metadata, 1 ); 
+
+            latin2utf( (unsigned char *) meta.metadata, &utfmeta );
+            mymeta = ( char *) utfmeta;
+
+            textw   = meta_sprite.textWidth( mymeta, 1 ); 
             if ( textw < nonscroll_metawidth ){
                textx    = ( nonscroll_metawidth - textw )/2;
                spritew  = nonscroll_metawidth;
             }else if ( textw < ( 2*nonscroll_metawidth ) ){
           
-               middle = meta.metadata + strlen( meta.metadata ) / 2;
-               for( ; middle > meta.metadata && *middle != ' ' && middle > meta.metadata; --middle);
-               if ( middle - meta.metadata < strlen( meta.metadata ) / 3 ){
-                  middle = meta.metadata + strlen( meta.metadata ) / 2;
-                  for( ; middle > meta.metadata && *middle != ' ' && *middle; ++middle);
+               middle = mymeta + strlen( mymeta ) / 2;
+               for( ; middle > mymeta && *middle != ' ' && middle > mymeta; --middle);
+               if ( middle - mymeta < strlen( mymeta ) / 3 ){
+                  middle = mymeta + strlen( mymeta ) / 2;
+                  for( ; middle > mymeta && *middle != ' ' && *middle; ++middle);
                }
-               txt[0] = ps_strndup( meta.metadata, middle - meta.metadata );
-               txt[1] = ps_strdup( middle + 1);
+               txt[0] = ps_strndup( mymeta, middle - mymeta );
+               txt[1] = ps_strdup(  middle + 1);
           
                 
                char *longest = txt[0];
@@ -510,19 +513,26 @@ void tft_create_meta( int spritew){
             
             meta_sprite.deleteSprite();
             tft_create_meta( spritew );
+
+            
             
             if ( txt[0] != NULL ){ 
+              log_d( "txt 0 : %s\n", txt[0]);
               meta_sprite.drawString( txt[0], textx, 0, 1);
-              Serial.printf( "txt 0 : %s\n", txt[0] );
               free( txt[0]);
               if ( txt[1] != NULL){
-                Serial.printf( "txt 1 : %s\n", txt[1] );
-                meta_sprite.drawString( txt[1],textx,12, 1);
+                log_d( "txt 1 : %s\n", txt[1]);
+                meta_sprite.drawString( (char *)txt[1],textx,12, 1);
                 free( txt[1] );
               } 
             }else{
-              meta_sprite.drawString( meta.metadata, textx, 6, 1);
+              log_d( "mymeta : %s\n", mymeta );
+              meta_sprite.drawString( (char *)utfmeta, textx, 6, 1);
             }
+
+            mymeta = NULL;
+            if ( utfmeta != NULL)free( utfmeta );
+            
             tft_showmeta( true );
           }
           //---------------------------------------------------------------------
@@ -538,7 +548,8 @@ void tft_create_meta( int spritew){
               onscreen = 0;
               return;
             }
-            
+
+            if ( screenUpdateInProgress ) return;
             if ( currDisplayScreen != RADIO ) return;
             if ( meta.intransit ) return;
             if ( onscreen )return;
@@ -578,7 +589,7 @@ void tft_fillmeta(){
   // this way, font changes do not affect the screen.  
   tft_create_meta();
 
-
+  
   String mymeta = String( meta.metadata);
      
      // Alex's customizations
@@ -598,9 +609,9 @@ void tft_fillmeta(){
 
 //        keep meta.metadata as original, for the web page other changes or 
 //        none at all may be demanded. 
-        
-          mymetaedit = ps_strdup( mymeta.c_str() );
-          
+//        try to make sure both display (here) and web page (in asyncwebser.ino) receive a UTF-8 string.        
+          latin2utf( (unsigned char *) mymeta.c_str(), (unsigned char **)&mymetaedit );
+                  
           if ( metatxt[0] != NULL ){
             free ( metatxt[0] );
             metatxt[0] = NULL;
@@ -670,6 +681,7 @@ static int onscreen=0;
   if ( currDisplayScreen != RADIO ) return;
   if ( meta.intransit ) return;
   if ( onscreen )return;
+  if (   screenUpdateInProgress ) return;
    
   grabTft();
 
