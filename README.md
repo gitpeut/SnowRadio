@@ -126,7 +126,7 @@ Currently, the following options are defined:
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
-                    // place under the station name.</pre>
+                    // place under the station name.
 #define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
                     // in some configurations this has been seen to cause garbage on the screen for unknown reasons.                    
 #define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
