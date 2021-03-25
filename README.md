@@ -1,4 +1,5 @@
-# Snow Radio - Снежное радио - Sneeuwradio
+# Snow Radio 
+(Снежное радио - Sneeuwradio)
 
 </p>
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
