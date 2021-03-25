@@ -75,7 +75,9 @@ This file should contain the following variables for SnowRadio.
 <pre>
 #ifndef WIFICREDENTIALS_H
 #define WIFICREDENTIALS_H
-
+// optional,  necessary if LOADSSIDS is defined and used
+const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
+const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
 
 // ntp
 const char* ntpServers[]	= { "nl.pool.ntp.org", "ru.pool.ntp.org", "de.pool.ntp.org"};
