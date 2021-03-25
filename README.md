@@ -9,7 +9,7 @@ encoding supported. Also artist and track information is collected, if available
 on the display and in the web browser.
 Latency is low by design.
 <p />
-Gele radio was greatly improved and extended due to the generous support, useful suggestions 
+Snow Radio was greatly improved and extended due to the generous support, useful suggestions 
 and rigorous testing of Alexander Semenov.
 <p />
 Playlists ( .pls, .m3u, .dash etc.) are not supported. 
@@ -33,7 +33,7 @@ http://www.vlsi.fi/en/support/software.html
 An effort has been made to maximize use of PSRAM, if available.
 <p />
 
-Gele Radio uses the following libraries:
+Snow Radio uses the following libraries:
 <ul>
  <li>ArduinoJSON ( https://github.com/bblanchon/ArduinoJson.git )</li>
  <li>Gesture_PAJ7620 ( https://github.com/Seeed-Studio/Gesture_PAJ7620 )</li>
@@ -70,7 +70,7 @@ to operate both devices on the same SPI bus.
 Should compile with the Arduino IDE, but make sure a file
 wificredentials.h is available in folder wificredentials of your Arduino library folder.
 (credits: Andres Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
-This file should contain the following variables for GeleRadio.
+This file should contain the following variables for SnowRadio.
 <p />
 
 <pre>
@@ -101,7 +101,7 @@ const char	*owm_lang = "nl"; // en, ru....
 #endif
 </pre>
  
-In GeleRadio.ino a number of defines enable you to turn on or off some features.
+In SnowRadio.ino a number of defines enable you to turn on or off some features.
 Generally they are called USE<option>. Be aware that not all possible combinations 
 have been tested (although many have) , and that a random combination of features may 
 show random and undefined behaviour.
@@ -130,6 +130,17 @@ Currently, the following options are defined:
                     // place under the station name.</pre>
 #define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
                     // in some configurations this has been seen to cause garbage on the screen for unknown reasons.                    
+#define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
+                      //for some this is very user friendly, for others it is a source of frustration. 
+#undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
+                      // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
+                      // For this to work, in wificredentials.h,  
+                      // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
+                      // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
+                      // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
+                      // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
+                      // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
+                      //                    
 </pre>
 <h2>sundry</h2>
 
