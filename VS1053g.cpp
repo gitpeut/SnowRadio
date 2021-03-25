@@ -213,7 +213,7 @@ void VS1053g::displaySpectrum() {
       
           spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 3, spectrum_height - sline_y + 20, TFT_RED );
     }          
-    if ( MuteActive ){
+    if ( MuteActive && !nextprevChannel ){
       spectrum_sprite.setFreeFont( &radio_button_font );
       spectrum_sprite.drawString( "8", (tft.width() - 50)/2 , 0, 1);
     }  
