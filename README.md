@@ -62,7 +62,7 @@ An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320
 will run out of pins) screen is used. All VS1053 breakouts should work ok, consult the 0pins.h file for a 
 possible way of connecting this hardware.
 <p />
-In the current version, a saparate SPI bus is used for the VS1053 (VSPI) and the screen (HSPI).
+In the current version, a separate SPI bus is used for the VS1053 (VSPI) and the screen (HSPI).
 This works but so far, there is no evidence this improves speed or reliability, so feel free
 to operate both devices on the same SPI bus. 
 
