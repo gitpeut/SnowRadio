@@ -1,4 +1,4 @@
-# Snow Radio
+# Snow Radio - Снежное радио
 <p />
 Snow Radio - Снежное радио
 </p>
