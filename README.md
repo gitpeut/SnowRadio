@@ -1,6 +1,5 @@
-# Snow Radio - Снежное радио
-<p />
-Snow Radio - Снежное радио
+# Snow Radio - Снежное радио - Sneeuwradio
+
 </p>
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
 optional gesture and touchscreen control and openweathermap data. User friendly web interface

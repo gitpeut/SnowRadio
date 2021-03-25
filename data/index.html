@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Gele radio</title>
+<title>Snow radio</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -13,8 +13,14 @@ body {
 }
 
 h1 {
-	color: GoldenRod;
+	color: white;
 	font-size: 5vw;
+    margin-left: 15px;
+}
+
+h3 {
+	color: white;
+	font-size: 1vw;
     margin-left: 15px;
 }
 
@@ -826,6 +832,23 @@ function savestationsclick()
   
 }
 //-------------------------------------------------------------------------------------------------
+function savenetpassclick()
+{
+    previous_iframe = document.getElementById( "download_iframe") 
+    if ( previous_iframe != null ){
+        previous_iframe.remove();
+    }
+    
+    downloadframe               = document.createElement("iframe"); 
+    downloadframe.id            = "download_iframe";
+    downloadframe.style.display = "none";
+    downloadframe.src           = "/netpass?download=1";
+  
+    document.body.appendChild( downloadframe );
+        
+  
+}
+//-------------------------------------------------------------------------------------------------
 function remtouchcalclick()
 {
  
@@ -849,7 +872,7 @@ function remtouchcalclick()
                     ds = document.getElementById("delstatus");
                     ds.innerHTML = "Calibration data of the touchscreen has been removed.";
                     ds.innerHTML += "<p />";
-                    ds.innerHTML += "At the next reboot of Gele Radio you will be asked to enter new calibration points.";
+                    ds.innerHTML += "At the next reboot of Snow Radio you will be asked to enter new calibration points.";
                    
                 }else{
                     ds = document.getElementById("delstatus");
@@ -1265,15 +1288,15 @@ function closeandload(){
     esource.close();
     now_playing = document.getElementById( "now_playing");
     now_playing.innerHTML = '';
-    now_playing.appendChild(document.createTextNode( "-- Radio may be off, please check. Then click to reconnect --" ));
+    now_playing.appendChild(document.createTextNode( "-- Connection lost to Snow radio, click to reconnect --" ));
     loadstatus();
 }
 
 </script>
 </head>
 <body>
-<h1>Gele radio</h1>
-
+<h1>Snow radio</h1>
+<h3>Снежное радио - Sneeuwradio</h3>
 
 <div id="left" style="margin: 10px;width: 98%; float: left; clear: left;">
 
@@ -1413,6 +1436,9 @@ Show<br />status
 </div>
 <div id="dirk" class="clickdiv">
 Directory		
+</div>
+<div id="savenetpass" class="clickdiv">
+Backup<br />network data		
 </div>
 <div id="savestations" class="clickdiv">
 Backup<br />stations		
@@ -1588,6 +1614,7 @@ document.getElementById("logk").onclick=logclick;
 document.getElementById("statusk").onclick=statusclick;
 document.getElementById("dirk").onclick=dirclick;
 document.getElementById("savestations").onclick=savestationsclick;
+document.getElementById("savenetpass").onclick=savenetpassclick;
 document.getElementById("remtouchcal").onclick=remtouchcalclick;
 
 var eUrl  = document.getElementById("edstationurl"); 

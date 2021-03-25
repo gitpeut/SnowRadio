@@ -201,7 +201,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V5.7"
+#define APVERSION "V1.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

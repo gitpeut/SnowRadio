@@ -1136,7 +1136,7 @@ void tft_init(){
   tft.setRotation( tftrotation );
 
   tft.fillScreen(TFT_BLACK);
-  drawBmp( "/images/GoldRadio.bmp", (tft.width()/2) - 25, 20);
+  drawBmp( "/images/SnowRadio.bmp", (tft.width()/2) - 25, 20);
   
   tft_message( tft.getAttribute(3)?"tft will use PSRAM": "tft will not use PSRAM");
   tft_message( CONFIG_SPIRAM_SUPPORT?"sprites will so, too":"sprites will not" );
