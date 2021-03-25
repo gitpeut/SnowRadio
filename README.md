@@ -1,6 +1,6 @@
-# Gele Radio
+# Snow Radio
 <p />
-Gele Radio means yellow radio. 
+Snow Radio - Снежное радио
 </p>
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
 optional gesture and touchscreen control and openweathermap data. User friendly web interface
