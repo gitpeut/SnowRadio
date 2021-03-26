@@ -69,7 +69,8 @@ public:
   uint8_t     prevbands = 0; // Number previous band Spectrum Analyzer
   uint8_t     spectrum[14][3]; // Array per Spectrum Analyzer
                                // [0] current height [1] previous height [2] peak value
-  
+
+  uint8_t     spectrum_width  = 208;
   uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
   uint8_t     spectrum_height = 78; //высота графика = Spectrum graph height
   TFT_eSprite spectrum_sprite = TFT_eSprite(&tft);    

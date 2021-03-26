@@ -175,58 +175,61 @@ return( buf.st_size );
 void VS1053g::displaySpectrum() {
  
   if (bands <= 0 || bands > 14)  return;
-  uint8_t   bar_width = 13;
-  
+  uint8_t   bar_width   = 13;  
   uint16_t  barx = 0; // start location of the first bar
-
   boolean   visual = true; //paint to display
   static int nextx = 0;
+
+  spectrum_width  = 208;
   
   if ( ! spectrum_sprite.created() ){
-    spectrum_sprite.createSprite( 208, spectrum_height );      
-//    spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
+      spectrum_sprite.createSprite( spectrum_width, spectrum_height );      
   }
   
   if (bands != prevbands) {
     prevbands = bands;
-    if (visual) spectrum_sprite.fillRect (0,0, 208, spectrum_height, TFT_MY_DARKGRAY);
+    if (visual) spectrum_sprite.fillRect (0,0, spectrum_width, spectrum_height, TFT_MY_DARKGRAY);
   }
 
   if ( nextprevChannel || MuteActive ){
     prevbands = 0;
-    spectrum_sprite.fillRect (0,0, 208, spectrum_height, TFT_MY_DARKGRAY);
+    spectrum_sprite.fillRect (0,0, spectrum_width, spectrum_height, TFT_MY_DARKGRAY);
     
     if ( nextprevChannel ){
         nextx += 10;
-        int curx = (nextprevChannel>0)?50+nextx:208-50-nextx;
-        if( curx > 201 || curx < 0 ) nextx = 0;    
-      int sline_y     = 2*(spectrum_height/3);
-      int sline_start = 0;
-      int sline_end   = 208;
+        int curx = (nextprevChannel>0)?50+nextx:spectrum_width-50-nextx;
+        if( curx > spectrum_width - 7 || curx < 0 ) nextx = 0;    
+        int sline_y     = 2*(spectrum_height/3);
+        int sline_start = 0;
+        int sline_end   = spectrum_width;
+      
+        spectrum_sprite.setFreeFont( DATE_FONT );
+        spectrum_sprite.setTextColor( TFT_MY_GOLD, TFT_MY_DARKGRAY );  
+        spectrum_sprite.setTextDatum(TC_DATUM);
+        spectrum_sprite.drawString( stations[ currentStation].name, 104, 61);
     
-      spectrum_sprite.setFreeFont( DATE_FONT );
-      spectrum_sprite.setTextColor( TFT_MY_GOLD, TFT_MY_DARKGRAY );  
-      spectrum_sprite.setTextDatum(TC_DATUM);
-      spectrum_sprite.drawString( stations[ currentStation].name, 104, 61);
-      spectrum_sprite.setTextDatum(TL_DATUM);
-  spectrum_sprite.setFreeFont( ARROW_FONT );
-  spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
-  spectrum_sprite.setTextDatum(TC_DATUM);
-  spectrum_sprite.drawString( (nextprevChannel>0)?"54545":"64646", 104, 5);
-  spectrum_sprite.setTextDatum(TL_DATUM);
-     
-    spectrum_sprite.setFreeFont( DATE_FONT );
-    spectrum_sprite.setTextColor( TFT_GREEN, TFT_MY_DARKGRAY ); 
+        spectrum_sprite.setFreeFont( ARROW_FONT );
+        spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
+        spectrum_sprite.drawString( (nextprevChannel>0)?"54545":"64646", spectrum_width/2, 5);
+       
       
     }          
     if ( MuteActive && !nextprevChannel ){
-  spectrum_sprite.setFreeFont( ARROW_FONT );
-  spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
-  spectrum_sprite.setTextDatum(TC_DATUM);
-      spectrum_sprite.drawString( "7", 104 , 15);
-        spectrum_sprite.setTextDatum(TL_DATUM);
+          spectrum_sprite.setFreeFont( ARROW_FONT );
+          spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
+          spectrum_sprite.setTextDatum(TC_DATUM);
+          spectrum_sprite.drawString( "7", spectrum_width/2 , 15);
     }  
   }else{
+    
+        bar_width = spectrum_width / bands;
+  
+        while( (bar_width * bands + (bands-1) * 2 > spectrum_width) ){
+            bar_width--;
+        }
+         
+        barx = (spectrum_width - (bar_width * bands + (bands-1) * 2)) /2; 
+        
         nextx = 0;
         for (uint8_t i = 0; i < bands; i++) // Handle all sections
         {
@@ -239,6 +242,7 @@ void VS1053g::displaySpectrum() {
             }  
           }
           if (spectrum[i][2] > 0) { 
+        
             spectrum[i][2]--;
           }
           if (spectrum[i][0] > spectrum[i][2]) {
