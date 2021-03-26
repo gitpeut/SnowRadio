@@ -3,24 +3,32 @@
 
 #include <TFT_eSPI.h>
     
-#define TFT_MY_GOLD        0xE68E
-#define TFT_MY_SILVER      0xC615
+#define TFT_MY_GOLD         0xE68E
+#define TFT_MY_SILVER       0xC615
+#define TFT_MY_BLACK        0x31A7  // Темный задний фон
+#define TFT_MY_GRAY         0xBDF7  // Контур, шрифты
+#define TFT_MY_DARKGRAY     0x424A  // Заливка отсеков
+#define TFT_MY_BLUE         0x5C5C  // Часы, спект, активные кнопки.
+#define TFT_MY_RED          0xEAA9
 
-#define TFT_REALGOLD       TFT_MY_GOLD
-#define TFT_ROTATION       2
+#define TFT_ROTATION       3
 
 // --- fonts ---
 //just to make it resemble the examples
 #define GFXFF 1
 // symbol font for volume, battery and buttons
-#include "fonts.h"
-//freefont for stations
-#define STATION_FONT  &FreeSansBold10pt8b //Same as Date font
-//freefont for stationlist
-#define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
-#define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
-#define DATE_FONT     &FreeSansBold10pt8b
-#define META_FONT     &MetaBold11 //&MetaBold10//&FreeSansBold6pt8b //&MetaBold12
+
+#include "fonts.h"    //freefont for stations
+#define BTN_FONT      &radio_button_font    // Кнопки управления радио и режимами // Radio and mode control buttons
+#define ARROW_FONT    &arrow                // Шрифт для стрелок переключения станции и mute. // Font for the station switching arrows and the symbol for mute mode.
+#define INDICATOR_FONT  &indicator          // Индикаторы аккумулятора и громкости
+#define LABEL_FONT    &FreeSansBold6pt8b    // Шрифт для метки погоды, описание погоды, день недели, название трека. // Font for the weather label, weather description, day of the week, track name.
+#define DATE_FONT     &FreeSansBold9pt8b    // Шрифт для следующей станции и текущей даты // Font for the next station and the current date
+#define STATION_FONT  &FreeSansBold10pt8b   // Шрифт списка станций // Station List Font
+#define TIME_FONT     &FreeSansBold44pt7b   // Шрифт для часов. Только цифры. // The font for the clock. Only numbers.
+#define LABELW_FONT   &Digital_8            // Шрифт, цифры для даты в прогнозах погоды. // Font, numbers for the date in the weather forecasts.
+#define NUM_FONT      &Digital_16pt8b       // Шрифт, цифры для параметров погоды + специальные символы. // Font, numbers for weather parameters + special characters.
+
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
@@ -62,27 +70,27 @@ extern SemaphoreHandle_t tftSemaphore;
 //  drawBmp("/OranjeRadio24.bmp", 55, 15 );
 
 #ifdef USETOUCH
-  #define TFTCLOCKT 51                             //top
+  #define TFTCLOCKT 51
 #else
-  #define TFTCLOCKT  0                             //top
+  #define TFTCLOCKT  0
 #endif
 
-#define TFTCLOCKH 80                                //height
-#define TFTCLOCKB (TFTCLOCKT + TFTCLOCKH)           //bottom 175
+#define TFTCLOCKH 80
+#define TFTCLOCKB (TFTCLOCKT + TFTCLOCKH)
 
-#define TFTSPECTRUMH 50                             // height
-#define TFTSPECTRUMT (TFTCLOCKB + 32 )               // top    
-#define TFTSPECTRUMB (TFTSPECTRUMT + TFTSPECTRUMH ) //bottom  226
+#define TFTSPECTRUMH 80
+#define TFTSPECTRUMT (TFTCLOCKB + 32 )    
+#define TFTSPECTRUMB (TFTSPECTRUMT + TFTSPECTRUMH )
 
-#define TFTSTATIONH  25                             //height
-#define TFTSTATIONT  (TFTSPECTRUMB + 1)             //top      
-#define TFTSTATIONB  ( TFTSTATIONT + TFTSTATIONH )  //bottom  277
+#define TFTSTATIONH  25
+#define TFTSTATIONT  (TFTSPECTRUMB + 1)    
+#define TFTSTATIONB  ( TFTSTATIONT + TFTSTATIONH )
 
-#define TFTMETAH  30                                //height
-#define TFTMETAT  (TFTSTATIONB)                     //top      
-#define TFTMETAB  (TFTMETAT + TFTMETAH)             //bottom  277
+#define TFTMETAH  25
+#define TFTMETAT  (TFTSTATIONB)     
+#define TFTMETAB  (TFTMETAT + TFTMETAH)
 
-#define BUTOFFSET ((tft.width() - 4*BUTW)/5)
+#define BUTOFFSET ((230 - 4*BUTW)/5)
 
 // neopixel 
 #define NEONUMBER    10
@@ -125,15 +133,15 @@ struct metaInfo{
   
 };
 
-extern struct metaInfo meta;
+extern struct        metaInfo meta;
 extern void          broadcast_meta(bool reset=false);
 extern volatile bool screenUpdateInProgress;
 extern volatile int  nextprevChannel;
 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
-void showVolume( int percentage , bool force = false);
-void showBattery( bool force = false);
+//void showVolume( int percentage , bool force = false);
+//void showBattery( bool force = false);
 void drawBmp(const char *filename, int16_t x, int16_t y, TFT_eSprite *sprite=NULL, bool show=true );
 void showClock ( bool force = false);
 void toggleStop( bool nostop=true );

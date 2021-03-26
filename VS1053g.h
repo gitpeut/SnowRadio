@@ -71,7 +71,7 @@ public:
                                // [0] current height [1] previous height [2] peak value
   
   uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
-  uint8_t     spectrum_height = 70; //высота графика = Spectrum graph height
+  uint8_t     spectrum_height = 78; //высота графика = Spectrum graph height
   TFT_eSprite spectrum_sprite = TFT_eSprite(&tft);    
 
   bool        stop_song();

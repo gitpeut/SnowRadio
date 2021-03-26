@@ -65,7 +65,8 @@ using WhateverRamJsonDocument = BasicJsonDocument<GrAllocator>;
 void init_owm(){
   weathert = TFTCLOCKB;
   weatherh = tft.height() - weathert - radio_button_font.yAdvance - 4;  
-  weatherw = tft.width();  
+//  weatherw = tft.width();  
+  weatherw = 230;  
   
   iconh    = 51;
   iconw    = 51;
@@ -85,7 +86,8 @@ void init_owm(){
   fclabelh   = fch;
   fclabelo   = labelo/2;
   fclabelw   = (fcw - fclabelo*3)/3;
-  fcx        = tft.width()  - fcw;
+//  fcx        = tft.width()  - fcw;
+  fcx        = 230  - fcw;
   fcy        = tft.height() - radio_button_font.yAdvance - 5;
 
   log_d( "fcw %d fcx %d ", fcw, fcx); 
@@ -176,11 +178,7 @@ bool getWeather(){
   }  
   owmclient.stop();                                      //stop client
 
-/*
-  for( eresult = result; *eresult; ++eresult ){
-    if ( *eresult == '[' || *eresult == ']') *eresult = ' ';
-  }
- */ 
+
   Serial.println( result );
 
   DeserializationError error;
@@ -190,7 +188,7 @@ bool getWeather(){
 //    works, but should be conditional  
 
   WhateverRamJsonDocument root(10*1024);
-//  StaticJsonDocument<2048> root;
+
   error = deserializeJson( root, result );
 
   if ( error  ){
@@ -279,25 +277,14 @@ void drawWeather(){
 
 int extray = 0;
 
-#ifdef USETOUCH
-    if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT ){
-#else
-    if (1){
-       if ( currDisplayScreen == RADIO ){ 
-          extray = tft.height() - weathert - label2t; 
-       }
-#endif
        if ( xSemaphoreTake( tftSemaphore, 1000 ) == pdTRUE ){
           if ( owmdata.iconfilename != NULL ){
-            weather_sprite.pushSprite( 0, weathert + extray );
+            weather_sprite.pushSprite( 16, 130 );
             releaseTft();  
-#ifdef TWOLINEDESC            
-            drawBmp( owmdata.iconfilename,labelo, weathert + extray );           
-#else
-            drawBmp( owmdata.iconfilename,labelo, weathert + label1t + labelh/2 + extray );         
-#endif
+            drawBmp( owmdata.iconfilename, 24, 146 ); 
+            delay (1);        
           }else{
-            weather_sprite.pushSprite( 0, weathert + labelh + extray );
+            weather_sprite.pushSprite( 16, 130 );
             releaseTft();
           }  
           // drawing 24bit colorbmp's to sprites gives weird colors
@@ -307,7 +294,7 @@ int extray = 0;
             log_w("Couldn't take tft semaphore in time to draw weather");
        }
     }
-}
+
 //--------------------------------------------------------------------------------
 void fillWeatherSprite(){
   
@@ -316,170 +303,84 @@ void fillWeatherSprite(){
  //  icon      tempval feelval
  // <wind>    <pres> <hum>
  // windval   presval humval
+
+  char  scratch[32];
  
  enum vfield{vtemp,vfeel,vhum,vpres,vwind};
  int  endv[ vwind +1 ]; 
  
- if ( ! weather_sprite.created() ){
-    weather_sprite.createSprite( weatherw, weatherh );  
+ if ( ! weather_sprite.created() ){  
+    weather_sprite.createSprite( 210 , 114 );  
+    weather_sprite.fillSprite(TFT_MY_DARKGRAY); 
+
  }
     
-  weather_sprite.fillRect(0,0, weatherw, weatherh, TFT_BLACK);
-
-//values  
-// drawing 24bit colorbmp's to sprites gives weird colors
-//  drawBmp( owmdata.iconfilename,labelo, label1t - 1, &weather_sprite);
-//  drawBmp( owmdata.iconfilename,labelo, weathert + label1t - 1 );
-
-#ifdef USEOWM
-  weather_sprite.setTextDatum(L_BASELINE);
-  weather_sprite.setTextFont( 4 );
-  weather_sprite.setTextSize(2);  
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-
-  int   txt1t = value2t  - labelh - 7 ;//- ((label2t-label1t) - weather_sprite.fontHeight())/2; 
-  int   txt2t = weatherh - 22 ;//- (( weatherh - label2t) - weather_sprite.fontHeight())/2; 
-  char  scratch[32];
+//-------------- NO WEATHER DATA
 
 // if no data has been collected yet, display an empty black rectangle
   if ( owmdata.city == NULL ) {
-      
-    weather_sprite.setTextSize(1);  
-    sprintf( scratch, "No weather data");
-    weather_sprite.drawString(scratch, 5, txt1t );
-  
+    weather_sprite.setFreeFont( STATION_FONT );      
+    weather_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
+    weather_sprite.setTextDatum( TC_DATUM );
+    sprintf( scratch, "NO WEATHER DATA");
+    weather_sprite.setTextDatum( TL_DATUM ); 
     return;
   }
 
-  sprintf( scratch, "%2.0f", owmdata.temperature );
-  //sprintf( scratch, "%2.0f", -52.0, 248);
-  weather_sprite.drawString(scratch, labelw + 2*labelo, txt1t );
-  endv[vtemp] = weather_sprite.textWidth( scratch, 4 )+ labelw + 2*labelo;
-      
-  sprintf( scratch, "%2.0f", owmdata.feelslike);
-  weather_sprite.drawString(scratch, 2*labelw + 3*labelo, txt1t );
-  endv[vfeel] = weather_sprite.textWidth( scratch, 4 ) + 2*labelw + 3*labelo;
-  
-  
-  weather_sprite.setTextSize(1);  
-  txt1t = value1t + weather_sprite.fontHeight() ;
-  txt2t = value2t + weather_sprite.fontHeight() ;
-  
-  sprintf( scratch, "%2.0f", owmdata.humidity);
-  weather_sprite.drawString(scratch, labelo, txt2t );
-  endv[vhum] = weather_sprite.textWidth( scratch, 4 ) + labelo+ 1;
-  
-  sprintf( scratch, "%4.0f", owmdata.pressure);
-  weather_sprite.drawString(scratch, labelw + 2*labelo, txt2t );
-  endv[vpres] = weather_sprite.textWidth( scratch, 4 ) + labelw + 2*labelo + 1;
-  
-  sprintf( scratch, "%2.0f", owmdata.windspeed);
-  weather_sprite.drawString(scratch, 2*labelw + 3*labelo + 5, txt2t );
-  endv[vwind] = weather_sprite.textWidth( scratch, 4 ) + 2*labelw + 3*labelo + 5+ 1;
-  
-// labels 
+//--------------
 
-  weather_sprite.fillRoundRect( labelw + 2*labelo,   label1t, labelw, labelh, 4, TFT_MY_GOLD); // for TEMP
-  weather_sprite.fillRoundRect( 2*labelw + 3*labelo, label1t, labelw, labelh, 4, TFT_MY_GOLD); // for FEEL
-  weather_sprite.fillRoundRect( labelo,              label2t, labelw, labelh, 4, TFT_MY_GOLD); // for WIND
-  weather_sprite.fillRoundRect( labelo*2 + labelw,   label2t, labelw, labelh, 4, TFT_MY_GOLD); // for PRES
-  weather_sprite.fillRoundRect( labelo*3 + 2*labelw, label2t, labelw, labelh, 4, TFT_MY_GOLD); // for HUM
+  weather_sprite.fillRect(  73, 17, 66, 15, TFT_MY_BLACK); // for TEMP
+  weather_sprite.fillRect( 145, 17, 66, 15, TFT_MY_BLACK); // for FEEL
+  weather_sprite.fillRect(   0, 67, 66, 15, TFT_MY_BLACK); // for WIND
+  weather_sprite.fillRect(  73, 67, 66, 15, TFT_MY_BLACK); // for HUM
+  weather_sprite.fillRect( 145, 67, 66, 15, TFT_MY_BLACK); // for PRES
 
-// label text
+//--------------
 
-  weather_sprite.setFreeFont( LABEL_FONT);                 // FreeSansBold6pt8b
-  weather_sprite.setTextDatum(L_BASELINE);
+  weather_sprite.setFreeFont( LABEL_FONT );
+  weather_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_BLACK );
+  weather_sprite.setTextDatum( TC_DATUM );
+
+  weather_sprite.drawString("TEMP", 105, 18 );
+  weather_sprite.drawString("FEEL", 177, 18 );
+  weather_sprite.drawString("WIND",  32, 68 );
+  weather_sprite.drawString("HUM",  105, 68 );
+  weather_sprite.drawString("PRES", 177, 68 );  
+  weather_sprite.setTextDatum( TL_DATUM ); 
   
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  
-  //int desoffset = weather_sprite.textWidth( owmdata.description, 1 );
-  //desoffset = (tft.width() - 2*labelo - desoffset)/2;
-  //weather_sprite.drawString(  owmdata.description, labelo, label1t-4 );
-  
-#ifdef TWOLINEDESC  
-   char *torusdesc = ps_strdup( owmdata.description );
-   utf8torus( owmdata.description, torusdesc );     
-   int dw = weather_sprite.textWidth( torusdesc ,1);
-  
-   if( dw > labelw ){
-    char *line[2];
-    char *t = ps_strdup( torusdesc );
-    char *s;
-    
-    line[0] = t;   
-    line[1] = t;
-    
-    for ( s = t+5; *s && *s != ' '; ++s );
-    
-    if (*s){
-      *s = 0;++s;
-      line[1] = s;
-    }
-    
-    weather_sprite.drawString( line[0], labelo, 58 );
-    if(*s)weather_sprite.drawString( line[1], labelo, 72 );
-    
-    free(t);
-    
-  }else{
-    log_d("description shorter than labelw ");
-    
-    weather_sprite.drawString(  torusdesc, labelo, 50 + 12 );
-  }
-  
-  free( torusdesc );
-#else
-    weather_sprite.setTextColor( TFT_REALGOLD, TFT_BLACK ); 
-    weather_sprite.setFreeFont( LABEL_FONT ); 
+//--------------
 
     char tmprus[128];
     char tmpline[128];
     
-    sprintf( tmpline, "%s",utf8torus( owmdata.description, tmprus ) );
-
-    if( strlen( tmpline ) > 15 ){
-        weather_sprite.setFreeFont( LABEL_FONT );         
-    }else{
-        weather_sprite.setFreeFont( DATE_FONT ); 
-    }
+  sprintf( tmpline, "%s",utf8torus( owmdata.description, tmprus ) );
+  weather_sprite.setFreeFont( LABEL_FONT );
+  weather_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY );
+  weather_sprite.setTextDatum( TC_DATUM );
+  weather_sprite.drawString( tmpline, 105, 1 );
+  weather_sprite.setTextDatum( TL_DATUM ); 
     
-    int dw = weather_sprite.textWidth( tmpline, 1 );
-    int dx = (weatherw - dw )/2;
-    weather_sprite.drawString( tmpline, dx, 20 );
-#endif
+//--------------
 
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
-  weather_sprite.setFreeFont( LABEL_FONT );         
-  
-  int txtxo4 = (labelw - weather_sprite.textWidth( "TEMP",1) )/2;
-  int txtxo3 = (labelw - weather_sprite.textWidth( "HUM", 1) )/2;
-  
-  weather_sprite.drawString("TEMP", labelw + 2*labelo + txtxo4,     label1t + 11 );
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  weather_sprite.drawString("o",  endv[ vtemp],     label1t + 28 );
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
-  
-  weather_sprite.drawString("FEEL", 2*labelw + 3*labelo + txtxo4,   label1t + 11 );
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  weather_sprite.drawString("o", endv[vfeel],     label1t + 28 );
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
-  
-  weather_sprite.drawString("HUM",  labelo + txtxo3,                label2t + 11 );
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  weather_sprite.drawString("%",  endv[vhum],     label2t + 40 );
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
-  
-  weather_sprite.drawString("PRES", labelo*2 + labelw + txtxo4,     label2t + 11 );
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  weather_sprite.drawString("hPa", endv[ vpres],        label2t + 40 );
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
-  
-  weather_sprite.drawString("WIND",  labelo*3 + 2*labelw + txtxo4,   label2t + 11 );
-  weather_sprite.setTextColor( TFT_MY_GOLD, TFT_BLACK );
-  weather_sprite.drawString("m/s",   endv[ vwind], label2t + 40 );
-  weather_sprite.setTextColor( TFT_BLACK, TFT_MY_GOLD );
+  String t_full = String ( owmdata.temperature, 0 ) + String ("*");
+  String t_feel = String ( owmdata.feelslike , 0 ) + String ("*");
+  String sp     = String ( owmdata.windspeed, 0 ) + String ( "&" );
+  if (owmdata.humidity > 99) owmdata.humidity = 99;
+  String hm     = String ( owmdata.humidity, 0 ) + String ( "%" );
+  int pres_mm   = round  (owmdata.pressure * 0.75) ;
 
-#endif
+  weather_sprite.setFreeFont  ( NUM_FONT );
+  weather_sprite.setTextColor ( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
+  weather_sprite.setCursor( 150, 108 );
+  weather_sprite.print(pres_mm); 
+  
+  weather_sprite.setTextDatum ( TC_DATUM );
+  weather_sprite.drawString(t_full, 106, 37 );
+  weather_sprite.drawString(t_feel, 178, 37 );
+  weather_sprite.drawString(sp, 33, 86 );
+  weather_sprite.drawString(hm, 106, 86 );
+
+  weather_sprite.setTextDatum( TL_DATUM ); 
   
 }
 
@@ -494,15 +395,15 @@ void drawForecastSprite(){
     log_d("not drawing forecast, fcx = %d", fcx);
     return;
   }
-  #ifdef USETOUCH
-    if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){
-      log_d(" not drawing forecast, wrong screen");
-      return;
-    }
-  #endif  
+//  #ifdef USETOUCH
+//    if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){
+//      log_d(" not drawing forecast, wrong screen");
+//      return;
+//    }
+//  #endif   
   log_d("draw forecast sprite at %d %d", fcx, fcy );
   grabTft();
-  forecast_sprite.pushSprite( fcx, fcy );
+  forecast_sprite.pushSprite( 16, 264 );
   releaseTft();
 }
 //--------------------------------------------------------------------
@@ -511,22 +412,30 @@ void fillForecastSprite(){
 
   if ( !owmforecast.valid ) return;
   if ( ! forecast_sprite.created() ){
-    forecast_sprite.createSprite( fcw, fch );  
+    forecast_sprite.createSprite( 210, 46 ); 
+    forecast_sprite.fillSprite(TFT_MY_DARKGRAY);  
   }
     
-  forecast_sprite.fillRoundRect( 0                      ,0, fclabelw, fch, 8,TFT_DARKCYAN);
-  forecast_sprite.fillRoundRect( fclabelw + fclabelo    ,0, fclabelw, fch, 8,TFT_DARKCYAN);
-  forecast_sprite.fillRoundRect( fclabelw*2 + fclabelo*2,0, fclabelw, fch, 8,TFT_DARKCYAN);
-  
-  forecast_sprite.setFreeFont(LABEL_FONT);                 // FreeSansBold6pt8b
-  forecast_sprite.setTextDatum(L_BASELINE);  
-  forecast_sprite.setTextColor(TFT_REALGOLD, TFT_DARKCYAN);
+  forecast_sprite.fillRect( 0 ,0, 66, 16, TFT_MY_BLUE);
+  forecast_sprite.fillRect( 73 ,0, 66, 16, TFT_MY_BLUE);
+  forecast_sprite.fillRect( 145 ,0, 66, 16, TFT_MY_BLUE);
 
-  int fonth = forecast_sprite.fontHeight(1);  
-  for ( int i=0 ; i < 3 ; ++i ){   
-      int txtw = forecast_sprite.textWidth( owmforecast.t[i] );
-      forecast_sprite.drawString( owmforecast.t[i], (i*fclabelw + i*fclabelo) + (fclabelw - txtw)/2,fonth-3); 
-  }
+//  forecast_sprite.setFreeFont( LABEL_FONT );                 // FreeSansBold6pt8b
+  forecast_sprite.setFreeFont( LABELW_FONT );                 // FreeSansBold6pt8b
+  forecast_sprite.setTextColor( TFT_MY_DARKGRAY, TFT_MY_BLUE );
+  forecast_sprite.setTextDatum( TC_DATUM );
+  forecast_sprite.drawString( owmforecast.d[0], 32, 2 );
+  forecast_sprite.drawString( owmforecast.d[1], 105, 2);
+  forecast_sprite.drawString( owmforecast.d[2], 177, 2 );
+  forecast_sprite.setTextDatum( TL_DATUM );
+
+  forecast_sprite.setFreeFont( NUM_FONT );
+  forecast_sprite.setTextDatum( TC_DATUM );
+  forecast_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY );
+  forecast_sprite.drawString( owmforecast.t[0] + "*",  33, 22 );
+  forecast_sprite.drawString( owmforecast.t[1] + "*", 106, 22 );
+  forecast_sprite.drawString( owmforecast.t[2] + "*", 178, 22 );
+  forecast_sprite.setTextDatum( TL_DATUM );
 
 }
 
@@ -586,6 +495,7 @@ bool getForecast(){
   const char *owmserver = (const char *)"api.openweathermap.org";              // remote server we will connect to  
   char *result, *eresult; 
   char *request = (char *)gr_calloc( 1024,1 );
+  char tmpdat[8]; 
 
   owmforecast.valid = false;
 
@@ -607,7 +517,7 @@ bool getForecast(){
   while( owmclient.connected() && ! owmclient.available()){
     delay( 50 );
     if ( ! owmclient.connected() ){
-      log_e("Connection to openweathermap disconnected");        //error message if no client connect
+//      log_e("Connection to openweathermap disconnected");        //error message if no client connect
       return( false );
     }
   }
@@ -679,8 +589,9 @@ bool getForecast(){
       owmforecast.owmstamp[i] = (time_t) root["list"][ owmoffset ]["dt"];
       
       gmtime_r(&owmforecast.owmstamp[i], &tmptm);            
-      owmforecast.d[i] = String(tmptm.tm_mday) + String(".") + String(tmptm.tm_mon+1);
-
+      sprintf( tmpdat, "%02d.%02d", tmptm.tm_mday, tmptm.tm_mon + 1);
+      owmforecast.d[i]  = String( tmpdat);
+   
   }
   owmforecast.valid = true;
 
@@ -699,13 +610,12 @@ String json_owmdata(){return("\t\"openweathermap\" : {}");}
 void drawWeather(){
 
   if ( ! weather_sprite.created() ){
-    weather_sprite.createSprite( tft.width(), TFTSTATIONB - TFTCLOCKB );  
+    weather_sprite.createSprite( 210 , 114 ); 
   }
+    weather_sprite.fillSprite(TFT_MY_DARKGRAY); 
     
-  weather_sprite.fillRect(0,0, tft.width(), TFTSTATIONB - TFTCLOCKB, TFT_BLACK);
-  
   grabTft();
-  weather_sprite.pushSprite( 0, TFTCLOCKB );
+  weather_sprite.pushSprite( 16, 130 );
   releaseTft(); 
 }  
 #endif

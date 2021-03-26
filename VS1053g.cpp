@@ -175,47 +175,56 @@ return( buf.st_size );
 void VS1053g::displaySpectrum() {
  
   if (bands <= 0 || bands > 14)  return;
-      
-  uint8_t   bar_width = tft.width() / bands - 2;
-  uint16_t  barx = 2; // start location of the first bar
+  uint8_t   bar_width = 13;
+  
+  uint16_t  barx = 0; // start location of the first bar
+
   boolean   visual = true; //paint to display
   static int nextx = 0;
   
   if ( ! spectrum_sprite.created() ){
-    spectrum_sprite.createSprite( tft.width(), spectrum_height );     
-    spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
+    spectrum_sprite.createSprite( 208, spectrum_height );      
+//    spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
   }
   
   if (bands != prevbands) {
     prevbands = bands;
-    if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
+    if (visual) spectrum_sprite.fillRect (0,0, 208, spectrum_height, TFT_MY_DARKGRAY);
   }
 
   if ( nextprevChannel || MuteActive ){
     prevbands = 0;
-    spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
-    if ( nextprevChannel ){
-        spectrum_sprite.setFreeFont( LABEL_FONT );
-        nextx += 10;
-        int curx = (nextprevChannel>0)?50+nextx:tft.width()-50-nextx;
-        if( curx > tft.width() || curx < 0 ) nextx = 0;    
-          int sline_y     = 2*(spectrum_height/3);
-          int sline_start = 10;
-          int sline_end   = tft.width()-10;
+    spectrum_sprite.fillRect (0,0, 208, spectrum_height, TFT_MY_DARKGRAY);
     
-          spectrum_sprite.drawString( stations[ currentStation].name,
-                                    (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
+    if ( nextprevChannel ){
+        nextx += 10;
+        int curx = (nextprevChannel>0)?50+nextx:208-50-nextx;
+        if( curx > 201 || curx < 0 ) nextx = 0;    
+      int sline_y     = 2*(spectrum_height/3);
+      int sline_start = 0;
+      int sline_end   = 208;
+    
+      spectrum_sprite.setFreeFont( DATE_FONT );
+      spectrum_sprite.setTextColor( TFT_MY_GOLD, TFT_MY_DARKGRAY );  
+      spectrum_sprite.setTextDatum(TC_DATUM);
+      spectrum_sprite.drawString( stations[ currentStation].name, 104, 61);
+      spectrum_sprite.setTextDatum(TL_DATUM);
+  spectrum_sprite.setFreeFont( ARROW_FONT );
+  spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
+  spectrum_sprite.setTextDatum(TC_DATUM);
+  spectrum_sprite.drawString( (nextprevChannel>0)?"54545":"64646", 104, 5);
+  spectrum_sprite.setTextDatum(TL_DATUM);
      
-          spectrum_sprite.drawLine( sline_start, sline_y, sline_end,sline_y, TFT_GREEN);
-          for( int i = 0; i < (tft.width() - 10); i += 20 ){
-               spectrum_sprite.drawLine( sline_start + i, sline_y -10 , sline_start+i, sline_y, TFT_GREEN);        
-          }
+    spectrum_sprite.setFreeFont( DATE_FONT );
+    spectrum_sprite.setTextColor( TFT_GREEN, TFT_MY_DARKGRAY ); 
       
-          spectrum_sprite.fillRect ( sline_start + curx, sline_y - 20, 3, spectrum_height - sline_y + 20, TFT_RED );
     }          
     if ( MuteActive && !nextprevChannel ){
-      spectrum_sprite.setFreeFont( &radio_button_font );
-      spectrum_sprite.drawString( "8", (tft.width() - 50)/2 , 0, 1);
+  spectrum_sprite.setFreeFont( ARROW_FONT );
+  spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
+  spectrum_sprite.setTextDatum(TC_DATUM);
+      spectrum_sprite.drawString( "7", 104 , 15);
+        spectrum_sprite.setTextDatum(TL_DATUM);
     }  
   }else{
         nextx = 0;
@@ -224,9 +233,9 @@ void VS1053g::displaySpectrum() {
           if (visual) {
             if (spectrum[i][0] > spectrum[i][1]) {
               spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
-              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_MY_DARKGRAY);
             } else {
-              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
+              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_MY_DARKGRAY);
             }  
           }
           if (spectrum[i][2] > 0) { 
@@ -246,7 +255,7 @@ void VS1053g::displaySpectrum() {
     
   if ( currDisplayScreen == RADIO && xSemaphoreGetMutexHolder( tftSemaphore ) == NULL){
      if ( xSemaphoreTake( tftSemaphore, 10 ) == pdTRUE ){
-      spectrum_sprite.pushSprite( 0, spectrum_top);
+      spectrum_sprite.pushSprite( 255, 82 );
       releaseTft();  
     }else{
       log_d("failed to get tft semaphore");  

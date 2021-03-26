@@ -69,7 +69,7 @@ while(1){
  
  if ( gerror ) { Serial.println("Error reading register 0x43"); continue;}
  
- log_v("data %02x - ", data);
+// log_v("data %02x - ", data);
 
 #ifndef USEPIXELS
     parse_gestures(data);

@@ -106,22 +106,6 @@ void stationsInit(){
 
 stations = (Station *) gr_calloc( STATIONSSIZE,sizeof(Station) );
 
-/*
-  add_station("NPO Radio 1","icecast.omroep.nl","/radio1-bb-mp3",80);
-  add_station("NPO Radio 2","icecast.omroep.nl","/radio2-bb-mp3",80);
-  
-  add_station("NPO 3fm","icecast.omroep.nl","/3fm-bb-mp3",80);
-  add_station("NPO Radio 4","icecast.omroep.nl","/radio4-bb-mp3",80);
-  add_station("NPO Radio 5","icecast.omroep.nl","/radio5-bb-mp3",80);
-  add_station("NPO Radio 6","icecast.omroep.nl","/radio6-bb-mp3",80);
-  add_station("Cncrt Jazz","streams.greenhost.nl","/jazz",8080);
-  add_station("Cncrt Hardbop","streams.greenhost.nl","/hardbop",8080);
-  add_station("BBC 1","bbcmedia.ic.llnwd.net","/stream/bbcmedia_radio1_mf_q",80);
-  add_station("BBC 2","bbcmedia.ic.llnwd.net","/stream/bbcmedia_radio2_mf_q",80);
-  add_station("BBC 3","bbcmedia.ic.llnwd.net","/stream/bbcmedia_radio3_mf_q",80);
-  add_station("BBC 4","bbcmedia.ic.llnwd.net","/stream/bbcmedia_radio4fm_mf_q",80);
-  add_station("BBC 1xtra","bbcmedia.ic.llnwd.net","/stream/bbcmedia_radio1xtra_mf_p",80);
-*/
   read_stations();
  
 }

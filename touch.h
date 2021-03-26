@@ -9,15 +9,12 @@
 
 #include "fonts.h"
 
-
-
-
 class RadioButton : public TFT_eSPI_Button {
   private:
   
-  static const uint16_t outline    = TFT_MY_SILVER;
-  static const uint16_t buttonfill = TFT_REALGOLD;
-  static const uint16_t textcolor  = TFT_BLACK;
+  static const uint16_t outline    = TFT_MY_GRAY;
+  static const uint16_t buttonfill = TFT_MY_DARKGRAY;
+  static const uint16_t textcolor  = TFT_MY_BLUE;
   
   public:
   
@@ -50,19 +47,19 @@ class RadioButton : public TFT_eSPI_Button {
         if ( strlen( longname ) == 1 ){
             //use radio_button_font font
             if ( longname[0] < 112 ){
-               tft.setFreeFont(&radio_button_font);
+               tft.setFreeFont(BTN_FONT);
             }else{
-               tft.setFreeFont(&Arrows);              
+               tft.setFreeFont(BTN_FONT);              
             }
             if ( invert ){
-              tft.setTextColor( TFT_BLUE, TFT_BLACK);             
+              tft.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY);             
             }else{
-              tft.setTextColor( TFT_REALGOLD, TFT_BLACK);
+              tft.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY);
             }
-            //log_d( "fontbutton - draw %s", longname);
+            log_d( "fontbutton - draw %s", longname);
             tft.drawString( longname, x,y );          
         }else{ 
-            tft.setFreeFont( STATION_FONT );
+            tft.setFreeFont( DATE_FONT );
              
             drawButton( invert, longname);      
         }
@@ -94,9 +91,10 @@ class RadioButton : public TFT_eSPI_Button {
       if ( argbmp_normal && argbmp_invert == NULL ) bmp_invert = bmp_normal;
       
       initButtonUL(&tft, x, y, arg_butw, arg_buth, outline, buttonfill, textcolor, symbol_normal, 1);
-      setLabelDatum(0, 0, MC_DATUM );  // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
+//      setLabelDatum(10, 2, CL_DATUM );   // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
                                        // in the middle of the label ("datum"). y offset of 7 for font 4 = bigfont
                                        // y offset 0 for FreeSansBold10pt8b    
+        setLabelDatum(10, 2, MC_DATUM );
     }
 
    
@@ -130,8 +128,8 @@ class RadioButton : public TFT_eSPI_Button {
   BUTTON_ITEM3,
   BUTTON_ITEM4,
   BUTTON_ITEM5,
-  BUTTON_ITEM6,
-  BUTTON_ITEM7,
+//  BUTTON_ITEM6,
+//  BUTTON_ITEM7,
   BUTTON_LEFTLIST,
   BUTTON_QUITLIST,
   BUTTON_RIGHTLIST,
@@ -154,8 +152,8 @@ class RadioButton : public TFT_eSPI_Button {
   BUTTON_ITEM3,
   BUTTON_ITEM4,
   BUTTON_ITEM5,
-  BUTTON_ITEM6,
-  BUTTON_ITEM7,
+//  BUTTON_ITEM6,
+//  BUTTON_ITEM7,
   BUTTON_LEFTLIST,
   BUTTON_QUITLIST,
   BUTTON_RIGHTLIST,

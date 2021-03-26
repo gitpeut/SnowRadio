@@ -54,7 +54,6 @@ void touch_calibrate()
       f.close();
     }
     delay( 8000 );
-    //tft.fillScreen(TFT_BLACK);
   }
   log_i("written/found uint16_t caldata={ %u, %u, %u, %u,%u }", calData[0], calData[1], calData[2], calData[3], calData[4]); 
 }
@@ -76,13 +75,14 @@ int what_button(){
   // return the button number 
   
   uint16_t          touch_x = 0, touch_y = 0;
-  //static uint32_t   touch_count=0;
+ //static uint32_t   touch_count=0;
   int               startbutton, endbutton;
   boolean           pressed;
     
   if( xSemaphoreTake( tftSemaphore, 50 ) == pdTRUE){   
     pressed = tft.getTouch(&touch_x, &touch_y, 50);
     xSemaphoreGive( tftSemaphore);
+    if( !pressed ) return(-1);
   }else{
     return(-1);
   }
@@ -105,65 +105,46 @@ int what_button(){
       endbutton   = BUTTON_DOWN;
   }
   
-  if ( pressed ){
-        for ( int i = startbutton ; i < endbutton; ++i ){
-          if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
-        }
+  for ( int i = startbutton ; i < endbutton; ++i ){
+    if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
   }
   return( -1 );  
 } 
 //--------------------------------------------------------------------
 void touch_setup(){
-int topt  = 3;
-int bott  = tft.height() - BUTH - 2;
-int itemw = tft.width() - 2*topt;
-int itemh = 32;
-int listbuttonw = 57, listbuttonh = 24; 
-int listbuttonxo = ( tft.width() - 3*listbuttonw ) /4;
-  
-  tft.setFreeFont(&indicator);
-  
-  int butoffset = BUTOFFSET; 
 
+int itemw = 218; 
+int itemh = 35;
+
+draw_left_frames();
+  
+tft.setFreeFont( BTN_FONT );
+  
   log_i( "ram free before buttons %d",ESP.getFreeHeap()  );
 
-#ifdef USEINPUTSELECT
-  touchbutton[BUTTON_AV].init( butoffset,                  topt, (char *)"0",BUTW,BUTH ); 
-  touchbutton[BUTTON_BLUETOOTH].init( 1*BUTW +2*butoffset, topt, (char *)"1",BUTW,BUTH );
-#else
-  touchbutton[BUTTON_UP].init( butoffset,                  topt, (char *)"9",BUTW,BUTH ); 
-  touchbutton[BUTTON_DOWN].init( 1*BUTW +2*butoffset, topt, (char *)":",BUTW,BUTH );
-#endif
-
-  touchbutton[BUTTON_RADIO].init( 2*BUTW +3*butoffset,     topt, (char *)"2",BUTW,BUTH );   
-  touchbutton[BUTTON_STOP].init( 3*BUTW + 4*butoffset,     topt, (char *)"3",BUTW,BUTH );
+  touchbutton[BUTTON_AV].init       ( 250, 11, (char *)"0",BUTW,BUTH ); 
+  touchbutton[BUTTON_BLUETOOTH].init( 306, 11, (char *)"1",BUTW,BUTH );
+  touchbutton[BUTTON_RADIO].init    ( 362, 11, (char *)"2",BUTW,BUTH );   
+  touchbutton[BUTTON_STOP].init     ( 418, 11, (char *)"3",BUTW,BUTH );
    
-  
-  touchbutton[BUTTON_MUTE].init( butoffset,                bott, (char *)"7",BUTW,BUTH, (char *)"8" );
+  touchbutton[BUTTON_MUTE].init( 250, 269, (char *)"7",BUTW,BUTH, (char *)"8" );
+  touchbutton[BUTTON_PREV].init( 306, 269, (char *)"4",BUTW,BUTH );
+  touchbutton[BUTTON_NEXT].init( 362, 269, (char *)"6",BUTW,BUTH );
+  touchbutton[BUTTON_LIST].init( 418, 269, (char *)"5",BUTW,BUTH );
 
-  touchbutton[BUTTON_PREV].init( 1*BUTW + 2*butoffset,     bott, (char *)"4",BUTW,BUTH );
-  touchbutton[BUTTON_NEXT].init( 2*BUTW + 3*butoffset,     bott, (char *)"6",BUTW,BUTH );
-  touchbutton[BUTTON_LIST].init( 3*BUTW + 4*butoffset,     bott, (char *)"5",BUTW,BUTH );
+  touchbutton[BUTTON_ITEM0].init( 250, 12,           (char *)"", itemw, itemh);
+  touchbutton[BUTTON_ITEM1].init( 250, 18 + 1*itemh, (char *)"", itemw, itemh);
+  touchbutton[BUTTON_ITEM2].init( 250, 24 + 2*itemh, (char *)"", itemw, itemh);
+  touchbutton[BUTTON_ITEM3].init( 250, 30 + 3*itemh, (char *)"", itemw, itemh);
+  touchbutton[BUTTON_ITEM4].init( 250, 36 + 4*itemh, (char *)"", itemw, itemh);
+  touchbutton[BUTTON_ITEM5].init( 250, 42 + 5*itemh, (char *)"", itemw, itemh);
 
-  
-  touchbutton[BUTTON_ITEM0].init( topt, topt, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM1].init( topt, 2*topt + 1*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM2].init( topt, 3*topt + 2*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM3].init( topt, 4*topt + 3*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM4].init( topt, 5*topt + 4*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM5].init( topt, 6*topt + 5*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM6].init( topt, 7*topt + 6*itemh, (char *)"", itemw, itemh);
-  touchbutton[BUTTON_ITEM7].init( topt, 8*topt + 7*itemh, (char *)"", itemw, itemh);
-  
-  touchbutton[BUTTON_LEFTLIST].init(  listbuttonxo,                   11*topt + 8*itemh, (char *)"p", listbuttonw, listbuttonh);
-  touchbutton[BUTTON_QUITLIST].init(  1*listbuttonw + 2*listbuttonxo, 11*topt + 8*itemh, (char *)"q", listbuttonw, listbuttonh);
-  touchbutton[BUTTON_RIGHTLIST].init( 2*listbuttonw + 3*listbuttonxo, 11*topt + 8*itemh, (char *)"r", listbuttonw, listbuttonh);
+  touchbutton[BUTTON_LEFTLIST].init(  260, 269, (char *)"<", 50, 40);
+  touchbutton[BUTTON_QUITLIST].init(  334, 269, (char *)"=", 50, 40);
+  touchbutton[BUTTON_RIGHTLIST].init( 408, 269, (char *)">", 50, 40);
     
   log_i( "ram free after buttons %d",ESP.getFreeHeap());
     
-//   touchbutton[BUTTON_DOWN].init( butoffset,                 bott, 'X');
-//   touchbutton[BUTTON_UP].init  ( 1*BUTW + 2*butoffset,      bott, 'W');
-
   log_i("touch button setup done"); 
 }
 
@@ -194,7 +175,7 @@ void draw_buttons( int startidx ){
       stationidx  = startidx;
       int playing_station = getStation();
       
-      for ( int i = 0; i < 8 ; ++i ){
+      for ( int i = 0; i < 6 ; ++i ){
           if ( stationidx >= stationCount )stationidx = 0;
           char *last = stations[ stationidx ].name;
           if ( strlen( last) > 18 ) { //omit the first word of the station name
@@ -250,26 +231,26 @@ void draw_buttons( int startidx ){
 void drawStationScreen(){
    
   grabTft();
-  tft.fillScreen(TFT_DARKCYAN);
+
   releaseTft();
-  
-  tft.setTextColor( TFT_WHITE );
-  tft.setTextFont( bigfont);     
+  drawBmp("/frames/list_frame.bmp", 243, 3 );  
+//  tft.setTextColor( TFT_WHITE );
+//  tft.setTextFont( bigfont);     
 
   tft_showmeta( true );
   
 }
 //--------------------------------------------------------------------
 void drawRadioScreen(){ 
-  
 
   grabTft();
-    tft.fillScreen(TFT_BLACK);
+  tft.fillRect (240,   0, 238, 318, TFT_MY_BLACK);
+  delay (1);
   releaseTft();
     
+  draw_right_frames ();
    
   if ( playingStation >= 0 )tft_showstation( getStation() );
-
   
 }
 
@@ -280,7 +261,6 @@ void drawMode(){
   if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT )return;
 
   char  modetext[32];
-
 
   switch( currDisplayScreen ){
         case POWEROFF:
@@ -297,34 +277,44 @@ void drawMode(){
             return;
   }
     
-    tft.setFreeFont( DATE_FONT );  
-    tft.setTextColor( TFT_BLACK, TFT_REALGOLD ); 
-
-    int txtw    = tft.textWidth( modetext, 1 );
-    int txtx    = tft.width() - txtw - 20 ; 
-
-    int labelh  = tft.fontHeight(1)-1 ;
-    int labelw  = txtw + 20;
-    int labelx  = txtx - 10; 
-    int labely  = tft.height() -  tft.fontHeight(1) - 4;
+      int mode_x;
 
     log_d("draw mode text");
-    grabTft();    
+    
+//    grabTft();    
 
-      if ( currDisplayScreen != POWEROFF ){// hide radio buttons 
-        tft.fillRect(60, 
-                   tft.height() - radio_button_font.yAdvance - 3, 
-                   tft.width(), 
-                   tft.height(), TFT_BLACK);
-      }else{ // in POWEROFF also hide mute
-        tft.fillRect(0, 
-                   tft.height() - radio_button_font.yAdvance - 3, 
-                   tft.width(), 
-                   tft.height(), TFT_BLACK);                    
+      if ( currDisplayScreen == LINEIN ){
+  drawBmp("/frames/line_frame.bmp", 243,  66 );
+  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY);  
+  drawBmp("/frames/btn_close.bmp",  306, 269 );
+  mode_x = 387 ;
+  delay (1);
       }
-      tft.fillRoundRect( labelx, labely, labelw , labelh, 8, TFT_REALGOLD);  
-      tft.drawString( modetext, txtx, labely + 1 );
-    releaseTft();
+
+      if ( currDisplayScreen == BLUETOOTH ){
+  drawBmp("/frames/bt_frame.bmp",  243,  66 );
+  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY);
+  drawBmp("/frames/btn_close.bmp", 306, 269 );  
+  mode_x = 387 ;
+  delay (1);
+      }
+
+      if ( currDisplayScreen == POWEROFF ){
+  drawBmp("/frames/power_frame.bmp", 243,  66 );
+  drawBmp("/frames/power_close.bmp", 250, 269 );  
+  mode_x = 359 ;
+  delay (1);
+      }
+
+  grabTft(); 
+  
+  tft.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
+  tft.setFreeFont( STATION_FONT );
+  tft.setTextDatum(TC_DATUM);
+  tft.drawString( modetext, mode_x, 279 );
+  tft.setTextDatum(TL_DATUM);
+  
+  releaseTft();
     
 #ifdef USEOWM
     drawForecastSprite(); 
@@ -365,9 +355,7 @@ void drawScreen( screenPage newscreen){
 
 
      drawWeather();
-     if ( newscreen != POWEROFF ){
-        tft.fillRect( 0,weathert + label2t, labelw+labelo+1, tft.height() - label2t, TFT_BLACK  );
-     }
+
  
   }
 
@@ -482,13 +470,11 @@ void touch_process( void *param){
              break;      
         case BUTTON_PREV:
              log_i("previous station");
-             
              change_volstat( -1, gStation );
              noreset = true;
              break;
         case BUTTON_NEXT:
              log_i("next station");
-             
              change_volstat( 1, gStation );
              noreset = true;
              break;
@@ -514,8 +500,7 @@ void touch_process( void *param){
         case BUTTON_ITEM3:
         case BUTTON_ITEM4:
         case BUTTON_ITEM5:
-        case BUTTON_ITEM6:
-        case BUTTON_ITEM7:
+
              setStation( touchbutton[button_pressed].stationidx , -1 );                       
              draw_buttons( touchbutton[ BUTTON_ITEM0].stationidx );
              noreset = true;
@@ -524,7 +509,7 @@ void touch_process( void *param){
              newScreen = RADIO; 
              break;  
         case BUTTON_LEFTLIST:
-             newidx      = touchbutton[ BUTTON_ITEM0].stationidx - 8;
+             newidx      = touchbutton[ BUTTON_ITEM0].stationidx - 6;
              if ( newidx <= 0 ){
                  log_d("*newidx < 0 : %d", newidx);
                  newidx = stationCount + newidx; 
@@ -533,7 +518,7 @@ void touch_process( void *param){
              draw_buttons( newidx );
              break; 
         case BUTTON_RIGHTLIST:            
-             newidx      = touchbutton[ BUTTON_ITEM7].stationidx + 1;
+             newidx      = touchbutton[ BUTTON_ITEM5].stationidx + 1;
              draw_buttons( newidx );
              break;                                  
         default:

@@ -46,7 +46,7 @@
                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
                       //                    
 //#define MONTHNAMES_EN
-//#define MONTHNAMES_RU
+#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
 const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
@@ -165,8 +165,8 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
 TFT_eSprite img     = TFT_eSprite(&tft);  
 TFT_eSprite msg     = TFT_eSprite(&tft);  
-TFT_eSprite bats    = TFT_eSprite(&tft); 
-TFT_eSprite vols    = TFT_eSprite(&tft);  
+//TFT_eSprite bats    = TFT_eSprite(&tft); 
+//TFT_eSprite vols    = TFT_eSprite(&tft);  
 TFT_eSprite clocks  = TFT_eSprite(&tft); 
 TFT_eSprite station_sprite = TFT_eSprite(&tft); 
 TFT_eSprite bmp     = TFT_eSprite(&tft);  
@@ -175,7 +175,7 @@ TFT_eSprite weather_sprite  = TFT_eSprite(&tft);
 TFT_eSprite forecast_sprite = TFT_eSprite(&tft); 
 TFT_eSprite blackweather = TFT_eSprite(&tft); // only used when touch is disabled
 TFT_eSprite date_sprite  = TFT_eSprite(&tft); 
-TFT_eSprite cloud_sprite = TFT_eSprite(&tft);
+//TFT_eSprite cloud_sprite = TFT_eSprite(&tft);
 TFT_eSprite meta_sprite  = TFT_eSprite(&tft); 
 
 //TFT_eSprite spa  = TFT_eSprite(&tft);
@@ -414,7 +414,7 @@ void startAfterWifi(){
 
     msg.deleteSprite();
           
-    tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_MY_BLACK);
   
     #ifdef USETOUCH    
       touch_init();    
@@ -566,8 +566,8 @@ void setup () {
      // position and colors for the spectrum analyzer
      vs1053player->spectrum_height    = TFTSPECTRUMH;
      vs1053player->spectrum_top       = TFTSPECTRUMT;
-     vs1053player->setSpectrumBarColor(TFT_SKYBLUE);
-     vs1053player->setSpectrumPeakColor(TFT_REALGOLD);
+     vs1053player->setSpectrumBarColor(TFT_MY_BLUE);
+     vs1053player->setSpectrumPeakColor(TFT_MY_RED);
      
   
      Serial.println("Start File System...");

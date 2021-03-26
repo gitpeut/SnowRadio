@@ -70,7 +70,7 @@ int setVolume( int v){
     vs1053player->setVolume( v );    
   xSemaphoreGive(volSemaphore);
 
-  if ( currDisplayScreen != STNSELECT && currDisplayScreen != POWEROFF ) showVolume(v);
+//  if ( currDisplayScreen != STNSELECT && currDisplayScreen != POWEROFF ) showVolume(v);
   if ( MuteActive )toggleMute();  
  
   save_last_volstat(1);
@@ -231,10 +231,12 @@ void toggleStop( bool nostop ){
               }
               #ifndef USESPECTRUM
                   if ( ! blackweather.created() ){
-                    blackweather.createSprite( tft.width(), tft.height() - TFTCLOCKB  );  
+//                    blackweather.createSprite( tft.width(), tft.height() - TFTCLOCKB  );
+                    blackweather.createSprite( 230, tft.height() - TFTCLOCKB  );  
                   }
     
-                  blackweather.fillRect(0,0, tft.width(), tft.height() - TFTCLOCKB, TFT_BLACK);
+//                  blackweather.fillRect(0,0, tft.width(), tft.height() - TFTCLOCKB, TFT_BLACK);
+                  blackweather.fillRect(0,0, 230, tft.height() - TFTCLOCKB, TFT_MY_BLACK);
   
                   grabTft();
                     blackweather.pushSprite( 0, TFTCLOCKB );
