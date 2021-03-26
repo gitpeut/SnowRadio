@@ -190,18 +190,20 @@ void VS1053g::displaySpectrum() {
     prevbands = bands;
     if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
   }
-
+  
+  spectrum_width  = tft.width();
+  
   if ( nextprevChannel || MuteActive ){
     prevbands = 0;
-    spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
+    spectrum_sprite.fillRect (0,0, spectrum_width, spectrum_height, TFT_BLACK);
     if ( nextprevChannel ){
         spectrum_sprite.setFreeFont( LABEL_FONT );
         nextx += 10;
-        int curx = (nextprevChannel>0)?50+nextx:tft.width()-50-nextx;
+        int curx = (nextprevChannel>0)?50+nextx:spectrum_width-50-nextx;
         if( curx > tft.width() || curx < 0 ) nextx = 0;    
           int sline_y     = 2*(spectrum_height/3);
           int sline_start = 10;
-          int sline_end   = tft.width()-10;
+          int sline_end   = spectrum_width-10;
     
           spectrum_sprite.drawString( stations[ currentStation].name,
                                     (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
@@ -218,6 +220,15 @@ void VS1053g::displaySpectrum() {
       spectrum_sprite.drawString( "8", (tft.width() - 50)/2 , 0, 1);
     }  
   }else{
+
+        bar_width = spectrum_width / bands;
+  
+        while( (bar_width * bands + (bands-1) * 2 > spectrum_width) ){
+            bar_width--;
+        }
+         
+        barx = (spectrum_width - (bar_width * bands + (bands-1) * 2)) /2; 
+        
         nextx = 0;
         for (uint8_t i = 0; i < bands; i++) // Handle all sections
         {
