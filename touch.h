@@ -169,6 +169,7 @@ extern RadioButton touchbutton [ TOUCHBUTTONCOUNT  ] ;
 extern bool MuteActive;
 
 int touch_init(); 
+void drawMode( bool traffic_only = false );
 
 #endif
 #endif

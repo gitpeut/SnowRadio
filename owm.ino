@@ -275,8 +275,6 @@ return( true );
 //---------------------------------------------------------------------------------
 void drawWeather(){
 
-int extray = 0;
-
        if ( xSemaphoreTake( tftSemaphore, 1000 ) == pdTRUE ){
           if ( owmdata.iconfilename != NULL ){
             weather_sprite.pushSprite( 16, 130 );
@@ -306,9 +304,6 @@ void fillWeatherSprite(){
 
   char  scratch[32];
  
- enum vfield{vtemp,vfeel,vhum,vpres,vwind};
- int  endv[ vwind +1 ]; 
- 
  if ( ! weather_sprite.created() ){  
     weather_sprite.createSprite( 210 , 114 );  
     weather_sprite.fillSprite(TFT_MY_DARKGRAY); 
@@ -325,6 +320,9 @@ void fillWeatherSprite(){
     sprintf( scratch, "NO WEATHER DATA");
     weather_sprite.setTextDatum( TL_DATUM ); 
     return;
+  }else{
+    //weather data available, erase sprite
+    weather_sprite.fillSprite(TFT_MY_DARKGRAY); 
   }
 
 //--------------
@@ -367,12 +365,23 @@ void fillWeatherSprite(){
   String sp     = String ( owmdata.windspeed, 0 ) + String ( "&" );
   if (owmdata.humidity > 99) owmdata.humidity = 99;
   String hm     = String ( owmdata.humidity, 0 ) + String ( "%" );
-  int pres_mm   = round  (owmdata.pressure * 0.75) ;
 
   weather_sprite.setFreeFont  ( NUM_FONT );
   weather_sprite.setTextColor ( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
-  weather_sprite.setCursor( 150, 108 );
-  weather_sprite.print(pres_mm); 
+
+  #ifdef PRESSURE_IN_HPA
+    weather_sprite.setTextDatum( TC_DATUM ); // position using center of string
+    String pres_hpa    = String( owmdata.pressure, 0); // no decimals in string
+    int    pres_center = weather_sprite.textWidth( pres_hpa )/2; // center is half the string width
+    int    pres_x      = weather_sprite.width() - pres_center;  // make sure we do not cut off value.
+                                                             // otherwise we would have used center of label
+    
+    weather_sprite.drawString( pres_hpa, pres_x, 86 );
+  #else
+    int pres_mm   = round  (owmdata.pressure * 0.75) ;
+    weather_sprite.setCursor( 150, 108 );  
+    weather_sprite.print(pres_mm);   
+  #endif
   
   weather_sprite.setTextDatum ( TC_DATUM );
   weather_sprite.drawString(t_full, 106, 37 );
@@ -395,12 +404,7 @@ void drawForecastSprite(){
     log_d("not drawing forecast, fcx = %d", fcx);
     return;
   }
-//  #ifdef USETOUCH
-//    if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){
-//      log_d(" not drawing forecast, wrong screen");
-//      return;
-//    }
-//  #endif   
+
   log_d("draw forecast sprite at %d %d", fcx, fcy );
   grabTft();
   forecast_sprite.pushSprite( 16, 264 );
@@ -604,7 +608,7 @@ bool getForecast(){
   return( true );
 }
 
-#else
+#else // do not USEOWM
 String json_owmdata(){return("\t\"openweathermap\" : {}");}
 
 void drawWeather(){

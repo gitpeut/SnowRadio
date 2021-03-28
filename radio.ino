@@ -301,7 +301,7 @@ void radio( void *param) {
 
     if ( uxQueueMessagesWaiting(playQueue) < 20 ){
         lowqueue++; 
-        if ( lowqueue > RESTART_AFTER_LOWQ_COUNT  ){
+        if ( lowqueue > ( RESTART_AFTER_LOWQ_COUNT + ( 50 * stations[ currentStation ].protocol))   ){
            syslog( (char *)"Restart to solve low queue");  
            disconnect_radioclient();
            ModeChange = false;                       

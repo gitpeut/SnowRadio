@@ -199,9 +199,9 @@ void VS1053g::displaySpectrum() {
         nextx += 10;
         int curx = (nextprevChannel>0)?50+nextx:spectrum_width-50-nextx;
         if( curx > spectrum_width - 7 || curx < 0 ) nextx = 0;    
-        int sline_y     = 2*(spectrum_height/3);
-        int sline_start = 0;
-        int sline_end   = spectrum_width;
+        //int sline_y     = 2*(spectrum_height/3);
+        //int sline_start = 0;
+        //int sline_end   = spectrum_width;
       
         spectrum_sprite.setFreeFont( DATE_FONT );
         spectrum_sprite.setTextColor( TFT_MY_GOLD, TFT_MY_DARKGRAY );  

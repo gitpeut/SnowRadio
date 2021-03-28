@@ -33,7 +33,7 @@
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.
-#define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
+#define METASPRITE    // use a sprite to display metadata and scroll the sprite if text is too long
 #define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
                       //for some this is very user friendly, for others it is a source of frustration. 
 #undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
@@ -44,9 +44,13 @@
                       // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
                       // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
-                      //                    
+                      //    
+#define USETRAFFIC    // will show traffic info for Moscow. Highly dependant on the dataprovider,
+                      // url in traffic.h, with other providers this will not work, and could even cause crashes,
+                      // so be careful.
+                                
 //#define MONTHNAMES_EN
-#define MONTHNAMES_RU
+//#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
 const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
@@ -106,6 +110,7 @@ const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
 #include "0pins.h"
 #include "tft.h"
 #include "owm.h"
+#include "traffic.h"    
 
 screenPage currDisplayScreen = RADIO;
 
@@ -189,7 +194,7 @@ bool ModeChange = false;
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
-#define RESTART_AFTER_LOWQ_COUNT 100
+#define RESTART_AFTER_LOWQ_COUNT 20
 
 int   unavailablecount=0;
 int   failed_connects=0;
@@ -201,7 +206,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.0"
+#define APVERSION "V1.1 (ST7796)"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -233,7 +238,7 @@ TaskHandle_t      touchTask;
 
 
 #define PIXELTASKPRIO     3
-#define GESTURETASKPRIO   4
+#define GESTURETASKPRIO   5
 #define TOUCHTASKPRIO     5
 #define RADIOTASKPRIO     6
 #define PLAYTASKPRIO      5

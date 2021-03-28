@@ -111,12 +111,15 @@ xSemaphoreTake( tftSemaphore, portMAX_DELAY);
 xSemaphoreGive( tftSemaphore); 
 
 }
+
+//Display litle hand over the radio button to indicate the gesture sensor has woken up.
+//When gestures go to sleep or are turned off, display the active radiobutton again. 
 //-----------------------------------------------------
 void tft_show_gesture( bool showonscreen ){
-int   w=32;
-int   h    = 20;
-int   xpos = BUTOFFSET;
-int   ypos = TFTCLOCKT + 12 + h; 
+int   w = 32;
+int   h = 20;
+int   xpos = touchbutton[BUTTON_RADIO].x + (50 - w)/2;
+int   ypos = touchbutton[BUTTON_RADIO].y + (50 - h )/2; 
 char  geststring[4];
     
    if ( currDisplayScreen != RADIO) return;
@@ -131,14 +134,18 @@ char  geststring[4];
       geststring[1] = 0;   
       gest.setTextColor( TFT_WHITE, TFT_MY_BLACK ); 
       gest.drawString( geststring , 0,1 );
+
+      grabTft();
+        gest.pushSprite( xpos, ypos);
+      releaseTft();  
+  
+   }else{    
+      touchbutton[BUTTON_RADIO].draw( true );
    }
 
 
-grabTft();
-  gest.pushSprite( xpos, ypos);
-releaseTft();  
-
 }
+
 //----------------------------------------------------------
 
 //int read_battery(){
@@ -239,9 +246,8 @@ releaseTft();
 //--------------------------------------------------------------------------------------------------------
 
 void showClock ( bool force ){
-  int     clockh, clockx, clocky, clockw;
-  int     datex, datey, datew;
-  int     dspritex,dspritey,dspritew;
+  int     clockw   = 230, clockh   = 70,  clockx   = 6,   clocky = 8;
+  int     dspritew = 230, dspriteh = 31 , dspritex = 6, dspritey = 78;
   int     yy;
   char    tijd[32] = "", datestring[128] = "", daystring[10] = "";
   char    tmpday[128] = "", tmpmon[ 128 ]= "";
@@ -276,19 +282,19 @@ void showClock ( bool force ){
  
   sprintf(tijd,"%02d:%02d",tinfo.tm_hour, tinfo.tm_min);   
 
-  if ( !clocks.created() )clocks.createSprite(  230, 70 );
+  if ( !clocks.created() )clocks.createSprite(  clockw, clockh );
   
   clocks.fillSprite(TFT_MY_DARKGRAY);    
   clocks.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
   clocks.setFreeFont( TIME_FONT );
   clocks.setTextDatum(TC_DATUM);
-  clocks.drawString( tijd, 114, 4 );
+  clocks.drawString( tijd, clocks.width()/2 - 1, 4 );
   clocks.setTextDatum( TL_DATUM );
   
   if ( (tinfo.tm_mday != previous_date) || force ){
       previous_date = tinfo.tm_mday;
       
-      if ( !date_sprite.created() )date_sprite.createSprite(  230, 31 );
+      if ( !date_sprite.created() )date_sprite.createSprite(  dspritew, dspriteh );
       date_sprite.fillSprite(TFT_MY_DARKGRAY);
 
       sprintf( daystring,"%s", utf8torus( daynames[tinfo.tm_wday], tmpday )); 
@@ -303,7 +309,7 @@ void showClock ( bool force ){
       int day_date_w = 4 + daystring_w + 15 + datestring_w ;
       int x_day_date = 230/2 - day_date_w/2;
       
-      date_sprite.drawRect (x_day_date - 1, 10, daystring_w + 7, 17, TFT_MY_GRAY);
+      date_sprite.drawRect (x_day_date - 1, 10, daystring_w + 9, 19, TFT_MY_GRAY);
       date_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
       date_sprite.setFreeFont( LABEL_FONT );    
       date_sprite.drawString( daystring, x_day_date + 3, 12 ); //LABEL_FONT  
@@ -311,7 +317,7 @@ void showClock ( bool force ){
       date_sprite.drawString( datestring, x_day_date + 4 + daystring_w + 12, 9 ); 
       
       grabTft();
-      date_sprite.pushSprite( 6, 78 );
+      date_sprite.pushSprite( dspritex, dspritey );
       releaseTft();
   
       
@@ -319,7 +325,7 @@ void showClock ( bool force ){
   }
     
   grabTft();
-  clocks.pushSprite( 6, 8 );
+  clocks.pushSprite( clockx, clocky );
   releaseTft();
     
 
@@ -334,23 +340,29 @@ void showClock ( bool force ){
 //---------------------------------------------------------------------
 void tft_showstation( int stationIdx){
 
-  int   xpos = 0, ypos=7;
+  int   spritew = 222, spriteh  = 23;
+  int   xpos    = 248, ypos     = 173;
   char  *s = stations[stationIdx].name;
   
   if ( currDisplayScreen != RADIO ) return;
   if ( xSemaphoreTake( stationSemaphore, 50) != pdTRUE) return;
  
-  if( !station_sprite.created() ) station_sprite.createSprite(222, 23 );
+  if( !station_sprite.created() ) station_sprite.createSprite( spritew, spriteh );
   station_sprite.fillSprite(TFT_MY_DARKGRAY);
   station_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY );
   station_sprite.setFreeFont( STATION_FONT );
 
+  // if station name is too long, try to remove first word from station name
+  if ( station_sprite.textWidth( stations[stationIdx].name) > station_sprite.width() ){
+    while ( *s && *s != ' ') ++s;
+    *s?++s:s=stations[stationIdx].name;        
+  }
   station_sprite.setTextDatum(TC_DATUM);
-  station_sprite.drawString( stations[stationIdx].name, 111, 1 );
+  station_sprite.drawString( s, spritew/2, 1 );
   station_sprite.setTextDatum(TL_DATUM);
   
   grabTft();
-  station_sprite.pushSprite( 248, 173 ); 
+  station_sprite.pushSprite( xpos, ypos ); 
   releaseTft();
   
  
@@ -379,7 +391,7 @@ void tft_create_meta( int spritew){
   //meta_sprite.fillSprite(TFT_YELLOW);
   meta_sprite.fillSprite(TFT_MY_DARKGRAY);
   meta_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
-  meta_sprite.setFreeFont( LABEL_FONT );
+  meta_sprite.setFreeFont( META_FONT );
 
 
 }
@@ -403,7 +415,8 @@ void tft_create_meta( int spritew){
 
             latin2utf( (unsigned char *) meta.metadata, &utfmeta );
             mymeta = ( char *) utfmeta;
-
+            dump_meta( (char *)utfmeta);
+            
             textw   = meta_sprite.textWidth( mymeta, 1 ); 
             if ( textw < nonscroll_metawidth ){
                textx    = ( nonscroll_metawidth - textw )/2;
@@ -450,7 +463,8 @@ void tft_create_meta( int spritew){
               } 
             }else{
               log_d( "mymeta : %s\n", mymeta );
-              meta_sprite.drawString( (char *)utfmeta, textx, 6, 1);
+              meta_sprite.drawString( (char *)utfmeta, textx, 8
+              , 1);
             }
 
             mymeta = NULL;
@@ -1046,7 +1060,7 @@ void tft_init(){
   //PSRAM_ENABLE == 3 psramFound test is already done by tft_espi,
   //no need to duplicate.
   tft.setAttribute( 3,1);//enable PSRAM
-  tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
+  //tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
   tft.init();
   
   //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 

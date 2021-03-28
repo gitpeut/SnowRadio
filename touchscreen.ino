@@ -256,69 +256,111 @@ void drawRadioScreen(){
 
 //--------------------------------------------------------------------
 
-void drawMode(){
+void drawMode( bool traffic_only ){
 
   if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT )return;
-
   char  modetext[32];
+  bool  draw_txt = true;
+  uint16_t text_color = TFT_MY_GRAY, background_color=TFT_MY_DARKGRAY;
+  int mode_x=0;
+         
+  #ifdef USEOWM
+    if ( ! traffic_only )drawForecastSprite(); 
+  #endif
 
-  switch( currDisplayScreen ){
-        case POWEROFF:
-            strcpy( modetext, "POWER OFF");
-            break;
-        case LINEIN:
-            strcpy( modetext, "LINE IN");
-            break;
-        case BLUETOOTH:      
-            strcpy( modetext, "BLUETOOTH");
-            break;                  
-        default: 
-            // RADIO screen
-            return;
+            
+
+#ifdef USETRAFFIC
+
+        sprintf( modetext, "%d", traffic_info.level );
+        draw_txt = false;
+        
+        switch( traffic_info.level ){
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                  background_color=TFT_MY_GREEN;
+                  break;
+            case 4:            
+            case 5:            
+            case 6:            
+                  background_color=TFT_MY_YELLOW;
+                  text_color = TFT_MY_DARKGRAY;
+                  break;
+            case 7:
+            case 8:
+            case 9:
+                  background_color=TFT_RED;
+                  break;
+            default:
+                  background_color=TFT_WHITE;
+                  break;            
+        }
+#endif  
+
+  if ( ! traffic_only ){
+          
+            mode_x = 387 ;
+
+            switch ( currDisplayScreen ){
+                case LINEIN:
+                  if ( draw_txt ) sprintf( modetext, "LINE IN");  
+                  drawBmp("/frames/line_frame.bmp", 243,  66 );
+                  drawBmp("/frames/btn_close.bmp",  306, 269 );
+                  break;
+                case BLUETOOTH:
+                  if ( draw_txt ) sprintf( modetext, "BLUETOOTH");  
+                  drawBmp("/frames/bt_frame.bmp",  243,  66 );
+                  drawBmp("/frames/btn_close.bmp",  306, 269 );
+                  break;
+                case POWEROFF:
+                  if ( draw_txt ) sprintf( modetext, "POWER OFF");  
+                  drawBmp("/frames/power_frame.bmp", 243,  66 );
+                  drawBmp("/frames/power_close.bmp", 250, 269 );  
+                  mode_x = 359 ;
+                  break;
+                default:
+                  return;  
+            }                   
+  } 
+  
+  delay(5);
+  
+  if ( !draw_txt ){
+    mode_x = mode_x - 7;
   }
-    
-      int mode_x;
-
-    log_d("draw mode text");
-    
-//    grabTft();    
-
-      if ( currDisplayScreen == LINEIN ){
-  drawBmp("/frames/line_frame.bmp", 243,  66 );
-  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY);  
-  drawBmp("/frames/btn_close.bmp",  306, 269 );
-  mode_x = 387 ;
-  delay (1);
-      }
-
-      if ( currDisplayScreen == BLUETOOTH ){
-  drawBmp("/frames/bt_frame.bmp",  243,  66 );
-  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY);
-  drawBmp("/frames/btn_close.bmp", 306, 269 );  
-  mode_x = 387 ;
-  delay (1);
-      }
-
-      if ( currDisplayScreen == POWEROFF ){
-  drawBmp("/frames/power_frame.bmp", 243,  66 );
-  drawBmp("/frames/power_close.bmp", 250, 269 );  
-  mode_x = 359 ;
-  delay (1);
-      }
-
+  
   grabTft(); 
   
-  tft.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
-  tft.setFreeFont( STATION_FONT );
-  tft.setTextDatum(TC_DATUM);
-  tft.drawString( modetext, mode_x, 279 );
-  tft.setTextDatum(TL_DATUM);
-  
+  if ( currDisplayScreen != POWEROFF ){
+    tft.fillRect( 300, 268, 170, 42, background_color);  
+  }else{
+    tft.fillRect( 250, 268, 220, 42, background_color);      
+  }
+  if ( draw_txt ){
+      // no traffic info  
+        tft.setTextColor( text_color, background_color ); 
+        tft.setFreeFont( STATION_FONT );
+        tft.setTextDatum(TC_DATUM);  
+        tft.drawString( modetext, mode_x, 279 );
+        tft.setTextDatum(TL_DATUM);
+  }else{
+        tft.setTextColor( text_color, background_color ); 
+        tft.setFreeFont( TRAFFIC_NUM );
+        tft.setTextDatum(TC_DATUM);  
+        tft.drawString( modetext, mode_x, 275 );
+        
+        tft.setTextDatum(TR_DATUM);   // align to the right side of the string  
+        tft.setFreeFont( TRAFFIC_TIME );
+        sprintf( modetext, "(%s)", traffic_info.time.c_str() );
+        mode_x = tft.width() - 10;
+        tft.drawString( modetext, mode_x, 275+7 );
+        tft.setTextDatum(TL_DATUM); // rest to default datum 
+         
+  }
   releaseTft();
     
-#ifdef USEOWM
-    drawForecastSprite(); 
-#endif
 
 }
 
@@ -426,7 +468,7 @@ void touch_process( void *param){
       irqset = true;
     }
     
-    Serial.println("Touch read...");
+    //log_d("Touch read...");
     xTaskNotifyWait(0,0,&touch_command,portMAX_DELAY);
       
     //the touch irq also fires when positions are read. To avoid

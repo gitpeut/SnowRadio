@@ -10,6 +10,9 @@
 #define TFT_MY_DARKGRAY     0x424A  // Заливка отсеков
 #define TFT_MY_BLUE         0x5C5C  // Часы, спект, активные кнопки.
 #define TFT_MY_RED          0xEAA9
+#define TFT_MY_GREEN        TFT_DARKGREEN
+#define TFT_MY_YELLOW       TFT_MY_GOLD
+
 
 #define TFT_ROTATION       3
 
@@ -28,7 +31,9 @@
 #define TIME_FONT     &FreeSansBold44pt7b   // Шрифт для часов. Только цифры. // The font for the clock. Only numbers.
 #define LABELW_FONT   &Digital_8            // Шрифт, цифры для даты в прогнозах погоды. // Font, numbers for the date in the weather forecasts.
 #define NUM_FONT      &Digital_16pt8b       // Шрифт, цифры для параметров погоды + специальные символы. // Font, numbers for weather parameters + special characters.
-
+#define META_FONT     &MetaBold11           //
+#define TRAFFIC_TIME  &traffic_time         // only numbers font for traffic time
+#define TRAFFIC_NUM   &traffic_num          // traffic severity
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed

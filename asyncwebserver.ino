@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include "tft.h"
 #include "owm.h"
+#include "traffic.h"
 
 AsyncWebServer    fsxserver(80);
 AsyncEventSource  radioevents("/radioevents");
@@ -347,6 +348,7 @@ void handleDel( AsyncWebServerRequest *request ){
   }else{
     save_stations();                
     return_status = 200;
+    if ( delFBuf( "/stations.json" ) ) addFBuf( "/stations.json" );
     read_stations();
     sprintf( message,"Deleted station %s", request->getParam("name")->value().c_str() );      
   }
@@ -864,6 +866,22 @@ static unsigned char *lastmeta = NULL;
   
   
 }
+//--------------------------------------------------------------
+void handleTraffic(  AsyncWebServerRequest *request ) {
+  int   return_status = 200;
+  bool  traffic_status;
+  char  trafficstring[64];
+  
+  traffic_status = show_traffic();
+  if (traffic_status) {
+    sprintf( trafficstring,"{\"result\" : 1,\"level\" : %d, \"time\": \"%s\"}", traffic_info.level, traffic_info.time.c_str() ); 
+  }else{
+    return_status = 500;
+    sprintf( trafficstring,"{\"result\":0}"  ); 
+  }
+    
+  request->send( return_status, "application/json;charset=UTF-8", trafficstring );
+}
 //------------------------------------------------------------------
 void broadcast_status(){
     log_d( "broadcast status");  
@@ -906,7 +924,7 @@ void startWebServer( void *param ){
         
   fsxserver.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
     {request->send(200, "text/html", uploadpage); }, handleFileUpload);
-
+  fsxserver.on("/traffic", HTTP_GET, handleTraffic );
   fsxserver.on("/set", HTTP_GET, handleSet );
   fsxserver.on("/add", HTTP_GET, handleAdd );
   fsxserver.on("/del", HTTP_GET, handleDel );
@@ -972,6 +990,14 @@ void startWebServer( void *param ){
      --weathercount;
      
      if ( weathercount <= 0  ){
+
+ #ifdef USETRAFFIC 
+     
+        show_traffic();
+        drawMode( true );
+
+        delay(20);
+#endif        
         if( getWeather() ){
           weathercount = ((30*60*1000) /delaytime); // every 30 minutes, 48 requests a day - free allows for 100 requests a day 
         }else{

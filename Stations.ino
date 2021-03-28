@@ -91,6 +91,7 @@ for ( i = 0; i< STATIONSSIZE; ++i ){
         if ( i == index && stations[i].status  ){
                 if ( strcmp( stations[i].name, name )  == 0 ){
                   stations[i].status = 0;
+                  save_stations();//hiero
                   break;
                 }
         }
