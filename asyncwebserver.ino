@@ -347,6 +347,7 @@ void handleDel( AsyncWebServerRequest *request ){
   }else{
     save_stations();                
     return_status = 200;
+    if ( delFBuf( "/stations.json" ) ) addFBuf( "/stations.json" );
     read_stations();
     sprintf( message,"Deleted station %s", request->getParam("name")->value().c_str() );      
   }
