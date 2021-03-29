@@ -147,6 +147,11 @@ Currently, the following options are defined:
                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
                       //                    
 </pre>
+
+Compiling and uploading can be done in the ARduino IDE. Creating and populating the flash filesystem is required, and should be done using the
+ESP32 Sketch data upload utility, currently, this is the most feature-rich version: https://github.com/lorol/arduino-esp32fs-plugin,
+it allows for SPIFFS, LittleFS and FFat filesystems.
+
 <h2>faq</h2>
 <ul>
 <li>Touch calibration <br />
