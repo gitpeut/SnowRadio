@@ -142,7 +142,8 @@ extern struct        metaInfo meta;
 extern void          broadcast_meta(bool reset=false);
 extern volatile bool screenUpdateInProgress;
 extern volatile int  nextprevChannel;
-
+extern volatile int  trafficCount; // in asyncwebserver
+ 
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
 //void showVolume( int percentage , bool force = false);

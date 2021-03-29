@@ -9,6 +9,8 @@
 #include "owm.h"
 #include "traffic.h"
 
+volatile int      trafficCount  = 0;
+
 AsyncWebServer    fsxserver(80);
 AsyncEventSource  radioevents("/radioevents");
 
@@ -989,19 +991,24 @@ void startWebServer( void *param ){
            broadcast_metacount = (60000/delaytime);           
     }
 
+     #ifdef USETRAFFIC 
+      --trafficCount;
+      
+     if ( trafficCount <= 0  ){
+        show_traffic();
+        drawMode( true );
+        trafficCount = ((30*60*1000) /delaytime); 
+        delay(20);
+     }
+         
+     #endif 
+         
      #ifdef USEOWM
 
      --weathercount;
      
      if ( weathercount <= 0  ){
-
-#ifdef USETRAFFIC 
-     
-        show_traffic();
-        drawMode( true );
-
-        delay(20);
-#endif        
+    
         if( getWeather() ){
           weathercount = ((30*60*1000) /delaytime); // every 30 minutes, 48 requests a day - free allows for 100 requests a day 
         }else{

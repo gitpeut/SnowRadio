@@ -271,6 +271,13 @@ void drawMode( bool traffic_only ){
             
 
 #ifdef USETRAFFIC
+        // if show_traffic() is called directly from this task we 
+        // we run out of stack space. Signal async webserver, which has plenty of
+        // stack, to update traffic info if needed.
+         
+        if ( traffic_info.stale ){
+            trafficCount = 4;
+        }
 
         sprintf( modetext, "%d", traffic_info.level );
         draw_txt = false;
@@ -335,10 +342,10 @@ void drawMode( bool traffic_only ){
   
   grabTft(); 
   
-  if ( currDisplayScreen != POWEROFF ){
-    tft.fillRect( 300, 268, 170, 42, background_color);  
+  if ( currDisplayScreen != POWEROFF ){ 
+    tft.fillRect( 300, 268+1, 170, 42-1, background_color); // tweaked the offsets to avoid traffic color bleeding around the mute button. 
   }else{
-    tft.fillRect( 250, 268, 220, 42, background_color);      
+    tft.fillRect( 250, 268+1, 220, 42-2, background_color);      
   }
   if ( draw_txt ){
       // no traffic info  
@@ -351,14 +358,14 @@ void drawMode( bool traffic_only ){
         tft.setTextColor( text_color, background_color ); 
         tft.setFreeFont( TRAFFIC_NUM );
         tft.setTextDatum(TC_DATUM);  
-        tft.drawString( modetext, mode_x, 275 );
+        tft.drawString( modetext, (currDisplayScreen == POWEROFF)?359:387-5, 275 );
         
         tft.setTextDatum(TR_DATUM);   // align to the right side of the string  
         tft.setFreeFont( TRAFFIC_TIME );
         sprintf( modetext, "(%s)", traffic_info.time.c_str() );
         mode_x = tft.width() - 10;
         tft.drawString( modetext, mode_x, 275+7 );
-        tft.setTextDatum(TL_DATUM); // rest to default datum 
+        tft.setTextDatum(TL_DATUM); // restore to default datum 
          
   }
   releaseTft();
