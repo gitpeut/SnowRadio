@@ -221,7 +221,7 @@ li.station {
     margin-left: 15px;
     margin-right: auto;
     width: 100px;
-    /* display: none;*/
+    display: none;
 /*    if mode buttons should not be visible and working uncomment this,
       and comment out  setup_modediv(); below */
 }
@@ -1097,7 +1097,7 @@ function act_on_jstatus( jstatus ){
     
     var playingElement;
     var playingButton;
-    playingStation = jstatus.currentStationIndex;
+    playingStation = jstatus.currentStationIndex;   
     
     for( x in jstations.stations ){
         if ( x == playingStation ){
@@ -1120,8 +1120,13 @@ function act_on_jstatus( jstatus ){
     }
     
     selectinput = jstatus.inputSelect;
-    if ( selectinput != 1 ){
-        document.getElementById("selectinput").style.display = "none";
+
+    document.getElementById("modeimg2").style.display = "block";
+    document.getElementById("modeimg0").style.display = "block";
+
+    if ( selectinput == 1 ){   
+        document.getElementById("modeimg3").style.display = "block";
+        document.getElementById("modeimg4").style.display = "block";
     }
     
     document.getElementById("volume").value      = jstatus.currentVolume;
