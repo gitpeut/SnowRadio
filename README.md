@@ -153,10 +153,14 @@ Currently, the following options are defined:
     "Delete touch calibration", then on the button "Reboot". When the Snow radio restarts, it ask you to touch 
     the 4 corners of the display. If done correctly, the display should work.
 </li>
+<li> Stations can be added by pressing button "Add station" on the webpage. A valid url and a station name is required.
+</li>
+<li> Changing or deleting a station can be done by pressing the button to the right of the station name in the stationlist.
+</li>
 <li>Only one SSL connection <br />
     The Snow radio can receive https Internet radio stations. However, when experimenting, bear in 
     mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
-    connection is not possible. This also makes it unlikely newer protocols like dash or HLS can ever be supported.
+    connection is not possible. This also makes it unlikely newer protocols like dash or HLS can be supported.
 </li>
 <li>Gesture sensor <br />
     Gestures work as follows:
@@ -174,16 +178,26 @@ Currently, the following options are defined:
     could surprise you, but is intentional.
 </li>
 <li>Restart at failing connection <br />
-    When reception of the internet radio is bad, the radio connot supply the VS1053 with enough data to supply sound.
+    When reception of the internet radio is bad, the radio cannot supply the VS1053 with enough data to supply sound.
     As a last resort the radio will then restart. This usually solves the issue, but could in some extraordinary cases
     lead to a reboot loop. Via the web page or the screen you can try to switch to another station before the reboot 
     occurs again. If this doesn't work a reflash of the filesystem can be the only way out, but this will also mean
     that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
     netpass file. 
 </li>
+<li>syslog <br />
+    A logfile (/syslog.txt) mainly containing boot reasons is maintained and can be viewed on the Web page by pressing the"Show Log"
+    button. When this log grows beyond 20k it is deleted.
+</li>   
+<li>Update firmware<br />
+    By default firmware can be updated using http. Press the button "Update firmware" to upload a new bin file, created 
+    in the Arduino IDE by selecting "Export compiled binary" in the Sketch menu.
+    An option #define USEOTA is available which should enable Arduino OTA updates, but it is hardly tested, and has been causing
+    issues in the previous versions.
+</li> 
 <li>Backup and restore<br/>
     For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
-    All other files can be downloaded and save by typing http://snowradio.local/<filename>?download=1 in your browser.
+    All other files can be downloaded and saved by typing http://snowradio.local/<filename>?download=1 in your browser.
     Use the "Directory" button to see which files you may want to backup. <br/>
     Restoring files can be done by a complete flash of the file system, or by using the "Upload file" button.
     Make sure you enter the full path of the file, including the preceding /
