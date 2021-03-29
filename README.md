@@ -158,7 +158,7 @@ Currently, the following options are defined:
     mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
     connection is not possible. This also makes it unlikely newer protocols like dash or HLS can ever be supported.
 </li>
-<li>Gesture sensor<br />
+<li>Gesture sensor <br />
 
     Gestures work as follows:
     - circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
@@ -168,7 +168,7 @@ Currently, the following options are defined:
     - right: go to next station
     - left: go to previous station
    
-    <br />    
+    <p />
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 <li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
