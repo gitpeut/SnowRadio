@@ -168,7 +168,6 @@ Currently, the following options are defined:
     <li>right: go to next station</li>
     <li>left: go to previous station</li>
     </ul>
-    
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 <li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
@@ -198,7 +197,7 @@ Currently, the following options are defined:
     For development LittleFS has been used, but the Radio can work with FFAT and SPIFFS as well. We recommend LittleFS 
     for it's robustness and better locking of files. Nevertheless, in SnowRadio.ino
     there are options to set the filesystem used. Just uncomment the one you prefer:
-    <pre>
+    
         //choose file system
         //
         //fs::FS      RadioFS     = SPIFFS;
