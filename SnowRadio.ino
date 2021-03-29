@@ -18,7 +18,6 @@
                //owm_unit (metric, imperial) in wificredentials.h
                // should be defined as const char *, e.g.
                // const char* owm_unit = "metric";
-
 #undef  USEOTA      // disable Arduino OTA. http update is always on and works 
                     // as well.
 #define USETLS 1    // allow for https
@@ -26,7 +25,7 @@
 #define USEGESTURES // Use the PAJ7620 gesture sensor
 #undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
 #define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341
-#define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
+#undef  USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI

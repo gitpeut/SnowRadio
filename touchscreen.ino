@@ -81,8 +81,9 @@ int what_button(){
   boolean           pressed;
     
   if( xSemaphoreTake( tftSemaphore, 50 ) == pdTRUE){   
-    pressed = tft.getTouch(&touch_x, &touch_y, 50);
+    pressed = tft.getTouch(&touch_x, &touch_y, 5);
     xSemaphoreGive( tftSemaphore);
+    if ( !pressed ) return(-1);
   }else{
     return(-1);
   }
@@ -90,26 +91,25 @@ int what_button(){
   //log_d("%d - touch (%s) at %u,%u", touch_count++, pressed?"pressed":"not pressed", touch_x,touch_y);
 
     if ( currDisplayScreen == RADIO ){
-      startbutton = 0; // BUTTON_AV or BUTTON_UP depending on USEINPUTSELECT
+      startbutton = 0; 
       endbutton   = BUTTON_ITEM0;
   }
 
   if ( currDisplayScreen != RADIO && currDisplayScreen != STNSELECT  ){
-      startbutton = 0; //BUTTON_AV or BUTTON_UP depending on USEINPUTSELECT
+      startbutton = 0; 
       endbutton   = BUTTON_PREV;
       if ( currDisplayScreen == POWEROFF) endbutton = BUTTON_MUTE;
   }
 
   if ( currDisplayScreen == STNSELECT  ){
       startbutton = BUTTON_ITEM0;
-      endbutton   = BUTTON_DOWN;
+      endbutton   = BUTTON_RIGHTLIST+1;
   }
   
-  if ( pressed ){
-        for ( int i = startbutton ; i < endbutton; ++i ){
-          if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
-        }
+  for ( int i = startbutton ; i < endbutton; ++i ){
+    if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
   }
+  
   return( -1 );  
 } 
 //--------------------------------------------------------------------
@@ -189,8 +189,8 @@ void draw_buttons( int startidx ){
   if ( currDisplayScreen == STNSELECT ){
       log_i("-- draw_buttons %d (max = %d)", startidx, stationCount);
       startbutton = BUTTON_ITEM0;
-      endbutton   = (int)BUTTON_DOWN;
-            
+//      endbutton   = (int)BUTTON_DOWN;
+      endbutton   = BUTTON_RIGHTLIST + 1;            
       stationidx  = startidx;
       int playing_station = getStation();
       

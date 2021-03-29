@@ -140,8 +140,8 @@ class RadioButton : public TFT_eSPI_Button {
   };
 #else
   enum buttontype{
-  BUTTON_UP,
   BUTTON_DOWN,
+  BUTTON_UP,  
   BUTTON_RADIO,
   BUTTON_STOP,
   BUTTON_MUTE,
