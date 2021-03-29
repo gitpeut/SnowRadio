@@ -60,7 +60,9 @@ Thanks to all the authors
 
 <h2>hardware</h2>
 An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 SPI ( NOT parallel, you 
-will run out of pins) screen is used. All VS1053 breakouts should work ok, consult the 0pins.h file for a 
+will run out of pins) screen is used. In branch ST7796_RU a highly modified version is available that makes
+use of a 480x320 ST7796 display.
+All VS1053 breakouts should work ok, consult the 0pins.h file for a 
 possible way of connecting this hardware.
 <p />
 In the current version, a separate SPI bus is used for the VS1053 (VSPI) and the screen (HSPI).
