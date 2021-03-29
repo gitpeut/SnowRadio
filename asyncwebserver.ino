@@ -867,6 +867,7 @@ static unsigned char *lastmeta = NULL;
   
 }
 //--------------------------------------------------------------
+#ifdef USETRAFFIC
 void handleTraffic(  AsyncWebServerRequest *request ) {
   int   return_status = 200;
   bool  traffic_status;
@@ -875,6 +876,7 @@ void handleTraffic(  AsyncWebServerRequest *request ) {
   traffic_status = show_traffic();
   if (traffic_status) {
     sprintf( trafficstring,"{\"result\" : 1,\"level\" : %d, \"time\": \"%s\"}", traffic_info.level, traffic_info.time.c_str() ); 
+    drawMode( true );
   }else{
     return_status = 500;
     sprintf( trafficstring,"{\"result\":0}"  ); 
@@ -882,6 +884,7 @@ void handleTraffic(  AsyncWebServerRequest *request ) {
     
   request->send( return_status, "application/json;charset=UTF-8", trafficstring );
 }
+#endif
 //------------------------------------------------------------------
 void broadcast_status(){
     log_d( "broadcast status");  
@@ -924,12 +927,13 @@ void startWebServer( void *param ){
         
   fsxserver.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
     {request->send(200, "text/html", uploadpage); }, handleFileUpload);
-  fsxserver.on("/traffic", HTTP_GET, handleTraffic );
   fsxserver.on("/set", HTTP_GET, handleSet );
   fsxserver.on("/add", HTTP_GET, handleAdd );
   fsxserver.on("/del", HTTP_GET, handleDel );
   fsxserver.on("/status", HTTP_GET, send_json_status );
-
+#ifdef USETRAFFIC
+  fsxserver.on("/traffic", HTTP_GET, handleTraffic );
+#endif
   fsxserver.on("/reset", HTTP_GET, []( AsyncWebServerRequest *request ) {
         request->send(200, "text/plain", "Goodbye!");
         delay(20);
@@ -991,7 +995,7 @@ void startWebServer( void *param ){
      
      if ( weathercount <= 0  ){
 
- #ifdef USETRAFFIC 
+#ifdef USETRAFFIC 
      
         show_traffic();
         drawMode( true );

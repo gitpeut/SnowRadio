@@ -351,7 +351,14 @@ void radio( void *param) {
           radioclient->stop(); 
           
       }            
-     
+#ifdef USETRAFFIC      
+      if ( traffic_info.stale ){
+          radioclient->stop();
+          delay(10);            
+          show_traffic( true);
+      }
+#endif
+      
     }else{ //no bytes available
       
       if (  millis() > connectmillis )unavailablecount++;

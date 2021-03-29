@@ -297,6 +297,8 @@ void drawMode( bool traffic_only ){
                   background_color=TFT_WHITE;
                   break;            
         }
+        if ( traffic_info.stale ) background_color=TFT_WHITE;
+
 #endif  
 
   if ( ! traffic_only ){

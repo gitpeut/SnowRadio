@@ -151,20 +151,21 @@ bool get_traffic( struct traffic &xt){
 struct traffic traffic_info;
 
 //---------------------------------------------------------------------
-bool show_traffic(){
-  log_d("Show traffic current Station %d protocol %d - %s", currentStation, stations[ currentStation ].protocol, 
-      stations[ currentStation ].name);
-  if ( stations[ currentStation ].protocol && currDisplayScreen == RADIO ) {
+bool show_traffic(bool force){
+  
+  if ( stations[ currentStation ].protocol && currDisplayScreen == RADIO && !force ) {
     log_d("Show traffic not possible SSL station playing");
-    
+    traffic_info.stale = true;
     return ( false );
   }
    
   if ( get_traffic( traffic_info ) ){
       Serial.printf("Got traffic: level : %d time : %s\n", traffic_info.level, traffic_info.time.c_str() );  
+      traffic_info.stale = false;
       return( true );
   }else{
       Serial.println( "Failed to get traffic");
+      traffic_info.stale = true;
       return( false );
   } 
   

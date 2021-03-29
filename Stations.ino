@@ -559,8 +559,8 @@ for(; *s; ++s ){
                         mode = 0;
                         switch( targetcount ){
                                 case 0:
-                                        stations[stationidx].name = strndup( source, s-source);
-                                        Serial.printf("%d - %s\n", stationidx, stations[stationidx].name);
+                                        stations[stationidx].name = ps_strndup( source, s-source);
+                                        //Serial.printf("%d - %s\n", stationidx, stations[stationidx].name);
                                         if ( current_station_name != NULL ){
                                           if ( strcmp( stations[stationidx].name, current_station_name ) == 0 ) newcurrent = stationidx;
                                         }
@@ -593,6 +593,7 @@ for(; *s; ++s ){
                         switch( targetcount ){
                         case 1:
                                 stations[stationidx].protocol = value;
+                                Serial.printf("%d - %s %d\n", stationidx, stations[stationidx].name, stations[stationidx].protocol);
                                 sprintf( searchstring,"\"host\"");
                                 targetcount++;
                                 mode = 0;
