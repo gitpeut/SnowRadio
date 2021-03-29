@@ -167,7 +167,7 @@ Currently, the following options are defined:
     <li>down: decrease volume</li>
     <li>right: go to next station</li>
     <li>left: go to previous station</li>
-    <ul>
+    </ul>
     
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
