@@ -160,14 +160,15 @@ Currently, the following options are defined:
 </li>
 <li>Gesture sensor <br />
     Gestures work as follows:
-    - circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
-        or put to sleep if active (the little hand disappears)
-    - up: increase volume
-    - down: decrease volume
-    - right: go to next station
-    - left: go to previous station
-   
-    <p />
+    <ul>
+    <li>circle clockwise or anti-clockwise: wake up sensor ( a little hand shows up on the screen) 
+        or put to sleep if active (the little hand disappears)</li>
+    <li>up: increase volume</li>
+    <li>down: decrease volume</li>
+    <li>right: go to next station</li>
+    <li>left: go to previous station</li>
+    <ul>
+    
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 <li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
