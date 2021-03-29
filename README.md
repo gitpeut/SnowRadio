@@ -200,6 +200,11 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     Files can be can be deleted by typing in this URL: http://snowradio/delete?file=<filename>, 
     e.g. http://snowradio/delete?file=/netpass
 </li>
+<li>Languages</br >
+    Default language for monthnames and days is Dutch. Provisions have been made to also display these in Russian and
+    English. For Russian fonts with Cyrillic characters are available. English can be set by uncommenting 
+    #define MONTHNAMES_EN in SnowRadio.ino, Russian by uncommenting MONTHNAMES_RU.  
+</li>    
 <li>Only one SSL connection <br />
     The Snow radio can receive https Internet radio stations. However, when experimenting, bear in 
     mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
