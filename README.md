@@ -161,14 +161,13 @@ Currently, the following options are defined:
 <li>Gesture sensor<br />
 
     Gestures work as follows:<br />
-    <ul>
-    <li>circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
-        or put to sleep if active (the little hand disappears)</li>
-    <li>up: increase volume</li>
-    <li>down: decrease volume</li>
-    <li>right: go to next station</li>
-    <li>left: go to previous station</li>
-    </ul>
+    circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
+        or put to sleep if active (the little hand disappears)<br />
+    up: increase volume<br />
+    down: decrease volume<br />
+    right: go to next station<br />
+    left: go to previous station<br />
+   
     <br />    
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
@@ -213,7 +212,7 @@ Currently, the following options are defined:
         //fs::FS      RadioFS     = FFat;
         //const int   RadioFSNO   = FSNO_FFAT;
         //const char  *RadioMount = "/ffat";
-    </pre>
+    
 </li>
 <li>Pins<br />
     In file 0pins.h an example configuration of the pins can be found. Pins for the display and
