@@ -155,14 +155,15 @@ Currently, the following options are defined:
     "Delete touch calibration", then on the button "Reboot". When the Snow radio restarts, it ask you to touch 
     the 4 corners of the display. If done correctly, the display should work.
 </li>
-<li> Stations can be added by pressing button "Add station" on the webpage. A valid url and a station name is required.
-</li>
-<li> Changing or deleting a station can be done by pressing the button to the right of the station name in the stationlist.
-</li>
-<li>Only one SSL connection <br />
-    The Snow radio can receive https Internet radio stations. However, when experimenting, bear in 
-    mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
-    connection is not possible. This also makes it unlikely newer protocols like dash or HLS can be supported.
+<li>Adding, changing or deleting stations 
+    Stations can be added on the Web page by pressing button "Add station". A valid url and a station name is required.
+    Changing or deleting a station can be done by pressing the button to the right of the station name in the stationlist.
+    There is a hardcoded limit of 100 stations that can be defined, but this is just forallocation purposes. with a generous amount 
+    of PSRAM this can easily be expanded.
+    Stations are saved in a file called stations.json, which can also be edited on your computer.
+    A very comprehensive and meticulously maintained website with more internet radio
+    stations is :
+    https://www.hendrikjansen.nl/henk/streaming.html    
 </li>
 <li>Gesture sensor <br />
     Gestures work as follows:
@@ -176,21 +177,7 @@ Currently, the following options are defined:
     </ul>
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
-<li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
-    could surprise you, but is intentional.
 </li>
-<li>Restart at failing connection <br />
-    When reception of the internet radio is bad, the radio cannot supply the VS1053 with enough data to supply sound.
-    As a last resort the radio will then restart. This usually solves the issue, but could in some extraordinary cases
-    lead to a reboot loop. Via the web page or the screen you can try to switch to another station before the reboot 
-    occurs again. If this doesn't work a reflash of the filesystem can be the only way out, but this will also mean
-    that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
-    netpass file. 
-</li>
-<li>syslog <br />
-    A logfile (/syslog.txt) mainly containing boot reasons is maintained and can be viewed on the Web page by pressing the"Show Log"
-    button. When this log grows beyond 20k it is deleted.
-</li>   
 <li>Update firmware<br />
     By default firmware can be updated using http. Press the button "Update firmware" to upload a new bin file, created 
     in the Arduino IDE by selecting "Export compiled binary" in the Sketch menu.
@@ -209,6 +196,26 @@ Currently, the following options are defined:
     Files can be can be deleted by typing in this URL: http://snowradio/delete?file=<filename>, 
     e.g. http://snowradio/delete?file=/netpass
 </li>
+<li>Only one SSL connection <br />
+    The Snow radio can receive https Internet radio stations. However, when experimenting, bear in 
+    mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
+    connection is not possible. This also makes it unlikely newer protocols like dash or HLS can be supported.
+</li>
+<li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
+    could surprise you, but is intentional.
+</li>
+<li>Restart at failing connection <br />
+    When reception of the internet radio is bad, the radio cannot supply the VS1053 with enough data to supply sound.
+    As a last resort the radio will then restart. This usually solves the issue, but could in some extraordinary cases
+    lead to a reboot loop. Via the web page or the screen you can try to switch to another station before the reboot 
+    occurs again. If this doesn't work a reflash of the filesystem can be the only way out, but this will also mean
+    that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
+    netpass file. 
+</li>
+<li>syslog <br />
+    A logfile (/syslog.txt) mainly containing boot reasons is maintained and can be viewed on the Web page by pressing the"Show Log"
+    button. When this log grows beyond 20k it is deleted.
+</li>   
 <li>File system <br />
     For development LittleFS has been used, but the Radio can work with FFAT and SPIFFS as well. We recommend LittleFS 
     for it's robustness and better locking of files. Nevertheless, in SnowRadio.ino
@@ -238,9 +245,6 @@ Currently, the following options are defined:
 </ul>
 
     
-<h2>sundry</h2>
 
-A very comprehensive and meticulously maintained website with more internet radio
-stations is :
-https://www.hendrikjansen.nl/henk/streaming.html
+
 
