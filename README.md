@@ -146,28 +146,28 @@ Currently, the following options are defined:
 </pre>
 <h2>faq</h2>
 <ul>
-<li>When attaching a touch display,touch calibration data for an other display will not work properly or not at all.
+<li>Touch calibration <br />
+    When attaching a touch display,touch calibration data for an other display will not work properly or not at all.
     Open a browser and connect to URL snowradio.local, or to the ip address of Snow radio and click on button
     "Delete touch calibration", then on the button "Reboot". When the Snow radio restarts, it ask you to touch 
     the 4 corners of the display. If done correctly, the display should work.
 </li>
-<li>When experimenting, bear in mind that Arduino does not allow for SSL to use PSRAM. for Snow radio this means that 
-    more than 1 SSL ( https) connection is not possible. This also makes it unlikely newer protocols like dash or HLS can 
-    be supported.
+<li>Only one SSL connection <br />
+    The Snow radio can receive https Internet radio stations. However, when experimenting, bear in 
+    mind that Arduino does not allow for SSL to use PSRAM. For Snow radio this means that more than 1 SSL ( https) 
+    connection is not possible. This also makes it unlikely newer protocols like dash or HLS can ever be supported.
 </li>
-<li>Network names and passwords are stored in an encrypted file, /netpass. This file can be deleted on the Web page, 
-    so you can get rid of old networks. Depending on the option you have configured with the defines, USEESPTOUCH or LOADSSIDS, 
-    you can refresh the network data.  
-</li>
-<li>Sometimes, especially after a new flash of the ESP3, the touch sensor does not react anymore. Only known fix
+<li>Gesture sensor<br />
+    Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 <li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
     could surprise you, but is intentional.
 </li>
-<li>When reception of the internet radio is bad, the radio connot supply the VS1053 with enough data to supply sound.
+<li>Restart at failing connection <br />
+    When reception of the internet radio is bad, the radio connot supply the VS1053 with enough data to supply sound.
     As a last resort the radio will then restart. This usually solves the issue, but could in some extraordinary cases
-    lead to a reboot loop. Via the web page or the screen you can try to swith to another station before the reboot 
-    occurs again. If thisdoesn't work a reflash of the filesystem can be the only way out, but this will also mean
+    lead to a reboot loop. Via the web page or the screen you can try to switch to another station before the reboot 
+    occurs again. If this doesn't work a reflash of the filesystem can be the only way out, but this will also mean
     that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
     netpass file. 
 </li>
@@ -181,10 +181,14 @@ Currently, the following options are defined:
     Make sure you enter the full path of the file, including the preceding /
     
 </li>
+<li>Delete files<br />
+    Files can be can be deleted by typing in this URL: http://snowradio/delete?file=<filename>, 
+    e.g. http://snowradio/delete?file=/netpass
+</li>
 <li>File system <br />
-    For development LittleFS is used, but the Radio can work with FFAT and SPIFFS as well. In SnowRadio.ino
-    there are option to set the filesystem used. We recommend LittleFS for it's robustness and better locking
-    of files. Just uncomment the one you prefer:
+    For development LittleFS has been used, but the Radio can work with FFAT and SPIFFS as well. We recommend LittleFS 
+    for it's robustness and better locking of files. Nevertheless, in SnowRadio.ino
+    there are options to set the filesystem used. Just uncomment the one you prefer:
     <pre>
     //choose file system
 //
@@ -204,9 +208,10 @@ const char  *RadioMount = "/littlefs";
     </pre>
 </li>
 <li>Pins<br />
-    In file 0pins.h an example configuration of the pins can be found. The  option to 
-    use input selection has been realized with an I2C port extender, the MCP23017. The code
-    to realize this has not been included.
+    In file 0pins.h an example configuration of the pins can be found. Pins for the display and
+    the touch sensor should be defined in the tft_eSPI setup file for your display. The  option to 
+    use input selection ( switch to bluetooth/line-in ) has been realized with an I2C port extender, 
+    the MCP23017. The code to initialize and use the MCP23017 has not been included.
 </ul>
 
     
