@@ -155,11 +155,10 @@ Currently, the following options are defined:
     "Delete touch calibration", then on the button "Reboot". When the Snow radio restarts, it ask you to touch 
     the 4 corners of the display. If done correctly, the display should work.
 </li>
-<li>Adding, changing or deleting stations 
+<li>Adding, changing or deleting stations <br /> 
     Stations can be added on the Web page by pressing button "Add station". A valid url and a station name is required.
     Changing or deleting a station can be done by pressing the button to the right of the station name in the stationlist.
-    There is a hardcoded limit of 100 stations that can be defined, but this is just forallocation purposes. with a generous amount 
-    of PSRAM this can easily be expanded.
+    There is a hardcoded limit of 100 stations. with a generous amount of PSRAM this limit can probably be increased.
     Stations are saved in a file called stations.json, which can also be edited on your computer.
     A very comprehensive and meticulously maintained website with more internet radio
     stations is :
