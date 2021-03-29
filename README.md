@@ -148,8 +148,8 @@ Currently, the following options are defined:
                       //                    
 </pre>
 
-Compiling and uploading can be done in the ARduino IDE. Creating and populating the flash filesystem is required, and should be done using the
-ESP32 Sketch data upload utility, currently, this is the most feature-rich version: https://github.com/lorol/arduino-esp32fs-plugin,
+Compiling and uploading can be done in the Arduino IDE. Creating and populating the flash filesystem is required, and should be done using the
+ESP32 Sketch data upload utility. Currently, this is the most feature-rich version: https://github.com/lorol/arduino-esp32fs-plugin,
 it allows for SPIFFS, LittleFS and FFat filesystems.
 
 <h2>faq</h2>
