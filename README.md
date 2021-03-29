@@ -204,8 +204,6 @@ const char  *RadioMount = "/littlefs";
 //fs::FS      RadioFS     = FFat;
 //const int   RadioFSNO   = FSNO_FFAT;
 //const char  *RadioMount = "/ffat";
-
-
     </pre>
 </li>
 <li>Pins<br />
