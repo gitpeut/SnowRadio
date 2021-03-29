@@ -152,8 +152,13 @@ struct traffic traffic_info;
 
 //---------------------------------------------------------------------
 bool show_traffic(){
-  
-  if ( stations[ playingStation ].protocol ) return ( false );
+  log_d("Show traffic current Station %d protocol %d - %s", currentStation, stations[ currentStation ].protocol, 
+      stations[ currentStation ].name);
+  if ( stations[ currentStation ].protocol && currDisplayScreen == RADIO ) {
+    log_d("Show traffic not possible SSL station playing");
+    
+    return ( false );
+  }
    
   if ( get_traffic( traffic_info ) ){
       Serial.printf("Got traffic: level : %d time : %s\n", traffic_info.level, traffic_info.time.c_str() );  
