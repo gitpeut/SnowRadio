@@ -159,6 +159,17 @@ Currently, the following options are defined:
     connection is not possible. This also makes it unlikely newer protocols like dash or HLS can ever be supported.
 </li>
 <li>Gesture sensor<br />
+
+    Gestures work as follows:<br />
+    <ul>
+    <li>circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
+        or put to sleep if active (the little hand disappears)</li>
+    <li>up: increase volume</li>
+    <li>down: decrease volume</li>
+    <li>right: go to next station</li>
+    <li>left: go to previous station</li>
+    </ul>
+    <br />    
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 <li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
@@ -172,9 +183,7 @@ Currently, the following options are defined:
     that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
     netpass file. 
 </li>
-<li> 
-    Backup and restore
-    <br/>
+<li>Backup and restore<br/>
     For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
     All other files can be downloaded and save by typing http://snowradio.local/<filename>?download=1 in your browser.
     Use the "Directory" button to see which files you may want to backup. <br/>
@@ -191,19 +200,19 @@ Currently, the following options are defined:
     for it's robustness and better locking of files. Nevertheless, in SnowRadio.ino
     there are options to set the filesystem used. Just uncomment the one you prefer:
     <pre>
-    //choose file system
-//
-//fs::FS      RadioFS     = SPIFFS;
-//const int   RadioFSNO   = FSNO_SPIFFS;
-//const char  *RadioMount = "/spiffs";
+        //choose file system
+        //
+        //fs::FS      RadioFS     = SPIFFS;
+        //const int   RadioFSNO   = FSNO_SPIFFS;
+        //const char  *RadioMount = "/spiffs";
 
-fs::FS      RadioFS     = LITTLEFS;
-const int   RadioFSNO   = FSNO_LITTLEFS;
-const char  *RadioMount = "/littlefs";
+        fs::FS      RadioFS     = LITTLEFS;
+        const int   RadioFSNO   = FSNO_LITTLEFS;
+        const char  *RadioMount = "/littlefs";
 
-//fs::FS      RadioFS     = FFat;
-//const int   RadioFSNO   = FSNO_FFAT;
-//const char  *RadioMount = "/ffat";
+        //fs::FS      RadioFS     = FFat;
+        //const int   RadioFSNO   = FSNO_FFAT;
+        //const char  *RadioMount = "/ffat";
     </pre>
 </li>
 <li>Pins<br />
@@ -211,6 +220,7 @@ const char  *RadioMount = "/littlefs";
     the touch sensor should be defined in the tft_eSPI setup file for your display. The  option to 
     use input selection ( switch to bluetooth/line-in ) has been realized with an I2C port extender, 
     the MCP23017. The code to initialize and use the MCP23017 has not been included.
+</li>
 </ul>
 
     
