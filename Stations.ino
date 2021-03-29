@@ -331,6 +331,7 @@ int i,j,rc;
             Serial.printf( "read_header returned %d, %s , %s\n", rc, stationChunked?"chunked":"stream", stationClose?"HTTP Close":"HTTP Keep-alive"  );
         
             if ( rc > 300 && rc < 309 ){
+              radioclient->stop(); // avoid memory leak
               Serial.printf( "Retry connect but now to %s\n", stations[stationIdx].host);
               break;
             }
