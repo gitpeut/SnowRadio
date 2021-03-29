@@ -189,7 +189,7 @@ bool ModeChange = false;
 
 //hangdetection
 #define MAXUNAVAILABLE 50000
-#define RESTART_AFTER_LOWQ_COUNT 100
+#define RESTART_AFTER_LOWQ_COUNT 20
 
 int   unavailablecount=0;
 int   failed_connects=0;
