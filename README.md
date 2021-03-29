@@ -70,7 +70,7 @@ to operate both devices on the same SPI bus.
 <h2>compiling</h2>
 Should compile with the Arduino IDE, but make sure a file
 wificredentials.h is available in folder wificredentials of your Arduino library folder.
-(credits: Andres Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
+(credits: Andreas Spiess https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ )
 This file should contain the following variables for SnowRadio.
 <p />
 
