@@ -159,7 +159,6 @@ Currently, the following options are defined:
     connection is not possible. This also makes it unlikely newer protocols like dash or HLS can ever be supported.
 </li>
 <li>Gesture sensor <br />
-
     Gestures work as follows:
     - circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
         or put to sleep if active (the little hand disappears)
