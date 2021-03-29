@@ -152,7 +152,10 @@ struct traffic traffic_info;
 
 //---------------------------------------------------------------------
 bool show_traffic(bool force){
-  
+  if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT ){
+    traffic_info.stale = true;
+    return( false ); // just don't.
+  }
   if ( stations[ currentStation ].protocol && currDisplayScreen == RADIO && !force ) {
     log_d("Show traffic not possible SSL station playing");
     traffic_info.stale = true;

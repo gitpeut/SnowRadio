@@ -275,7 +275,7 @@ void radio( void *param) {
         xSemaphoreGive( updateSemaphore);
     }
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
-
+        
         vs1053player->setVolume(0);
           
         ModeChange = true;
@@ -286,7 +286,7 @@ void radio( void *param) {
         vs1053player->stop_song();
 
         broadcast_meta( true );
-        
+        radioclient->stop();  
         playingStation = -1;
         log_d("volume when stopping radiotask %d", vs1053player->getVolume()); 
 
