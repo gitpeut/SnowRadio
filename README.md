@@ -160,13 +160,13 @@ Currently, the following options are defined:
 </li>
 <li>Gesture sensor<br />
 
-    Gestures work as follows:<br />
-    circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
-        or put to sleep if active (the little hand disappears)<br />
-    up: increase volume<br />
-    down: decrease volume<br />
-    right: go to next station<br />
-    left: go to previous station<br />
+    Gestures work as follows:
+    - circle clockwise or anti-clockwise: wake up sensor ( a little hand ahows up on the screen) 
+        or put to sleep if active (the little hand disappears)
+    - up: increase volume
+    - down: decrease volume
+    - right: go to next station
+    - left: go to previous station
    
     <br />    
     Sometimes, especially after a new flash of the ESP32, the gesture sensor does not react anymore. Only known fix
