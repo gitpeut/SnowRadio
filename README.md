@@ -5,7 +5,7 @@
 Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
 optional gesture and touchscreen control and openweathermap data. User friendly web interface
 for easy addition of internet radio stations. https and http radio stations, chunked tranfer
-encoding supported. Also artist and track information is collected, if available and shown both
+encoding supported. Also artist and track information is collected  if available and shown both
 on the display and in the web browser.
 Latency is low by design.
 <p />
@@ -144,6 +144,72 @@ Currently, the following options are defined:
                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
                       //                    
 </pre>
+<h2>faq</h2>
+<ul>
+<li>When attaching a touch display,touch calibration data for an other display will not work properly or not at all.
+    Open a browser and connect to URL snowradio.local, or to the ip address of Snow radio and click on button
+    "Delete touch calibration", then on the button "Reboot". When the Snow radio restarts, it ask you to touch 
+    the 4 corners of the display. If done correctly, the display should work.
+</li>
+<li>When experimenting, bear in mind that Arduino does not allow for SSL to use PSRAM. for Snow radio this means that 
+    more than 1 SSL ( https) connection is not possible. This also makes it unlikely newer protocols like dash or HLS can 
+    be supported.
+</li>
+<li>Network names and passwords are stored in an encrypted file, /netpass. This file can be deleted on the Web page, 
+    so you can get rid of old networks. Depending on the option you have configured with the defines, USEESPTOUCH or LOADSSIDS, 
+    you can refresh the network data.  
+</li>
+<li>Sometimes, especially after a new flash of the ESP3, the touch sensor does not react anymore. Only known fix
+    is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
+<li>When connection to an internet radio station fails, the radio connects to the next station in the list. This
+    could surprise you, but is intentional.
+</li>
+<li>When reception of the internet radio is bad, the radio connot supply the VS1053 with enough data to supply sound.
+    As a last resort the radio will then restart. This usually solves the issue, but could in some extraordinary cases
+    lead to a reboot loop. Via the web page or the screen you can try to swith to another station before the reboot 
+    occurs again. If thisdoesn't work a reflash of the filesystem can be the only way out, but this will also mean
+    that more data is lost, like your last station, last volume and tone settiongs, your display calibration data and your 
+    netpass file. 
+</li>
+<li> 
+    Backup and restore
+    <br/>
+    For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
+    All other files can be downloaded and save by typing http://snowradio.local/<filename>?download=1 in your browser.
+    Use the "Directory" button to see which files you may want to backup. <br/>
+    Restoring files can be done by a complete flash of the file system, or by using the "Upload file" button.
+    Make sure you enter the full path of the file, including the preceding /
+    
+</li>
+<li>File system <br />
+    For development LittleFS is used, but the Radio can work with FFAT and SPIFFS as well. In SnowRadio.ino
+    there are option to set the filesystem used. We recommend LittleFS for it's robustness and better locking
+    of files. Just uncomment the one you prefer:
+    <pre>
+    //choose file system
+//
+//fs::FS      RadioFS     = SPIFFS;
+//const int   RadioFSNO   = FSNO_SPIFFS;
+//const char  *RadioMount = "/spiffs";
+
+fs::FS      RadioFS     = LITTLEFS;
+const int   RadioFSNO   = FSNO_LITTLEFS;
+const char  *RadioMount = "/littlefs";
+
+//fs::FS      RadioFS     = FFat;
+//const int   RadioFSNO   = FSNO_FFAT;
+//const char  *RadioMount = "/ffat";
+
+
+    </pre>
+</li>
+<li>Pins<br />
+    In file 0pins.h an example configuration of the pins can be found. The  option to 
+    use input selection has been realized with an I2C port extender, the MCP23017. The code
+    to realize this has not been included.
+</ul>
+
+    
 <h2>sundry</h2>
 
 A very comprehensive and meticulously maintained website with more internet radio
