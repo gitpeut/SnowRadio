@@ -16,12 +16,13 @@
 #include "fonts.h"
 //freefont for stations
 #define STATION_FONT  &FreeSansBold10pt8b //Same as Date font
+#define STATION_FONT_LATIN &LatinStation
 //freefont for stationlist
 #define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
 #define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
 #define DATE_FONT     &FreeSansBold10pt8b
 #define META_FONT     &MetaBold11 //&MetaBold10//&FreeSansBold6pt8b //&MetaBold12
-
+#define META_FONTRUS  LABEL_FONT
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
 // to load the font in the sprite, see showStation for an example 
@@ -142,6 +143,7 @@ void tft_create_meta( int spritew = 0);
 void tft_fillmeta();
 void tft_showmeta(bool resetx=false);
 
+char *utf8torus(const char *source, char *target);
 void latin2utf( unsigned char *latin, unsigned char **utf ); // in asyncwebserver.ino
 
 #endif

@@ -44,13 +44,17 @@ xSemaphoreGive( tftSemaphore);
 
 
 //----------------------------------------------------------
-#ifdef MONTHNAMES_RU
 
-//char *torus(const char *source, utf8char *target){
+
 char *utf8torus(const char *source, char *target){
     unsigned char *s  = (unsigned char *) source;
     unsigned char *t  = (unsigned char *) target;
     bool after208 = false;
+    
+    if ( *s != 208 && *s != 209 ) {
+      strcpy( target, source );
+      return( target );
+    }
     
     while (*s){
         switch( *s ){
@@ -73,11 +77,6 @@ char *utf8torus(const char *source, char *target){
     *t = 0;    
     return( target );
 }
-#else
-  char *utf8torus(const char *source, char *target){
-    return( (char *)source );
-  }
-#endif
 
 
 //---------------------------------------------------------------------
@@ -405,6 +404,7 @@ void tft_showstation( int stationIdx){
 
   int   xpos = 0, ypos=7;
   char  *s = stations[stationIdx].name;
+  char  *station_name; 
   
   if ( currDisplayScreen != RADIO ) return;
   if ( xSemaphoreTake( stationSemaphore, 50) != pdTRUE) return;
@@ -414,24 +414,37 @@ void tft_showstation( int stationIdx){
                while( *s && *s != ' ') ++s;
                if ( *s ) ++s; 
   }
-  
+
+   
   if( !station_sprite.created() ) station_sprite.createSprite(tft.width(), station_scroll_h );
   station_sprite.fillSprite(TFT_BLACK);
   station_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
-  station_sprite.setFreeFont( STATION_FONT );
+
+  if ( *s == 0xd0 || *s == 0xd1 ){
+    station_name = (char *)gr_calloc( strlen(s) + 4,1);
+    utf8torus( s, station_name);            
+    log_d("Cyrillic station name length %d ", strlen ( station_name ) );
+    station_sprite.setFreeFont( STATION_FONT );
+  }else{
+    latin2utf( (unsigned char *) s, (unsigned char **)&station_name );              
+    station_sprite.setFreeFont( STATION_FONT_LATIN );
+  }
+
   
-  int wholew = station_sprite.textWidth( s, 1 );
+  int wholew = station_sprite.textWidth( station_name, 1 );
   
   xpos = (tft.width() - wholew)/2; 
   ypos = 2;
-  station_sprite.drawString( s , xpos, ypos,1);
+  station_sprite.drawString( station_name , xpos, ypos,1);
+  
+  free( station_name );
   
   
   grabTft();
   station_sprite.pushSprite( 0, TFTSTATIONT );
   releaseTft();
-  
- 
+
+   
   xSemaphoreGive( stationSemaphore );
 }
 
@@ -445,6 +458,9 @@ const int meta_yposition        = TFTMETAT;
 int       metatextx              = 0; // will be calculated in tft_fillmeta
 char      *metatxt[2]           ={NULL,NULL};
 
+enum metaAlphabet {LATIN, CYRILLIC};
+metaAlphabet  metalang;
+
 //---------------------------------------------------------------------
 void tft_create_meta( int spritew){
 #ifndef SHOWMETA
@@ -456,8 +472,6 @@ void tft_create_meta( int spritew){
   meta_sprite.createSprite(spritew?spritew:nonscroll_metawidth, meta_height );
   meta_sprite.fillSprite(TFT_BLACK);
   meta_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
-  meta_sprite.setFreeFont( META_FONT );
-
 
 }
 
@@ -474,18 +488,31 @@ void tft_create_meta( int spritew){
           #ifndef SHOWMETA
             return;
           #endif
-            log_d( "- fillmeta %d -", meta.intransit);
             
             tft_create_meta();
 
-            latin2utf( (unsigned char *) meta.metadata, &utfmeta );
-            mymeta = ( char *) utfmeta;
+            
+            if ( meta.metadata[0] == 0xd0 || meta.metadata[0] == 0xd1 ){
+              //Cyrillic characters  
+              metalang = CYRILLIC;
+              meta_sprite.setFreeFont( META_FONTRUS );
+              utfmeta = (unsigned char *)gr_calloc( strlen( meta.metadata) + 4,1);
+              mymeta = utf8torus( meta.metadata, (char *)utfmeta);            
+            }else{
+              //Latin characters
+              metalang = LATIN;
+              meta_sprite.setFreeFont( META_FONT );
+              latin2utf( (unsigned char *) meta.metadata, (unsigned char **)&utfmeta );              
+              mymeta = ( char *) utfmeta;
+            }
+         
+            
 
             textw   = meta_sprite.textWidth( mymeta, 1 ); 
-            if ( textw < nonscroll_metawidth ){
+            if ( textw < nonscroll_metawidth ){           // text fits on one line
                textx    = ( nonscroll_metawidth - textw )/2;
                spritew  = nonscroll_metawidth;
-            }else if ( textw < ( 2*nonscroll_metawidth ) ){
+            }else if ( textw < ( 2*nonscroll_metawidth ) ){ //text fits on 2 lines, if it can be divided evenly on word borders
           
                middle = mymeta + strlen( mymeta ) / 2;
                for( ; middle > mymeta && *middle != ' ' && middle > mymeta; --middle);
@@ -506,7 +533,7 @@ void tft_create_meta( int spritew){
                if ( textx < 0 ) textx = 0;
                 
                spritew = nonscroll_metawidth;   
-            }else{  
+            }else{                                // text is very long, make a scrolling sprite
                textx    = 0;
                spritew  = textw + nonscroll_metawidth;
             }
@@ -517,7 +544,6 @@ void tft_create_meta( int spritew){
             
             
             if ( txt[0] != NULL ){ 
-              log_d( "txt 0 : %s\n", txt[0]);
               meta_sprite.drawString( txt[0], textx, 0, 1);
               free( txt[0]);
               if ( txt[1] != NULL){
@@ -526,8 +552,7 @@ void tft_create_meta( int spritew){
                 free( txt[1] );
               } 
             }else{
-              log_d( "mymeta : %s\n", mymeta );
-              meta_sprite.drawString( (char *)utfmeta, textx, 6, 1);
+              meta_sprite.drawString( (char *)mymeta, textx, 6, 1);
             }
 
             mymeta = NULL;
@@ -610,7 +635,19 @@ void tft_fillmeta(){
 //        keep meta.metadata as original, for the web page other changes or 
 //        none at all may be demanded. 
 //        try to make sure both display (here) and web page (in asyncwebser.ino) receive a UTF-8 string.        
-          latin2utf( (unsigned char *) mymeta.c_str(), (unsigned char **)&mymetaedit );
+        
+          if ( meta.metadata[0] == 0xd0 || meta.metadata[0] == 0xd1 ){
+              //Cyrillic characters  
+              metalang = CYRILLIC;
+              meta_sprite.setFreeFont( META_FONTRUS );
+              mymetaedit = (char *)gr_calloc( 1024,1);
+              mymetaedit = utf8torus( mymeta.c_str(), mymetaedit);
+              
+            }else{
+              metalang = LATIN;
+              meta_sprite.setFreeFont( META_FONT );
+              latin2utf( (unsigned char *) meta.metadata, (unsigned char **)&mymetaedit );
+            }
                   
           if ( metatxt[0] != NULL ){
             free ( metatxt[0] );
@@ -621,17 +658,15 @@ void tft_fillmeta(){
             metatxt[1] = NULL;
           }
 
-        
-//  
   textw   = meta_sprite.textWidth( mymetaedit, 1 ); 
-  if ( textw < nonscroll_metawidth ){
+  if ( textw < nonscroll_metawidth ){             // text fits on one line
      metatextx    = ( nonscroll_metawidth - textw )/2;
      metatxt[0] = ps_strdup( mymetaedit );
 
   }else{
      // don't scroll text, but chop off text so it fits on 2 lines.
 
-     for ( char *end = mymetaedit + strlen( mymetaedit ); 
+     for ( char *end = mymetaedit + strlen( mymetaedit) ; 
            ( meta_sprite.textWidth( mymetaedit ) > (2 * nonscroll_metawidth) ) && end > mymetaedit; 
            --end ){ 
             *end = 0;
@@ -642,12 +677,12 @@ void tft_fillmeta(){
                     //     if ( middle - mymetaedit < strlen( mymetaedit ) / 3 ){
                     //        middle = mymetaedit + strlen( mymetaedit ) / 2;
                     //        for( ; middle > mymetaedit && *middle != ' '; ++middle);
-       if ( middle - mymetaedit < (strlen( mymetaedit )/2 - 8) ){
-          middle = mymetaedit + strlen( mymetaedit ) / 2;
-          for( ; middle > mymetaedit && *middle != ' '&& *middle; ++middle);
-
      
+     if ( middle - mymetaedit < (strlen( mymetaedit )/2 - 8) ){
+          middle = mymetaedit + strlen( mymetaedit ) / 2;
+          for( ; middle > mymetaedit && *middle != ' ' && *middle; ++middle);   
      }
+     
      metatxt[0] = ps_strndup( mymetaedit, middle - mymetaedit );
      metatxt[1] = ps_strdup( middle + 1);
       
@@ -690,8 +725,14 @@ static int onscreen=0;
     tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, true );
        
     tft.setTextColor( TFT_WHITE, TFT_BLACK );
-    tft.setFreeFont( META_FONT );   
-
+    
+    if ( metalang == CYRILLIC ){
+     tft.setFreeFont( META_FONTRUS );   
+    }
+    if( metalang == LATIN ){
+     tft.setFreeFont( META_FONT );         
+    }
+    
     if ( metatxt[0] != NULL )tft.drawString( metatxt[0], metatextx, (metatxt[1] == NULL)?8:2, 1);
     if ( metatxt[1] != NULL )tft.drawString( metatxt[1], metatextx, 15, 1);
     
@@ -1128,7 +1169,7 @@ void tft_init(){
   //PSRAM_ENABLE == 3 psramFound test is already done by tft_espi,
   //no need to duplicate.
   tft.setAttribute( 3,1);//enable PSRAM
-  tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
+  //tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
   tft.init();
   
   //Serial.printf("------- tft width = %d tft height = %d\n", tft.width(), tft.height() ); 

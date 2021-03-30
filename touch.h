@@ -61,10 +61,22 @@ class RadioButton : public TFT_eSPI_Button {
             }
             //log_d( "fontbutton - draw %s", longname);
             tft.drawString( longname, x,y );          
-        }else{ 
-            tft.setFreeFont( STATION_FONT );
+        }else{
+          
+            char *displayname;
+            if ( *longname == 0xd0 || *longname == 0xd1 ){
+              displayname = (char *)gr_calloc( strlen( longname) + 4,1);
+              utf8torus( longname, displayname);
+              setLabelDatum(0, 0, MC_DATUM );              
+              tft.setFreeFont( STATION_FONT );
+            }else{
+              latin2utf( (unsigned char *) longname, (unsigned char **)&displayname ); 
+              setLabelDatum(0, 3, MC_DATUM );             
+              tft.setFreeFont( STATION_FONT_LATIN );
+            } 
              
-            drawButton( invert, longname);      
+            drawButton( invert, displayname); 
+            free( displayname );     
         }
         xSemaphoreGive( tftSemaphore );
       }

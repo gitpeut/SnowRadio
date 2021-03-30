@@ -25,14 +25,14 @@
 #define USEGESTURES // Use the PAJ7620 gesture sensor
 #undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
 #define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341
-#undef  USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
+#define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
                     // place under the station name.
-#define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
+#define METASPRITE  // use a sprite to display metadata and scroll the sprite if text is too long
 #define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
                       //for some this is very user friendly, for others it is a source of frustration. 
 #undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
@@ -44,7 +44,7 @@
                       // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
                       //                    
-//#define MONTHNAMES_EN
+#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
@@ -115,7 +115,6 @@ enum FSnumber{
 };
 
 //choose file system
-//For now and historic reasons, SPIFFS is used.
 //
 //fs::FS      RadioFS     = SPIFFS;
 //const int   RadioFSNO   = FSNO_SPIFFS;
@@ -200,7 +199,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.0"
+#define APVERSION "V1.1"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

@@ -197,17 +197,31 @@ void VS1053g::displaySpectrum() {
     prevbands = 0;
     spectrum_sprite.fillRect (0,0, spectrum_width, spectrum_height, TFT_BLACK);
     if ( nextprevChannel ){
-        spectrum_sprite.setFreeFont( LABEL_FONT );
+      
+        char *station_name;
+        
+        if ( stations[ currentStation].name[0] == 0xd0 || stations[ currentStation].name[0] == 0xd1 ){
+              //Cyrillic characters  
+              spectrum_sprite.setFreeFont( META_FONTRUS );
+              station_name = (char *)g_calloc( strlen(stations[ currentStation].name)+4,1);
+              station_name = utf8torus( stations[ currentStation].name, station_name);              
+        }else{
+              spectrum_sprite.setFreeFont( META_FONT );
+              latin2utf( (unsigned char *) stations[ currentStation].name, (unsigned char **)&station_name );
+        }
+
         nextx += 10;
+
         int curx = (nextprevChannel>0)?50+nextx:spectrum_width-50-nextx;
         if( curx > tft.width() || curx < 0 ) nextx = 0;    
           int sline_y     = 2*(spectrum_height/3);
           int sline_start = 10;
           int sline_end   = spectrum_width-10;
     
-          spectrum_sprite.drawString( stations[ currentStation].name,
-                                    (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( stations[ currentStation].name):sline_start , 0, 1);
-     
+            spectrum_sprite.drawString( station_name,
+                                    (nextprevChannel>0)?sline_end - spectrum_sprite.textWidth( station_name):sline_start , 0, 1);
+            free( station_name);
+            
           spectrum_sprite.drawLine( sline_start, sline_y, sline_end,sline_y, TFT_GREEN);
           for( int i = 0; i < (tft.width() - 10); i += 20 ){
                spectrum_sprite.drawLine( sline_start + i, sline_y -10 , sline_start+i, sline_y, TFT_GREEN);        
