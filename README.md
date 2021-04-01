@@ -3,15 +3,16 @@
 
 
 </p>
-Bug fixed and updated OranjeRadio with spectrum analyzer and choice of filesystem and
-optional gesture and touchscreen control and openweathermap data. User friendly web interface
-for easy addition of internet radio stations. https and http radio stations, chunked tranfer
-encoding supported. Also artist and track information is collected  if available and shown both
-on the display and in the web browser.
+Snow Radio is a logical extension of the previous Orange Radio project with a spectrum analyzer
+and choice of filesystem and optional gesture, touchscreen control and openweathermap data. 
+User friendly web interface for easy addition of internet radio stations. There a no restrictions 
+which stations to listen to. Full support for http and https stations with stream and chunked transfer encoding. 
+Also artist and track information is collected  if available and shown correctly both on the display and 
+in the web browser in most Western European languages and Russian. 
 Latency is low by design.
 <p />
 Snow Radio was greatly improved and extended due to the generous support, useful suggestions 
-and rigorous testing of Alexander Semenov.
+and rigorous testing of Alexander Semenov (https://github.com/Semenov-Alexander)
 <p />
 Playlists ( .pls, .m3u, .dash etc.) are not supported. 
 No plans exist to support these, but this may change one day.  
@@ -51,18 +52,34 @@ https://github.com/blotfi/ESP32-Radio-with-Spectrum-analyzer
 <p />
 Honourable mentions should be made for the support and inspiration taken from:
 <ul>
-<li>https://github.com/Aleks-Ale</li>
+<li>https://github.com/Semenov-Alexander</li>
 <li>https://github.com/Edzelf/ESP32-Radio</li>
 <li>https://github.com/RalphBacon/205-Internet-Radio</li>
+Thanks to all the authors.
+
 </ul>
 
-Thanks to all the authors 
+<h2>Suggested use and benefits</h2>
+
+You can use the suggested versions "as is" or use this as the basis for creating your project.
+Snow Radio uses unique software solutions and solves many of the problems necessary to create this project.
+We will be grateful for honouring the Apache license and mention this project as the origin for your own efforts.
+The project we created allows you to create your own unique interface for Snow Radio.
+The possibilities are limited only by your imagination.
+Use all the features of Snow Radio, or just some that you need.
+Creating a music center with gesture control and touch screen is now easy!
+Use the LINE-IN and Bluetooth buttons to control the output levels of the control pins.
+To manage external devices, you can use the MCP23017 port expander, for example.
+
 
 <h2>hardware</h2>
-An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 SPI ( NOT parallel, you 
-will run out of pins) screen is used. In branch ST7796_RU a highly modified version is available that makes
-use of a 480x320 ST7796 display.
-All VS1053 breakouts should work ok, consult the 0pins.h file for a 
+
+An ESP32 with plenty of PSRAM is recommended. For the touchscreen an ILI9341 320x240 SPI (NOT parallel, you 
+will run out of pins) screen is used. 
+<p />
+In branch ST7796_RU (  https://github.com/gitpeut/SnowRadio/tree/ST7796-RU )a highly modified version 
+is available that makes use of a 480x320 ST7796 display, and has some other unique features like 
+traffic information. All VS1053 breakouts should work ok, consult the 0pins.h file for a 
 possible way of connecting this hardware.
 <p />
 In the current version, a separate SPI bus is used for the VS1053 (VSPI) and the screen (HSPI).
@@ -88,7 +105,7 @@ const char* ntpServers[]	= { "nl.pool.ntp.org", "ru.pool.ntp.org", "de.pool.ntp.
 //Use a valid TZ string, docs e.g. https://www.di-mgt.com.au/src/wclocktz.ini
 //   
 const char* ntpTimezone		= "CET-1CEST,M3.5.0/2,M10.5.0/3";
-
+// const char* ntpTimezone = "MSK-3"; // For Moscow, no daylight saving time Moscow
 
 
 // Key and IV for G Radio used to encrypt wifi credentials for networks connected to by ESP touch
@@ -110,6 +127,8 @@ In SnowRadio.ino a number of defines enable you to turn on or off some features.
 Generally they are called USE<option>. Be aware that not all possible combinations 
 have been tested (although many have) , and that a random combination of features may 
 show random and undefined behaviour.
+<p />
+Use "#define USE..." for to enable an option, "#undef  USE..." to disable an option
 Currently, the following options are defined:
 <pre>
 /*define or undef */
@@ -183,10 +202,8 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     is a power on/power off of both the ESP32 and the PAJ7620. In other circumstances this hardly ever occurs.
 </li>
 <li>Update firmware<br />
-    By default firmware can be updated using http. Press the button "Update firmware" to upload a new bin file, created 
-    in the Arduino IDE by selecting "Export compiled binary" in the Sketch menu.
-    An option #define USEOTA is available which should enable Arduino OTA updates, but it is hardly tested, and has been causing
-    issues in the previous versions.
+    By default firmware can be updated using http. Press the button "Update firmware" on the Web page to upload a 
+    new bin file, created  in the Arduino IDE by selecting "Export compiled binary" in the Sketch menu.
 </li> 
 <li>Backup and restore<br/>
     For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
@@ -247,9 +264,7 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
 </li>
 <li>Pins<br />
     In file 0pins.h an example configuration of the pins can be found. Pins for the display and
-    the touch sensor should be defined in the tft_eSPI setup file for your display. The  option to 
-    use input selection ( switch to bluetooth/line-in ) has been realized with an I2C port extender, 
-    the MCP23017. The code to initialize and use the MCP23017 has not been included.
+    the touch sensor should be defined in the tft_eSPI setup file for your display. 
 </li>
 </ul>
 
