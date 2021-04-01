@@ -29,28 +29,32 @@
 #define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
-#define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
-                    // and gracefully adapted from the Web Radio of Blotfi
-#define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
-                    // place under the station name.
-#define METASPRITE    // use a sprite to display metadata and scroll the sprite if text is too long
-#define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
-                      //for some this is very user friendly, for others it is a source of frustration. 
-#undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
-                      // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
-                      // For this to work, in wificredentials.h,  
-                      // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
-                      // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
-                      // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
-                      // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
-                      // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
-                      //    
-#define USETRAFFIC    // will show traffic info for Moscow. Highly dependant on the dataprovider,
-                      // url in traffic.h, with other providers this will not work, and could even cause crashes,
-                      // so be careful.
-                                
+#undef  USEPWMLCD      // adapt brightness of LCD to surroundings using a an LDR attached to pin PhotoSensPin  
+#define USESPECTRUM    // install and run the spectrum patch as supplied by VLSI
+                       // and gracefully adapted from the Web Radio of Blotfi
+#define SHOWMETA       // show meta data ( artist/track info in variable meta.metadata ) in the default
+                       // place under the station name.
+// define one of below 3 if metadata is desired                       
+#undef  METASPRITE     // use a sprite to display metadata and scroll the sprite if text is too long
+#define METAPOPUP      // diplay long txt per 2 lines every ~10 seconds 
+#undef  METASTATIC     // display as much as possible, but overflow if too long
+
+#define USESPTOUCH     //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
+                       //for some this is very user friendly, for others it is a source of frustration. 
+#undef LOADSSIDS       // If you want to preload the encrypted netpass file with ssid and passwords 
+                       // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
+                       // For this to work, in wificredentials.h,  
+                       // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
+                       // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
+                       // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
+                       // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
+                       // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
+                       //                    
+#define USETRAFFIC     // will show traffic info for Moscow. Highly dependant on the dataprovider,
+                       // url in traffic.h, with other providers this will not work, and could even cause crashes,
+                       // so be careful.
 //#define MONTHNAMES_EN
-//#define MONTHNAMES_RU
+#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
 const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
@@ -110,7 +114,7 @@ const char *daynames[] = {"zo","ma","di","wo","do", "vr","za"};
 #include "0pins.h"
 #include "tft.h"
 #include "owm.h"
-#include "traffic.h"    
+#include "traffic.h"
 
 screenPage currDisplayScreen = RADIO;
 
@@ -206,7 +210,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.1 (ST7796)"
+#define APVERSION "V1.2J (ST7796)"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
