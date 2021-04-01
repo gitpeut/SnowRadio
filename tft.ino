@@ -654,8 +654,11 @@ int popup_linecount = 0;
         if ( metatxt[lastline] != NULL ) {
 
           //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
-
-          meta_sprite.drawString( metatxt[ lastline ], 0, 0, 1);
+          int xpos = 0;
+          if ( popup_linecount == 1){
+            xpos = ( meta_sprite.width() - meta_sprite.textWidth( metatxt[ lastline ], 1 ) )/2; 
+          }
+          meta_sprite.drawString( metatxt[ lastline ], xpos, 0, 1);
           currentx += strlen( metatxt[ lastline ] ) / 2;
           ++lastline;
         }
@@ -1179,30 +1182,7 @@ releaseTft();
       ESP.restart();
  }
 }
-//------------------------------------------------------
-/*
-void tft_NoConnect( WiFiManager *wm) {
- tft.setRotation( tftrotation );  
 
-// tft.fillScreen(TFT_BLACK);
-// tft.setTextColor( TFT_WHITE );
-log_d("tftnoconnect");
- tft.fillScreen(TFT_WHITE);
- tft.setTextColor( TFT_BLACK );
-
-
- tft.drawString( "Connect to network ", 10, 20, smallfont );
- tft.drawString( wm->getConfigPortalSSID(), 10, 34,bigfont );
- tft.drawString( "WiFi password ", 10, 52, smallfont );
-
- tft.drawString( APPAS, 10, 66, bigfont );
- tft.drawString( "Browse to", 10, 86,smallfont );
- tft.drawString( "192.168.4.1", 10, 102, bigfont );
-
- tellPixels( PIX_RED );
-
-}
-*/
 //------------------------------------------------------------------------------------------
 bmpFile *findBmpInCache( char *bmpfile ){
     
