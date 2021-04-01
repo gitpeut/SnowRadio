@@ -224,40 +224,40 @@ bool getWeather(){
   switch( atoi( iconname ) ){
        case 1:
           owmdata.iconfilename = ps_strdup( "/weather_icon/sunny.bmp");
-          owmdata.iconchar = 'A';
+//          owmdata.iconchar = 'A';
           break;
        case 2:
           owmdata.iconfilename = ps_strdup( "/weather_icon/partlysunny.bmp");
-          owmdata.iconchar = 'E';
+//          owmdata.iconchar = 'E';
           break;
        case 3:
           owmdata.iconfilename = ps_strdup( "/weather_icon/partlycloudy.bmp");
-          owmdata.iconchar = 'F';
+//          owmdata.iconchar = 'F';
           break;
        case 4:
           owmdata.iconfilename = ps_strdup( "/weather_icon/cloudy.bmp");
-          owmdata.iconchar = 'H';
+//          owmdata.iconchar = 'H';
           break;
        case 9:
        case 10:
           owmdata.iconfilename = ps_strdup( "/weather_icon/rain.bmp");
-          owmdata.iconchar = 'D';
+//          owmdata.iconchar = 'D';
           break;
        case 11:
           owmdata.iconfilename = ps_strdup( "/weather_icon/tstorms.bmp");
-          owmdata.iconchar = 'B';          
+//          owmdata.iconchar = 'B';          
           break;
        case 13:
           owmdata.iconfilename = ps_strdup( "/weather_icon/snow.bmp");
-          owmdata.iconchar = '@';
+//          owmdata.iconchar = '@';
           break;
        case 50:
           owmdata.iconfilename = ps_strdup( "/weather_icon/fog.bmp");
-          owmdata.iconchar = 'H';
+//          owmdata.iconchar = 'H';
           break;
        default:
           owmdata.iconfilename = ps_strdup( "/weather_icon/unknown.bmp");
-          owmdata.iconchar = 'D';
+//          owmdata.iconchar = 'D';
           break;
           
   }
@@ -274,6 +274,8 @@ return( true );
 
 //---------------------------------------------------------------------------------
 void drawWeather(){
+
+//int extray = 0;
 
        if ( xSemaphoreTake( tftSemaphore, 1000 ) == pdTRUE ){
           if ( owmdata.iconfilename != NULL ){
@@ -303,6 +305,9 @@ void fillWeatherSprite(){
  // windval   presval humval
 
   char  scratch[32];
+ 
+// enum vfield{vtemp,vfeel,vhum,vpres,vwind};
+// int  endv[ vwind +1 ]; 
  
  if ( ! weather_sprite.created() ){  
     weather_sprite.createSprite( 210 , 114 );  
@@ -368,21 +373,20 @@ void fillWeatherSprite(){
 
   weather_sprite.setFreeFont  ( NUM_FONT );
   weather_sprite.setTextColor ( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
-
+   
   #ifdef PRESSURE_IN_HPA
     weather_sprite.setTextDatum( TC_DATUM ); // position using center of string
     String pres_hpa    = String( owmdata.pressure, 0); // no decimals in string
     int    pres_center = weather_sprite.textWidth( pres_hpa )/2; // center is half the string width
     int    pres_x      = weather_sprite.width() - pres_center;  // make sure we do not cut off value.
-                                                             // otherwise we would have used center of label
-    
-    weather_sprite.drawString( pres_hpa, pres_x, 86 );
+                                                             // otherwise we would have used center of label    
+    weather_sprite.drawString( pres_hpa, pres_x, 85 );
   #else
     int pres_mm   = round  (owmdata.pressure * 0.75) ;
     weather_sprite.setCursor( 150, 108 );  
     weather_sprite.print(pres_mm);   
   #endif
-  
+    
   weather_sprite.setTextDatum ( TC_DATUM );
   weather_sprite.drawString(t_full, 106, 37 );
   weather_sprite.drawString(t_feel, 178, 37 );
@@ -424,8 +428,8 @@ void fillForecastSprite(){
   forecast_sprite.fillRect( 73 ,0, 66, 16, TFT_MY_BLUE);
   forecast_sprite.fillRect( 145 ,0, 66, 16, TFT_MY_BLUE);
 
-//  forecast_sprite.setFreeFont( LABEL_FONT );                 // FreeSansBold6pt8b
-  forecast_sprite.setFreeFont( LABELW_FONT );                 // FreeSansBold6pt8b
+//  forecast_sprite.setFreeFont( LABEL_FONT );
+  forecast_sprite.setFreeFont( LABELW_FONT );
   forecast_sprite.setTextColor( TFT_MY_DARKGRAY, TFT_MY_BLUE );
   forecast_sprite.setTextDatum( TC_DATUM );
   forecast_sprite.drawString( owmforecast.d[0], 32, 2 );
@@ -546,10 +550,6 @@ bool getForecast(){
 
   DeserializationError error;
   
-//    SpiRamJsonDocument root(10*1024);
-//    error = deserializeJson( root, result );
-//    works, but should be conditional  
-
   WhateverRamJsonDocument root(32*1024);
   error = deserializeJson( root, result );
 
@@ -608,7 +608,7 @@ bool getForecast(){
   return( true );
 }
 
-#else // do not USEOWM
+#else
 String json_owmdata(){return("\t\"openweathermap\" : {}");}
 
 void drawWeather(){

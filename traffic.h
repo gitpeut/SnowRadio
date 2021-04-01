@@ -7,8 +7,9 @@
     
     struct  traffic{
       bool   stale = true;
-      int    level = 99;
-      String time  = "88:88";
+      int    level = 0;
+//      String time  = "88:88";
+      String time    = "::::: ";
     };
     
     const char *trafficUrl = "https://export.yandex.ru/bar/reginfo.xml?region=213&lang=en";

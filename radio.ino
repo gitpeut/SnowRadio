@@ -108,7 +108,7 @@ int extractMeta ( uint8_t *r ){
        meta.metar   = NULL;
        meta.qoffset =0;                       
        log_d( "Metadata:\n%s", meta.metadata);
-       dump_meta( meta.metadata );
+//       dump_meta( meta.metadata );
        tft_fillmeta();
        meta.intransit = false;
        broadcast_meta();                                                                                             
@@ -127,7 +127,7 @@ int extractMeta ( uint8_t *r ){
        meta.intervalcount++;
        
        if ( meta.metadata[0] ){
-        log_d( "Metadata:\n%s", meta.metadata);;
+        log_d( "Radio received metadata:\n%c", meta.metadata[0]);;
        }
                      
 //       log_d ("\nchunkmode %d stationMetaInt %d, metalen %d metacount %d ", 
@@ -260,7 +260,6 @@ void radio( void *param) {
   int   totalbytes=0;
   //uint8_t radioBuffer[32];
   uint8_t radioBuffer[256];
-  
            
   log_i("Radiotask running on core %d", xPortGetCoreID()); 
 
@@ -276,7 +275,7 @@ void radio( void *param) {
         xSemaphoreGive( updateSemaphore);
     }
     if ( xSemaphoreGetMutexHolder( radioSemaphore ) != NULL ){
-        
+
         vs1053player->setVolume(0);
           
         ModeChange = true;
@@ -352,8 +351,7 @@ void radio( void *param) {
           radioclient->stop(); 
           
       }            
-
-      
+     
     }else{ //no bytes available
       
       if (  millis() > connectmillis )unavailablecount++;
@@ -381,8 +379,6 @@ void radio( void *param) {
                }
             }
             totalbytes=0;
-            
-            
             
             if( 0 == (rc = stationsConnect( getStation()) ) ){
               playingStation = getStation();

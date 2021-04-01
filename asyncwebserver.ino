@@ -9,6 +9,12 @@
 #include "owm.h"
 #include "traffic.h"
 
+#ifdef USEPWMLCD
+int PWM_FREQUENCY = 1000; 
+int PWM_CHANNEL = 0; 
+int PWM_RESOLUTION = 8;
+#endif
+
 volatile int      trafficCount  = 0;
 
 AsyncWebServer    fsxserver(80);
@@ -898,7 +904,12 @@ void broadcast_status(){
 }
 //------------------------------------------------------------------
 void startWebServer( void *param ){
- 
+     pinMode( TFT_LED , OUTPUT);
+#ifdef USEPWMLCD     
+    ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
+    ledcAttachPin(TFT_LED, PWM_CHANNEL);
+#endif
+    
   Serial.printf("Async WebServer started from core %d\n", xPortGetCoreID()); 
  
   MDNS.begin( APNAME);
@@ -963,7 +974,9 @@ void startWebServer( void *param ){
   int     weathercount  = 0;  // open weather, every hour, but also at start
   int     forecastcount = 0;
   int     broadcast_metacount = 0;
-  
+#ifdef USEPWMLCD 
+  int     photocount=0;
+#endif  
  #ifdef SHOWMETA
     int     metacount    = 0;
  #endif 
@@ -984,7 +997,7 @@ void startWebServer( void *param ){
            showClock();
            timecount = (1000/delaytime);           
     }
-
+    
     --broadcast_metacount;
     if ( broadcast_metacount <= 0  ){
            broadcast_meta();
@@ -1008,7 +1021,7 @@ void startWebServer( void *param ){
      --weathercount;
      
      if ( weathercount <= 0  ){
-    
+
         if( getWeather() ){
           weathercount = ((30*60*1000) /delaytime); // every 30 minutes, 48 requests a day - free allows for 100 requests a day 
         }else{
@@ -1020,11 +1033,26 @@ void startWebServer( void *param ){
 
      if ( forecastcount <= 0  ){
         if( getForecast() ){
-          forecastcount = ((4*60*60*1000) /delaytime); // every 4 hours, 6 a day - free allows for 100 requests a day 
+          forecastcount = ((3*60*60*1000) /delaytime); // every 4 hours, 6 a day - free allows for 100 requests a day 
           print_forecast();
         }
      }
-    
+#ifdef USEPWMLCD
+    --photocount;
+
+     if ( photocount <= 0  ){
+
+            photocount = ((5*1000) /delaytime); // every 5 sec
+            int val = analogRead( PhotoSensPin );
+//            Serial.print (">>>>>>>>>>>>> val: "); Serial.println (val);
+            
+            int ledPower = map(val, 500, 3000, 50, 200); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
+//                        Serial.print (">>>>>>>>>>>>> ledPower: "); Serial.println (ledPower);
+            if (ledPower <0) { ledPower = 0 ; }
+            ledcWrite(PWM_CHANNEL, ledPower);  // Меняем яркость
+     }
+#endif     
+
      #endif  
 
     #ifdef SHOWMETA

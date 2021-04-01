@@ -102,12 +102,14 @@ int what_button(){
 
   if ( currDisplayScreen == STNSELECT  ){
       startbutton = BUTTON_ITEM0;
-      endbutton   = BUTTON_DOWN;
+      endbutton   = BUTTON_RIGHTLIST + 1;
   }
   
-  for ( int i = startbutton ; i < endbutton; ++i ){
-    if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
-  }
+
+        for ( int i = startbutton ; i < endbutton; ++i ){
+          if ( touchbutton[i].contains(touch_x, touch_y) ) return( i ); 
+        }
+
   return( -1 );  
 } 
 //--------------------------------------------------------------------
@@ -154,7 +156,7 @@ void draw_buttons( int startidx ){
   int   startbutton, endbutton;
   int   stationidx;  
   int   playing_button = -1;
-
+//  char tmpru_station[128] = "";
 
   if ( currDisplayScreen == RADIO ){
       startbutton = 0;
@@ -178,6 +180,12 @@ void draw_buttons( int startidx ){
       for ( int i = 0; i < 6 ; ++i ){
           if ( stationidx >= stationCount )stationidx = 0;
           char *last = stations[ stationidx ].name;
+          
+          // Station names will be displayed in Cyrillic or Latin alphabet
+          // in the draw() function in touch.h, depending on the UTF coding.
+          // changing it here would disable the test there, and cause
+          // incorrect display of Cyrillic station names.
+          
           if ( strlen( last) > 18 ) { //omit the first word of the station name
              while( *last && *last != ' ') ++last;
              if ( *last ) ++last; 
@@ -260,15 +268,21 @@ void drawMode( bool traffic_only ){
 
   if ( currDisplayScreen == RADIO || currDisplayScreen == STNSELECT )return;
   char  modetext[32];
+  char  modetext_t[32];
   bool  draw_txt = true;
-  uint16_t text_color = TFT_MY_GRAY, background_color=TFT_MY_DARKGRAY;
+  char    tmp_traf[32] = "";
+  char    traf_row[32] = "";
+  char    traf_ru[32] = "";
+  
+  //uint16_t text_color = TFT_MY_GRAY, background_color=TFT_MY_DARKGRAY;
+  uint16_t background_color=TFT_MY_DARKGRAY;
   int mode_x=0;
          
-  #ifdef USEOWM
-    if ( ! traffic_only )drawForecastSprite(); 
-  #endif
+        #ifdef USEOWM
+          if ( ! traffic_only )drawForecastSprite(); 
+        #endif
 
-            
+
 
 #ifdef USETRAFFIC
         // if show_traffic() is called directly from this task we 
@@ -278,8 +292,12 @@ void drawMode( bool traffic_only ){
         if ( traffic_info.stale ){
             trafficCount = 4;
         }
-
-        sprintf( modetext, "%d", traffic_info.level );
+        
+          sprintf( modetext,   "%d", traffic_info.level );
+          sprintf( modetext_t, "%s", traffic_info.time.c_str() );
+          sprintf( traf_ru,    "%s", utf8torus( "ПРОБКИ", tmp_traf ));
+          sprintf( traf_row,   "%s  %s",utf8torus( "ПРОБКИ", tmp_traf ), traffic_info.time.c_str() );
+          
         draw_txt = false;
         
         switch( traffic_info.level ){
@@ -293,33 +311,32 @@ void drawMode( bool traffic_only ){
             case 5:            
             case 6:            
                   background_color=TFT_MY_YELLOW;
-                  text_color = TFT_MY_DARKGRAY;
                   break;
             case 7:
             case 8:
             case 9:
-                  background_color=TFT_RED;
+                  background_color=TFT_MY_RED;
                   break;
             default:
-                  background_color=TFT_WHITE;
+                  background_color=TFT_MY_DARKGRAY;
                   break;            
         }
-        if ( traffic_info.stale ) background_color=TFT_WHITE;
-
 #endif  
 
   if ( ! traffic_only ){
-          
-            mode_x = 387 ;
+         
+//            mode_x = 387 ;
 
             switch ( currDisplayScreen ){
                 case LINEIN:
                   if ( draw_txt ) sprintf( modetext, "LINE IN");  
+                  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY); 
                   drawBmp("/frames/line_frame.bmp", 243,  66 );
                   drawBmp("/frames/btn_close.bmp",  306, 269 );
                   break;
                 case BLUETOOTH:
-                  if ( draw_txt ) sprintf( modetext, "BLUETOOTH");  
+                  if ( draw_txt ) sprintf( modetext, "BLUETOOTH");
+                  tft.fillRect( 300, 268, 170, 42, TFT_MY_DARKGRAY);   
                   drawBmp("/frames/bt_frame.bmp",  243,  66 );
                   drawBmp("/frames/btn_close.bmp",  306, 269 );
                   break;
@@ -341,39 +358,28 @@ void drawMode( bool traffic_only ){
   }
   
   grabTft(); 
+
+
+  if ( currDisplayScreen != POWEROFF ){
+      tft.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
+      tft.setFreeFont( DATE_FONT ); 
+      tft.drawString( traf_ru, 324, 271 );
+      tft.setFreeFont( DATE_TR_FONT ); 
+      tft.drawString( modetext_t, 324, 291 );
+  }else{
+      tft.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
+      tft.setFreeFont( DATE_FONT ); 
+      tft.drawString( traf_row, 265, 280 );
+  }
   
-  if ( currDisplayScreen != POWEROFF ){ 
-    tft.fillRect( 300, 268+1, 170, 42-1, background_color); // tweaked the offsets to avoid traffic color bleeding around the mute button. 
-  }else{
-    tft.fillRect( 250, 268+1, 220, 42-2, background_color);      
-  }
-  if ( draw_txt ){
-      // no traffic info  
-        tft.setTextColor( text_color, background_color ); 
-        tft.setFreeFont( STATION_FONT );
-        tft.setTextDatum(TC_DATUM);  
-        tft.drawString( modetext, mode_x, 279 );
-        tft.setTextDatum(TL_DATUM);
-  }else{
-        tft.setTextColor( text_color, background_color ); 
-        tft.setFreeFont( TRAFFIC_NUM );
-        tft.setTextDatum(TC_DATUM);  
-        tft.drawString( modetext, (currDisplayScreen == POWEROFF)?359:387-5, 275 );
+      tft.setFreeFont( TRAFFIC_FONT ); 
+      tft.setTextColor( background_color, TFT_MY_DARKGRAY );
+      tft.drawString( modetext, 422, 274 );
         
-        tft.setTextDatum(TR_DATUM);   // align to the right side of the string  
-        tft.setFreeFont( TRAFFIC_TIME );
-        sprintf( modetext, "(%s)", traffic_info.time.c_str() );
-        mode_x = tft.width() - 10;
-        tft.drawString( modetext, mode_x, 275+7 );
-        tft.setTextDatum(TL_DATUM); // restore to default datum 
-         
-  }
+  
   releaseTft();
     
-
 }
-
-
 
 //--------------------------------------------------------------
 
@@ -477,7 +483,7 @@ void touch_process( void *param){
       irqset = true;
     }
     
-    //log_d("Touch read...");
+    log_d("Touch read...");
     xTaskNotifyWait(0,0,&touch_command,portMAX_DELAY);
       
     //the touch irq also fires when positions are read. To avoid

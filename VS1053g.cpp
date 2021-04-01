@@ -1,5 +1,5 @@
 #include "VS1053g.h"
-
+#include "tft.h"
 
 //----------------------------------------------------------------------------------
 
@@ -179,6 +179,10 @@ void VS1053g::displaySpectrum() {
   uint16_t  barx = 0; // start location of the first bar
   boolean   visual = true; //paint to display
   static int nextx = 0;
+  char  *s_sp = stations[ currentStation].name;
+  char tmprustation_sp[128] = "";
+  String mystation_sp;
+
 
   spectrum_width  = 208;
   
@@ -202,12 +206,14 @@ void VS1053g::displaySpectrum() {
         //int sline_y     = 2*(spectrum_height/3);
         //int sline_start = 0;
         //int sline_end   = spectrum_width;
-      
+//        char  *s_sp = stations[stationIdx].name;        
+        mystation_sp = String( utf8torus((char *)s_sp, tmprustation_sp ) );      
+        
         spectrum_sprite.setFreeFont( DATE_FONT );
         spectrum_sprite.setTextColor( TFT_MY_GOLD, TFT_MY_DARKGRAY );  
         spectrum_sprite.setTextDatum(TC_DATUM);
-        spectrum_sprite.drawString( stations[ currentStation].name, 104, 61);
-    
+//        spectrum_sprite.drawString( stations[ currentStation].name, 104, 61);
+        spectrum_sprite.drawString( mystation_sp, 104, 61 );  
         spectrum_sprite.setFreeFont( ARROW_FONT );
         spectrum_sprite.setTextColor( TFT_MY_BLUE, TFT_MY_DARKGRAY ); 
         spectrum_sprite.drawString( (nextprevChannel>0)?"54545":"64646", spectrum_width/2, 5);

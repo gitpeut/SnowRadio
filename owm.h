@@ -11,8 +11,9 @@
 extern TFT_eSPI tft;
 extern screenPage currDisplayScreen;
 
-// default is to display air pressure in mm Hg
-#define PRESSURE_IN_HPA 1
+// default is to display air pressure in mm Hg, 
+// uncomment when pressure must be show in hPa
+//#define PRESSURE_IN_HPA 
 
 struct Owmdata{
     float temperature;

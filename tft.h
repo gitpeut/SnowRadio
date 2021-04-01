@@ -10,8 +10,8 @@
 #define TFT_MY_DARKGRAY     0x424A  // Заливка отсеков
 #define TFT_MY_BLUE         0x5C5C  // Часы, спект, активные кнопки.
 #define TFT_MY_RED          0xEAA9
-#define TFT_MY_GREEN        TFT_DARKGREEN
-#define TFT_MY_YELLOW       TFT_MY_GOLD
+#define TFT_MY_GREEN        0x0567
+#define TFT_MY_YELLOW       0xF700
 
 
 #define TFT_ROTATION       3
@@ -26,14 +26,16 @@
 #define ARROW_FONT    &arrow                // Шрифт для стрелок переключения станции и mute. // Font for the station switching arrows and the symbol for mute mode.
 #define INDICATOR_FONT  &indicator          // Индикаторы аккумулятора и громкости
 #define LABEL_FONT    &FreeSansBold6pt8b    // Шрифт для метки погоды, описание погоды, день недели, название трека. // Font for the weather label, weather description, day of the week, track name.
-#define DATE_FONT     &FreeSansBold9pt8b    // Шрифт для следующей станции и текущей даты // Font for the next station and the current date
-#define STATION_FONT  &FreeSansBold10pt8b   // Шрифт списка станций // Station List Font
+#define DATE_FONT     &FreeSansBold9pt8b    // Шрифт для следующей станции, списка станций и текущей даты // Font for the next station and the current date
+#define DATE_TR_FONT  &FreeSansBold9pt8_b   // Шрифт время информации трафика
+#define STATION_FONT  &FreeSansBold10pt8b   // Шрифт названия станций // Station List Font
 #define TIME_FONT     &FreeSansBold44pt7b   // Шрифт для часов. Только цифры. // The font for the clock. Only numbers.
 #define LABELW_FONT   &Digital_8            // Шрифт, цифры для даты в прогнозах погоды. // Font, numbers for the date in the weather forecasts.
 #define NUM_FONT      &Digital_16pt8b       // Шрифт, цифры для параметров погоды + специальные символы. // Font, numbers for weather parameters + special characters.
-#define META_FONT     &MetaBold11           //
-#define TRAFFIC_TIME  &traffic_time         // only numbers font for traffic time
-#define TRAFFIC_NUM   &traffic_num          // traffic severity
+#define TRAFFIC_FONT  &traffic_num          // Шрифт, цифры для уровня пробок
+#define TRACK_FONT    &FreeSansBold7pt8b    // Шрифт для названия трека (meta)
+#define META_FONT     &MetaBold11           // font with extended Latin characters like é ö in stead of Cyrillic characters for meta information
+#define STATION_FONT_LATIN &LatinStation    // font with extended Latin characters like é ö in stead of Cyrillic characters for station names
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
@@ -143,7 +145,7 @@ extern void          broadcast_meta(bool reset=false);
 extern volatile bool screenUpdateInProgress;
 extern volatile int  nextprevChannel;
 extern volatile int  trafficCount; // in asyncwebserver
- 
+
 void IRAM_ATTR grabTft();
 void IRAM_ATTR releaseTft();
 //void showVolume( int percentage , bool force = false);
@@ -155,7 +157,7 @@ void tft_message( const char  *message1, const char *message2 );
 void tft_create_meta( int spritew = 0);
 void tft_fillmeta();
 void tft_showmeta(bool resetx=false);
-
+char *utf8torus(const char *source, char *target);
 void latin2utf( unsigned char *latin, unsigned char **utf ); // in asyncwebserver.ino
 
 #endif

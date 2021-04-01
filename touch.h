@@ -59,9 +59,21 @@ class RadioButton : public TFT_eSPI_Button {
             log_d( "fontbutton - draw %s", longname);
             tft.drawString( longname, x,y );          
         }else{ 
-            tft.setFreeFont( DATE_FONT );
-             
-            drawButton( invert, longname);      
+            char *displayname;
+            if ( *longname == 208 || *longname == 209 ){
+              log_d( "Cyrillic station name %s", longname);
+              displayname = (char *)gr_calloc( strlen( longname) + 4,1);
+              utf8torus( longname, displayname);
+              setLabelDatum(-butw/2 + 10, 2, CL_DATUM );    // + 10 to avoid overwriting the graphics on the left          
+              tft.setFreeFont( DATE_FONT );
+            }else{
+              latin2utf( (unsigned char *) longname, (unsigned char **)&displayname ); 
+              setLabelDatum(-butw/2 + 10, 3, CL_DATUM );    // + 10 to avoid overwriting the graphics on the left        
+              tft.setFreeFont( STATION_FONT_LATIN );
+            }   
+                         
+            drawButton( invert, displayname ); 
+            free( displayname );     
         }
         xSemaphoreGive( tftSemaphore );
       }
@@ -91,10 +103,9 @@ class RadioButton : public TFT_eSPI_Button {
       if ( argbmp_normal && argbmp_invert == NULL ) bmp_invert = bmp_normal;
       
       initButtonUL(&tft, x, y, arg_butw, arg_buth, outline, buttonfill, textcolor, symbol_normal, 1);
-//      setLabelDatum(10, 2, CL_DATUM );   // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
+      setLabelDatum(5, 2, CL_DATUM );   // x-delta, ydelta ( a bit down) , what place in the text ( here: the middle)
                                        // in the middle of the label ("datum"). y offset of 7 for font 4 = bigfont
                                        // y offset 0 for FreeSansBold10pt8b    
-        setLabelDatum(10, 2, MC_DATUM );
     }
 
    
