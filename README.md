@@ -1,7 +1,7 @@
 # Snow Radio 
 (Снежное радио - Sneeuwradio)
 
-<img src="Images/2021-03-31 01-21-37.JPG">
+<img src="Images/2/2021-03-31 01-21-37.JPG" >
 
 </p>
 Snow Radio is a logical extension of the previous Orange Radio project with a spectrum analyzer
