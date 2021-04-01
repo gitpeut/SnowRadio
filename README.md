@@ -1,6 +1,7 @@
 # Snow Radio 
 (Снежное радио - Sneeuwradio)
 
+<img src="images/2021-03-31 01-21-37.JPG">
 
 </p>
 Snow Radio is a logical extension of the previous Orange Radio project with a spectrum analyzer
@@ -59,7 +60,7 @@ Thanks to all the authors.
 
 </ul>
 
-<h2>Suggested use and benefits</h2>
+<h2>suggested use and benefits</h2>
 
 You can use the suggested versions "as is" or use this as the basis for creating your project.
 Snow Radio uses unique software solutions and solves many of the problems necessary to create this project.
@@ -71,6 +72,9 @@ Creating a music center with gesture control and touch screen is now easy!
 Use the LINE-IN and Bluetooth buttons to control the output levels of the control pins.
 To manage external devices, you can use the MCP23017 port expander, for example.
 
+<h2>pictures</h2>
+Pictures of various incarnations of Snow Radio, including the ST7796_RU branch, can be found in the 
+<a href="images">images</a> subdirectory of this repository
 
 <h2>hardware</h2>
 
@@ -151,9 +155,11 @@ Currently, the following options are defined:
 #define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
                     // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
-                    // place under the station name.
-#define METASPRITE 1// use a sprite to display metadata and scroll the sprite if text is too long
-                    // in some configurations this has been seen to cause garbage on the screen for unknown reasons.                    
+// define one of below 3 if metadata is desired                       
+#undef METASPRITE     // use a sprite to display metadata and scroll the sprite if text is too long
+#define  METAPOPUP    // diplay long txt per 2 lines every ~10 seconds 
+#undef  METASTATIC    // display as much as possible, but overflow if too long                    // place under the station name.
+
 #define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
                       //for some this is very user friendly, for others it is a source of frustration. 
 #undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
