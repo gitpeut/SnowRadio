@@ -478,8 +478,11 @@ int popup_linecount = 0;
         if ( metatxt[lastline] != NULL ) {
 
           //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
-
-          meta_sprite.drawString( metatxt[ lastline ], 0, 0, 1);
+          int xpos = 0;
+          if ( popup_linecount == 1){
+            xpos = ( meta_sprite.width() - meta_sprite.textWidth( metatxt[ lastline ], 1 ) )/2; 
+          }
+          meta_sprite.drawString( metatxt[ lastline ], xpos, 0, 1);
           currentx += strlen( metatxt[ lastline ] ) / 2;
           ++lastline;
         }
