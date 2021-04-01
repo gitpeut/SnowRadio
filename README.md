@@ -1,7 +1,7 @@
 # Snow Radio 
 (Снежное радио - Sneeuwradio)
 
-<img src="images/2021-03-31 01-21-37.JPG">
+<img src="Images/2021-03-31 01-21-37.JPG">
 
 </p>
 Snow Radio is a logical extension of the previous Orange Radio project with a spectrum analyzer
@@ -74,7 +74,7 @@ To manage external devices, you can use the MCP23017 port expander, for example.
 
 <h2>pictures</h2>
 Pictures of various incarnations of Snow Radio, including the ST7796_RU branch, can be found in the 
-<a href="images">images</a> subdirectory of this repository
+<a href="Images">Images</a> subdirectory of this repository
 
 <h2>hardware</h2>
 
