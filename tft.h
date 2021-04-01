@@ -5,9 +5,18 @@
     
 #define TFT_MY_GOLD        0xE68E
 #define TFT_MY_SILVER      0xC615
-
 #define TFT_REALGOLD       TFT_MY_GOLD
-#define TFT_ROTATION       2
+#define TFT_MY_BLACK        0x31A7  // Темный задний фон
+#define TFT_MY_GRAY         0xBDF7  // Контур, шрифты
+#define TFT_MY_DARKGRAY     0x424A  // Заливка отсеков
+#define TFT_MY_BLUE         0x5C5C  // Часы, спект, активные кнопки.
+#define TFT_MY_RED          0xEAA9
+#define TFT_MY_GREEN        0x0567
+#define TFT_MY_YELLOW       0xF700
+
+
+
+#define TFT_ROTATION       0
 
 // --- fonts ---
 //just to make it resemble the examples
@@ -15,14 +24,14 @@
 // symbol font for volume, battery and buttons
 #include "fonts.h"
 //freefont for stations
-#define STATION_FONT  &FreeSansBold10pt8b //Same as Date font
-#define STATION_FONT_LATIN &LatinStation
-//freefont for stationlist
-#define LIST_FONT     &FreeMonoBold12pt7b//&FreeMonoBold9pt7b//&FreeSansBold6pt8b //&FreeMonoBold9pt7b
-#define LABEL_FONT    &FreeSansBold6pt8b //FreeSansBold9pt8b  
-#define DATE_FONT     &FreeSansBold10pt8b
-#define META_FONT     &MetaBold11 //&MetaBold10//&FreeSansBold6pt8b //&MetaBold12
-#define META_FONTRUS  LABEL_FONT
+#define STATION_FONT  &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
+#define STATION_FONT_LATIN &LatinStation  //Font with extended ASCI characters
+#define LIST_FONT     &FreeMonoBold12pt7b //Font with Latin & Cyrillic characters
+#define LABEL_FONT    &FreeSansBold6pt8b  //Font with Latin & Cyrillic characters  
+#define DATE_FONT     &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
+#define META_FONT     &MetaBold11         //Font with extended ASCI characters
+#define META_FONTRUS  LABEL_FONT    
+
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed
 // to load the font in the sprite, see showStation for an example 

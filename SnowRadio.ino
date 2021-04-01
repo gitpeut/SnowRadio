@@ -13,38 +13,41 @@
 // Thanks to all the authors 
 //
 /*define or undef */
-#define USEOWM // to enable Open weathermap owm_key, 
-               // owm_id (city id), owm_lang (language),
-               //owm_unit (metric, imperial) in wificredentials.h
-               // should be defined as const char *, e.g.
-               // const char* owm_unit = "metric";
-#undef  USEOTA      // disable Arduino OTA. http update is always on and works 
-                    // as well.
-#define USETLS 1    // allow for https
-#undef  USEPIXELS   // use pixels as an indicator for the gestures
-#define USEGESTURES // Use the PAJ7620 gesture sensor
+#define USEOWM          // to enable Open weathermap owm_key, 
+                        // owm_id (city id), owm_lang (language),
+                        //owm_unit (metric, imperial) in wificredentials.h
+                        // should be defined as const char *, e.g.
+                        // const char* owm_unit = "metric";
+#undef  USEOTA          // disable Arduino OTA. http update is always on and works 
+                        // as well.
+#define USETLS 1        // allow for https
+#undef  USEPIXELS       // use pixels as an indicator for the gestures
+#define USEGESTURES     // Use the PAJ7620 gesture sensor
 #undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
-#define USETOUCH       // use a touchscreen. Tested and developed with an ILI9341
-#define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
-                       // if undefined, volume buttons are displayed on the touchscreen, otherwise 
-                       // buttons to select BLUETOOTH and AV (LINE IN) 
-#define USESPECTRUM // install and run the spectrum patch as supplied by VLSI
-                    // and gracefully adapted from the Web Radio of Blotfi
-#define SHOWMETA    // show meta data ( artist/track info in variable meta.metadata ) in the default
-                    // place under the station name.
-#define METASPRITE  // use a sprite to display metadata and scroll the sprite if text is too long
-#define USESPTOUCH 1  //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
-                      //for some this is very user friendly, for others it is a source of frustration. 
-#undef LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
-                      // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
-                      // For this to work, in wificredentials.h,  
-                      // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
-                      // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
-                      // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
-                      // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
-                      // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
-                      //                    
-#define MONTHNAMES_EN
+#define USETOUCH        // use a touchscreen. Tested and developed with an ILI9341
+#define USEINPUTSELECT  // input selection between AV(LINE IN), BLUETOOTH and RADIO
+                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
+                        // buttons to select BLUETOOTH and AV (LINE IN) 
+#define USESPECTRUM     // install and run the spectrum patch as supplied by VLSI
+                        // and gracefully adapted from the Web Radio of Blotfi
+#define SHOWMETA        // show meta data ( artist/track info in variable meta.metadata ) in the default
+                        // place under the station name.
+// define one of below 3 if metadata is desired                       
+#undef  METASPRITE      // use a sprite to display metadata and scroll the sprite if text is too long
+#define METAPOPUP       // diplay long txt per 2 lines every ~10 seconds 
+#undef  METASTATIC      // display as much as possible, but overflow if too long
+#define USESPTOUCH 1    //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
+                        //for some this is very user friendly, for others it is a source of frustration. 
+#undef LOADSSIDS        // If you want to preload the encrypted netpass file with ssid and passwords 
+                        // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
+                        // For this to work, in wificredentials.h,  
+                        // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
+                        // const char* wifiSsid[]      =  {"yourssid", "yourotherssid","yourmotherssid", ""};
+                        // const char* wifiPassword[]  =  ("yourWiFipassword", "yourotherssidpassword","yourmotherssidpassword", ""} ;
+                        // ATTENTION: After an encrypted /netpass file is generated, it is better to recompile without this option, the loading 
+                        // is not necessary anymore but more importantly, the credentials will remain readable in the compiled code. 
+                        //                    
+//#define MONTHNAMES_EN
 //#define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
@@ -199,7 +202,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.1"
+#define APVERSION "V1.3"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
@@ -564,8 +567,8 @@ void setup () {
      // position and colors for the spectrum analyzer
      vs1053player->spectrum_height    = TFTSPECTRUMH;
      vs1053player->spectrum_top       = TFTSPECTRUMT;
-     vs1053player->setSpectrumBarColor(TFT_SKYBLUE);
-     vs1053player->setSpectrumPeakColor(TFT_REALGOLD);
+     vs1053player->setSpectrumBarColor(TFT_MY_BLUE);
+     vs1053player->setSpectrumPeakColor(TFT_MY_RED);
      
   
      Serial.println("Start File System...");

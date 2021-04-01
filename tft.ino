@@ -451,15 +451,65 @@ void tft_showstation( int stationIdx){
 
 //---------------------------------------------------------------------
 
-const int nonscroll_metawidth = tft.width() - 20;
+const int nonscroll_metawidth   = tft.width() - 20;
 const int meta_height           = TFTMETAH;
 const int meta_xposition        = 0 + 10;
 const int meta_yposition        = TFTMETAT;
 int       metatextx              = 0; // will be calculated in tft_fillmeta
-char      *metatxt[2]           ={NULL,NULL};
+char      *metatxt[10]           ={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 enum metaAlphabet {LATIN, CYRILLIC};
 metaAlphabet  metalang;
+
+// unwanted strings. Last element MUST be ""
+const char  *unwanted_strings[] = { "Chromanova.fm presents - ", " - 0:00", "MegaNight RADIO | ", ""};
+
+//---------------------------------------------------------------------
+
+char *cleanup_meta( const char *meta , char **out){
+    char *m  = ( char *) meta;
+    char *o = *out;
+    
+    while ( *m ){
+
+        // remove everything in square brackets, including the square brackets
+        if ( *m == '[' ){
+           while (*m != ']') ++m;
+           ++m;
+           continue; // another bracket maybe following 
+        }
+        
+        // remove any string in unwanted_strings 
+        for ( int remcount = 0; unwanted_strings[ remcount][0]; ++remcount ){    
+            
+            if ( *m != unwanted_strings[ remcount][0] ){
+                continue;
+            }
+            if ( strncmp( m, unwanted_strings[remcount], strlen( unwanted_strings[remcount]) ) ){
+                continue;            
+            }
+            //remove by skipping over it in the input 
+            m += strlen( unwanted_strings[remcount] );
+            remcount = -1; // start again, an unwanted string we checked before may be following this one
+        }
+        
+        
+        if ( *m ){
+           
+           if (o == *out && *m == ' '){
+            ;  // Skip leading blanks
+           }else{ 
+                *o = *m;
+                ++o;
+           }
+           ++m;
+        }
+    }
+    // close the output string
+    *o = 0;
+// for convenience also return a pointer to the output string.
+return(*out);
+}
 
 //---------------------------------------------------------------------
 void tft_create_meta( int spritew){
@@ -474,6 +524,160 @@ void tft_create_meta( int spritew){
   meta_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
 
 }
+#ifdef METAPOPUP
+
+int popup_linecount = 0;
+
+    void tft_fillmeta(){
+        char  *mymeta=NULL, *cleanmeta = NULL; ;
+        unsigned char  *utfmeta=NULL;
+        
+      #ifndef SHOWMETA
+        return;
+      #endif
+        //log_d( "- fillmeta in transit : %d , metadata %s-", meta.intransit, meta.intransit?"": meta.metadata);
+        
+        
+        tft_create_meta();
+
+        popup_linecount = 0;    
+                              
+        for (int i =0; i < 10; ++i ){
+            if ( metatxt[i] != NULL ){
+              free( metatxt[i] ); 
+              metatxt[i] = NULL;
+            }
+        }
+        
+        if ( meta.metadata[0] == 0xd0 || meta.metadata[0] == 0xd1 ){
+          //Cyrillic characters  
+          metalang = CYRILLIC;
+          meta_sprite.setFreeFont( META_FONTRUS );
+          utfmeta = (unsigned char *)gr_calloc( strlen( meta.metadata) + 4,1);
+          mymeta = utf8torus( meta.metadata, (char *)utfmeta);            
+        }else{
+          //Latin characters
+          metalang = LATIN;
+          meta_sprite.setFreeFont( META_FONT );
+          latin2utf( (unsigned char *) meta.metadata, (unsigned char **)&utfmeta );              
+          mymeta = ( char *) utfmeta;
+        }
+
+         cleanmeta = (char *)gr_calloc( strlen( (char *)utfmeta ) + 4 , 1 );
+         mymeta = cleanup_meta( (const char *) utfmeta , &cleanmeta );
+
+         free( utfmeta );
+          
+        int textw   = meta_sprite.textWidth( mymeta, 1 ); 
+
+        //log_d("textw = %d", textw );
+        
+        if ( textw < nonscroll_metawidth ){
+           popup_linecount = 1;
+           //log_d ("metadata fits on 1 line: %s", meta.metadata);
+           metatxt[0] = ps_strdup( mymeta );
+        }else{ // multiple lines
+                char *start = mymeta, *end = mymeta, *previous=start;
+
+                bool endreached = false;
+                for ( end = mymeta; popup_linecount < 10; ++end ){
+                    
+                    if ( *end == ' ' || *end == 0 ){
+                       if ( *end == 0 ){
+                          endreached = true;
+                       }else{
+                          *end = 0;
+                       }
+                       textw   = meta_sprite.textWidth( start, 1 );
+                       if ( !endreached ) *end = ' ';
+                            
+                       if ( textw > nonscroll_metawidth || endreached ){
+                           
+                           if ( previous != (start -1 ) && textw > nonscroll_metawidth  ){ 
+                            end = previous;
+                            endreached = false;
+                           }
+                           *end = 0;
+                            
+                            metatxt[popup_linecount] = strdup( start );
+                            //log_d( "Added %s ", start) ;
+                            popup_linecount++;
+                            if ( !endreached ){ 
+                                start = end + 1;
+                                previous = end;
+                            }
+                       }else{
+                            if ( !endreached ) {
+                              previous = end;
+                            }                  
+                       }
+                   }
+                   if ( endreached ) break;
+                } 
+        }
+
+        mymeta = NULL;
+        if ( cleanmeta != NULL)free( cleanmeta ); 
+        log_d ("%d lines of metatdata filled", popup_linecount);
+                             
+        tft_showmeta( true );
+     }
+
+     //---------------------------------------------------------------------
+      void tft_showmeta(bool resetx){
+      static int currentx=0;
+      static int lastline=0;
+      
+        if ( resetx ){
+          currentx = 0;
+          lastline = 0;
+          return;
+        }
+
+        if ( screenUpdateInProgress ) return;
+        if ( currDisplayScreen != RADIO ) return;
+        if ( meta.intransit ) return;
+        
+        if ( currentx > 0 ){
+            currentx--;
+            return;
+        }else{
+            if ( lastline >= popup_linecount ) lastline = 0;            
+            currentx = 20;
+            if ( popup_linecount < 3 ) currentx += 100;
+        }
+          
+
+        meta_sprite.fillSprite(TFT_BLACK);
+        meta_sprite.setTextColor( TFT_WHITE, TFT_BLACK ); 
+
+        if ( metatxt[lastline] != NULL ) {
+
+          //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
+
+          meta_sprite.drawString( metatxt[ lastline ], 0, 0, 1);
+          currentx += strlen( metatxt[ lastline ] ) / 2;
+          ++lastline;
+        }
+
+
+        if ( lastline < popup_linecount && metatxt[lastline] != NULL ){
+
+          //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
+
+          meta_sprite.drawString( metatxt[ lastline ], 0,14, 1);
+          currentx += strlen( metatxt[ lastline ] ) / 2 ;
+          ++lastline;                                 
+        }
+        
+        grabTft();
+          tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, false );
+          meta_sprite.pushSprite( meta_xposition, meta_yposition );
+          tft.resetViewport();         
+        releaseTft();
+      }      
+      
+#endif
 
 
 #ifdef METASPRITE
@@ -597,66 +801,63 @@ void tft_create_meta( int spritew){
               tft.resetViewport();         
             releaseTft();
           }
-#else // METASPRITE NOT DEFINED
+#endif
 
+#ifdef METASTATIC
 //---------------------------------------------------------------------
 void tft_fillmeta(){
   int   textw;
   char  *middle, *mymetaedit;
+    char    *tmprumeta = (char *)gr_calloc( strlen( meta.metadata ) + 4 , 1 );
+  char    *cleanmeta = (char *)gr_calloc( strlen( meta.metadata ) + 4 , 1 );
+  String  mymeta;
+  GFXfont *metafont; 
   
 #ifndef SHOWMETA
   return;
 #endif
   
   log_d("%s", meta.metadata);
-  
+
+  if ( *meta.metadata == 208 || *meta.metadata == 209 ){
+      metafont = (GFXfont *) META_FONTRUS;
+      metalang = CYRILLIC;
+  }else{
+      metafont = (GFXfont *) META_FONT;
+      metalang = LATIN;      
+  }
+
+  meta_sprite.setFreeFont( metafont );
+
   // use the sprite to measure text width
   // this way, font changes do not affect the screen.  
   tft_create_meta();
-
   
-  String mymeta = String( meta.metadata);
-     
-     // Alex's customizations
-        mymeta.replace("Chromanova.fm presents - ", "");
-        mymeta.replace(" [1Rdf]", "");
-        //mymeta.replace(" - 0:00", "");
-        mymeta.replace("MegaNight RADIO | ", "");
-       
+  mymeta = String( cleanup_meta( (const char *)utf8torus(meta.metadata, tmprumeta ), &cleanmeta ) );
 
-        int f_1 = mymeta.indexOf("[");
-        int f_2 = mymeta.indexOf("]");
-        if (f_1 > 0 && f_2 > 0){
-            String f_4 = mymeta.substring (f_1 - 1, f_2 + 1);
-            Serial.print ("f_4 = "); Serial.println (f_4);  
-            mymeta.replace(f_4, "");
-        }
+  if ( metalang == LATIN ){
+    latin2utf( (unsigned char *) mymeta.c_str(), (unsigned char **)&mymetaedit );    
+  }else{
+    mymetaedit = ps_strdup( cleanmeta );
+  }
+  
+  log_d( "Mymeta:\n%s", mymeta.c_str());
 
-//        keep meta.metadata as original, for the web page other changes or 
-//        none at all may be demanded. 
-//        try to make sure both display (here) and web page (in asyncwebser.ino) receive a UTF-8 string.        
-        
-          if ( meta.metadata[0] == 0xd0 || meta.metadata[0] == 0xd1 ){
-              //Cyrillic characters  
-              metalang = CYRILLIC;
-              meta_sprite.setFreeFont( META_FONTRUS );
-              mymetaedit = (char *)gr_calloc( 1024,1);
-              mymetaedit = utf8torus( mymeta.c_str(), mymetaedit);
-              
-            }else{
-              metalang = LATIN;
-              meta_sprite.setFreeFont( META_FONT );
-              latin2utf( (unsigned char *) meta.metadata, (unsigned char **)&mymetaedit );
-            }
-                  
-          if ( metatxt[0] != NULL ){
-            free ( metatxt[0] );
-            metatxt[0] = NULL;
-          }
-          if ( metatxt[1] != NULL ){
-            free ( metatxt[1] );
-            metatxt[1] = NULL;
-          }
+  free( tmprumeta );  
+  free( cleanmeta ); 
+   
+
+#ifndef SHOWMETA
+  return;
+#endif
+  if ( metatxt[0] != NULL ){
+    free ( metatxt[0] );
+    metatxt[0] = NULL;
+  }
+  if ( metatxt[1] != NULL ){
+    free ( metatxt[1] );
+    metatxt[1] = NULL;
+  }
 
   textw   = meta_sprite.textWidth( mymetaedit, 1 ); 
   if ( textw < nonscroll_metawidth ){             // text fits on one line
@@ -716,7 +917,7 @@ static int onscreen=0;
   if ( currDisplayScreen != RADIO ) return;
   if ( meta.intransit ) return;
   if ( onscreen )return;
-  if (   screenUpdateInProgress ) return;
+  if ( screenUpdateInProgress ) return;
    
   grabTft();
 

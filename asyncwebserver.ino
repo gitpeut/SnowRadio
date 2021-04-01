@@ -753,7 +753,7 @@ void handleUpdate(AsyncWebServerRequest *request, const String& filename, size_t
   if (!index){
   
     Serial.println("Update firmware");
-
+        screenUpdateInProgress = true;
         for ( int curvol = vs1053player->getVolume(); curvol; --curvol ){
           vs1053player->setVolume( curvol  );
           delay( 5 );
