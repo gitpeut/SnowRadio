@@ -269,7 +269,7 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     
 </li>
 <li>Timezones<br />
-It is surpisingly difficult to find a good source for TZ strings online. Best method is to log in to an up-to-date Linux system
+It is surprisingly difficult to find a good source for TZ strings online. Best method is to log in to an up-to-date Linux system
 and view for instance /usr/share/zoneinfo/Europe/Moscow, ignore the binary information, the TZ string will be in there.
 </li>
 <li>Pins<br />
