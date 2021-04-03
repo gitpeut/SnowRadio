@@ -268,6 +268,10 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
         //const char  *RadioMount = "/ffat";
     
 </li>
+<li>Timezones<br />
+It is surpisingly difficult to find a good source for TZ strings online. Best method is to log in to an up-to-date Linux system
+and view for instance /usr/share/zoneinfo/Europe/Moscow, ignore the binary information, the TZ string will be in there.
+</li>
 <li>Pins<br />
     In file 0pins.h an example configuration of the pins can be found. Pins for the display and
     the touch sensor should be defined in the tft_eSPI setup file for your display. 
