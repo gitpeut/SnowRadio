@@ -2,7 +2,6 @@
 (Снежное радио - Sneeuwradio)
 
 <img src="Images/3/2021-03-31 00-41-15.JPG" >
-
 </p>
 Snow Radio is a logical extension of the previous Orange Radio project with a spectrum analyzer
 and choice of filesystem and optional gesture, touchscreen control and openweathermap data. 
@@ -212,11 +211,14 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     new bin file, created  in the Arduino IDE by selecting "Export compiled binary" in the Sketch menu.
 </li> 
 <li>Backup and restore<br/>
-    For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
-    All other files can be downloaded and saved by typing http://snowradio.local/<filename>?download=1 in your browser.
     Use the "Directory" button to see which files you may want to backup. <br/>
     Restoring files can be done by a complete flash of the file system, or by using the "Upload file" button.
     Make sure you enter the full path of the file, including the preceding /
+    For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
+    All other files can be downloaded and saved by typing http://snowradio.local/&ltfilename&gt?download=1 in your browser.
+    For example, to download the touch calibration data, access this url in your browser:
+    
+    http://snowradio.local/TouchCal.dat?download=1 
     
 </li>
 <li>Delete files<br />
@@ -269,7 +271,7 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     
 </li>
 <li>Timezones<br />
-It is surpisingly difficult to find a good source for TZ strings online. Best method is to log in to an up-to-date Linux system
+It is surprisingly difficult to find a good source for TZ strings online. Best method is to log in to an up-to-date Linux system
 and view for instance /usr/share/zoneinfo/Europe/Moscow, ignore the binary information, the TZ string will be in there.
 </li>
 <li>Pins<br />
