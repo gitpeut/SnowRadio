@@ -218,7 +218,7 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
     
     http://snowradio.local/TouchCal.dat?download=1 
     
-    Use the "Directory" button to see which files you may want to backup. <br/>
+    <br />Use the "Directory" button to see which files you may want to backup. <br/>
     Restoring files can be done by a complete flash of the file system, or by using the "Upload file" button.
     Make sure you enter the full path of the file, including the preceding /
     
