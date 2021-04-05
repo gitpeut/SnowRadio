@@ -213,7 +213,11 @@ it allows for SPIFFS, LittleFS and FFat filesystems.
 </li> 
 <li>Backup and restore<br/>
     For the netpassfile and the statonlist there are buttons on the webpage to easily backup these files.
-    All other files can be downloaded and saved by typing http://snowradio.local/<filename>?download=1 in your browser.
+    All other files can be downloaded and saved by typing http://snowradio.local/&ltfilename&gt?download=1 in your browser.
+    For example, to download the touch calibration data, access this url in your browser:
+    
+    http://snowradio.local/TouchCal.dat?download=1 
+    
     Use the "Directory" button to see which files you may want to backup. <br/>
     Restoring files can be done by a complete flash of the file system, or by using the "Upload file" button.
     Make sure you enter the full path of the file, including the preceding /
