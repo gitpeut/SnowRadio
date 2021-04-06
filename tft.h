@@ -14,8 +14,6 @@
 #define TFT_MY_GREEN        0x0567
 #define TFT_MY_YELLOW       0xF700
 
-
-
 #define TFT_ROTATION       0
 
 // --- fonts ---
@@ -24,18 +22,20 @@
 // symbol font for volume, battery and buttons
 #include "fonts.h"
 //freefont for stations
-#define STATION_FONT  &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
+#define STATION_FONT       &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
 #define STATION_FONT_LATIN &LatinStation  //Font with extended ASCI characters
-#define LIST_FONT     &FreeMonoBold12pt7b //Font with Latin & Cyrillic characters
-#define LABEL_FONT    &FreeSansBold6pt8b  //Font with Latin & Cyrillic characters  
-#define DATE_FONT     &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
-#define META_FONT     &MetaBold11         //Font with extended ASCI characters
-#define META_FONTRUS  LABEL_FONT    
-
+#define LIST_FONT          &FreeMonoBold12pt7b //Font with Latin & Cyrillic characters
+#define LABEL_FONT         &FreeSansBold6pt8b  //Font with Latin & Cyrillic characters  
+#define DATE_FONT          &FreeSansBold10pt8b //Font with Latin & Cyrillic characters
+#if defined (METAPOPUP) 
+  #define META_FONT        &MetaBold14         //= DejaVu Bold 14 - Font with extended ASCI characters
+  #define META_FONTRUS     &FreeSansBold7pt8b  //Font with ASCII and Cyrillic characters (modified y-offset by -4
+                                               //to makeit align with the DejaVu Bold 14 font
+#else
+  #define META_FONT        &MetaBold11         //Font with extended ASCI characters
+  #define META_FONTRUS     LABEL_FONT
+#endif
 //clock font, use built in 7segment font
-//If a freefont is to be used, showClock code show be changed
-// to load the font in the sprite, see showStation for an example 
-//on how to do that.
  
 #define CLOCK_FONT 7
 
@@ -88,7 +88,7 @@ extern SemaphoreHandle_t tftSemaphore;
 #define TFTSTATIONT  (TFTSPECTRUMB + 1)             //top      
 #define TFTSTATIONB  ( TFTSTATIONT + TFTSTATIONH )  //bottom  277
 
-#define TFTMETAH  30                                //height
+#define TFTMETAH  36// was 30                                //height
 #define TFTMETAT  (TFTSTATIONB)                     //top      
 #define TFTMETAB  (TFTMETAT + TFTMETAH)             //bottom  277
 
@@ -152,6 +152,7 @@ void tft_create_meta( int spritew = 0);
 void tft_fillmeta();
 void tft_showmeta(bool resetx=false);
 
+int  txt2fontmap( unsigned char *txt, unsigned char **utf, uint64_t *wordmap );
 char *utf8torus(const char *source, char *target);
 void latin2utf( unsigned char *latin, unsigned char **utf ); // in asyncwebserver.ino
 

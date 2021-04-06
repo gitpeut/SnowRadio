@@ -191,7 +191,9 @@ void VS1053g::displaySpectrum() {
     if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
   }
   
-  spectrum_width  = tft.width();
+  spectrum_width = tft.width();
+
+  //log_d("tft width %d spectrum width = %d, bar_wdth %d\n", tft.width(), spectrum_width, bar_width);
   
   if ( nextprevChannel || MuteActive ){
     prevbands = 0;

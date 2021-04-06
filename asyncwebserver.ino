@@ -464,6 +464,7 @@ void handleSet( AsyncWebServerRequest *request ){
       int desired_station = request->getParam("station")->value().toInt();
       if ( desired_station < STATIONSSIZE && desired_station >= 0 && stations[ desired_station ].status == 1 ){
         return_status = 200;
+        nextprevChannel = 1;
         if( desired_station != getStation() ) setStation( desired_station, -1 );
         sprintf( message,"Station set to %d, %s", desired_station, stations [ desired_station].name ); 
         log_d( "%s", message );     
@@ -815,7 +816,7 @@ if ( latin == NULL || *latin ==  0 ){
 *utf = (unsigned char *)gr_calloc( strlen( (char *)latin ) * 4, 1 );
 
 u   = *utf;
-l  = latin;
+l   = latin;
 
     while (*l){
       if (*l<128){
@@ -825,7 +826,7 @@ l  = latin;
             *u = 0xc0 | (*l >> 6);
             ++u;
             *u = 0x80 | (*l & 0x3f);
-          }else{ // apparently, this is UTF-8 input
+          }else{ // apparently, this is UTF-8 input            
             *u = *l;
             ++u; ++l;
             *u = *l;            
@@ -848,11 +849,18 @@ static unsigned char *lastmeta = NULL;
        //log_d("reset broadcast meta");           
   }else{ // meta.metadata is refreshed after connect, make sure after a reset this stale data is not sent          
       if ( meta.metadata[0] != 0 ){
-         if ( lastmeta != NULL ) free(lastmeta);
-            // apparently, most stations send meta data in ascii or even latin-1.
-            // events must be utf-8, so a conversion is necessary for non-ascii characters.
+         
+         if ( lastmeta != NULL ){ 
+          free(lastmeta); 
+          lastmeta = NULL; 
+         }
+         
+         // many stations send meta data in ascii or even latin-1. Events
+         // must be utf-8, so a conversion is necessary for non-ascii characters.
+         
          if ( !meta.intransit ) latin2utf( (unsigned char *)meta.metadata, &lastmeta );
          log_d("fill broadcast meta");                     
+         
       }
   }
   
@@ -862,7 +870,7 @@ static unsigned char *lastmeta = NULL;
   }else{
     radioevents.send( "-" ,"meta", millis() );  
   }
-  
+  // leave lastmeta allocated until the next time.
   
 }
 //------------------------------------------------------------------

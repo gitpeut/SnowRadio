@@ -136,7 +136,7 @@ void runWiFi( void *param){
     delay(2000);
   }
     
-#ifdef USEESPTOUCH 
+#ifdef USESPTOUCH 
 
   if ( WiFi.status() != WL_CONNECTED  ){
     
