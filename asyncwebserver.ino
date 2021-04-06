@@ -10,7 +10,7 @@
 #include "traffic.h"
 
 #ifdef USEPWMLCD
-int PWM_FREQUENCY = 1000; 
+int PWM_FREQUENCY = 23000; 
 int PWM_CHANNEL = 0; 
 int PWM_RESOLUTION = 8;
 #endif
@@ -473,6 +473,10 @@ void handleSet( AsyncWebServerRequest *request ){
       int desired_station = request->getParam("station")->value().toInt();
       if ( desired_station < STATIONSSIZE && desired_station >= 0 && stations[ desired_station ].status == 1 ){
         return_status = 200;
+        
+        nextprevChannel = 1;
+        if ( desired_station < getStation() ) nextprevChannel = -1;
+         
         if( desired_station != getStation() ) setStation( desired_station, -1 );
         sprintf( message,"Station set to %d, %s", desired_station, stations [ desired_station].name ); 
         log_d( "%s", message );     
@@ -909,6 +913,9 @@ void startWebServer( void *param ){
     ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
     ledcAttachPin(TFT_LED, PWM_CHANNEL);
 #endif
+#ifndef USEPWMLCD
+  digitalWrite( TFT_LED , HIGH); 
+#endif
     
   Serial.printf("Async WebServer started from core %d\n", xPortGetCoreID()); 
  
@@ -1037,7 +1044,9 @@ void startWebServer( void *param ){
           print_forecast();
         }
      }
-#ifdef USEPWMLCD
+     #endif  
+     
+    #ifdef USEPWMLCD
     --photocount;
 
      if ( photocount <= 0  ){
@@ -1046,14 +1055,26 @@ void startWebServer( void *param ){
             int val = analogRead( PhotoSensPin );
 //            Serial.print (">>>>>>>>>>>>> val: "); Serial.println (val);
             
-            int ledPower = map(val, 500, 3000, 50, 200); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
 //                        Serial.print (">>>>>>>>>>>>> ledPower: "); Serial.println (ledPower);
-            if (ledPower <0) { ledPower = 0 ; }
-            ledcWrite(PWM_CHANNEL, ledPower);  // Меняем яркость
+            //values may vary between photo resistors and setups, Test!
+            if ( val <= 100) { 
+             
+              ledcWrite(PWM_CHANNEL,0);
+                
+              ledcDetachPin(TFT_LED);
+              pinMode( TFT_LED,OUTPUT);
+              digitalWrite(TFT_LED,LOW); // or HIGH, whatever turns you screen off. 
+              
+            }else{
+              
+              ledcAttachPin(TFT_LED, PWM_CHANNEL);
+              int ledPower = map(val, 500, 3000, 50, 255); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
+              ledcWrite(PWM_CHANNEL, ledPower);  // Меняем яркость
+            }
      }
-#endif     
+    #endif     
 
-     #endif  
+
 
     #ifdef SHOWMETA
      --metacount;

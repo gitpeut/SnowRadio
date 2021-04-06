@@ -17,6 +17,8 @@ unsigned int   position;
 }Station;
 
 #define STATIONSSIZE 100
+#define RADIOANIMATION // when defined, show animated radio dial when changing stations.
+
 extern Station *stations; 
 extern volatile int   currentStation;
 extern TFT_eSPI tft;
@@ -70,9 +72,9 @@ public:
   uint8_t     spectrum[14][3]; // Array per Spectrum Analyzer
                                // [0] current height [1] previous height [2] peak value
   
-  uint8_t     spectrum_width  = 208;
-  uint8_t     spectrum_top    = 50; //120; //Spectrum graph top offset
-  uint8_t     spectrum_height = 78; //высота графика = Spectrum graph height
+  uint16_t     spectrum_width  = 208;
+  uint16_t     spectrum_top    = 50; //120; //Spectrum graph top offset
+  uint16_t     spectrum_height = 78; //высота графика = Spectrum graph height
   TFT_eSprite spectrum_sprite = TFT_eSprite(&tft);    
 
   bool        stop_song();

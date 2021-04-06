@@ -34,8 +34,16 @@
 #define NUM_FONT      &Digital_16pt8b       // Шрифт, цифры для параметров погоды + специальные символы. // Font, numbers for weather parameters + special characters.
 #define TRAFFIC_FONT  &traffic_num          // Шрифт, цифры для уровня пробок
 #define TRACK_FONT    &FreeSansBold7pt8b    // Шрифт для названия трека (meta)
-#define META_FONT     &MetaBold11           // font with extended Latin characters like é ö in stead of Cyrillic characters for meta information
 #define STATION_FONT_LATIN &LatinStation    // font with extended Latin characters like é ö in stead of Cyrillic characters for station names
+
+#if defined (METAPOPUP) 
+  #define META_FONT        &MetaBold14         //= DejaVu Bold 14 - Font with extended ASCI characters
+  #define META_FONTRUS     &FreeSansBold7pt8b_up4  //Font with ASCII and Cyrillic characters (modified y-offset by -4
+                                               //to makeit align with the DejaVu Bold 14 font
+#else
+  #define META_FONT        &MetaBold11         //Font with extended ASCI characters
+  #define META_FONTRUS     LABEL_FONT
+#endif
 
 //clock font, use built in 7segment font
 //If a freefont is to be used, showClock code show be changed

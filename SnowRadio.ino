@@ -1,4 +1,5 @@
 // Snow Radio/Снежное радио
+// ST7796 version
 // Jose Baars, Alexander Semenow, 2020-2021
 // public domain
 // uses the follwing libraries:
@@ -35,13 +36,13 @@
 #define SHOWMETA       // show meta data ( artist/track info in variable meta.metadata ) in the default
                        // place under the station name.
 // define one of below 3 if metadata is desired                       
+#define METAPOPUP      //display long txt per 2 lines every ~10 seconds in both Cyrillic and Latin extended fonts
 #undef  METASPRITE     // use a sprite to display metadata and scroll the sprite if text is too long
-#define METAPOPUP      // diplay long txt per 2 lines every ~10 seconds 
 #undef  METASTATIC     // display as much as possible, but overflow if too long
 
 #define USESPTOUCH     //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
                        //for some this is very user friendly, for others it is a source of frustration. 
-#undef LOADSSIDS       // If you want to preload the encrypted netpass file with ssid and passwords 
+#undef  LOADSSIDS      // If you want to preload the encrypted netpass file with ssid and passwords 
                        // define LOADSSIDS. If not using ESPTOUCH, this will be a necessary step.
                        // For this to work, in wificredentials.h,  
                        // WiFiNetworks are defined as follows, make sure the arrays have a "" as last element
@@ -53,12 +54,13 @@
 #define USETRAFFIC     // will show traffic info for Moscow. Highly dependant on the dataprovider,
                        // url in traffic.h, with other providers this will not work, and could even cause crashes,
                        // so be careful.
+
 //#define MONTHNAMES_EN
 #define MONTHNAMES_RU
 // Cyrillic characters must be supported by the font chosen
 #if defined(MONTHNAMES_RU)
-const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
-const char *daynames[]   = {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"};
+  const char *monthnames[] = {"ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ", "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"};
+  const char *daynames[]   = {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"};
 #elif defined(MONTHNAMES_EN)
 const char *monthnames[] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 const char *daynames[] = {"Sun","Mon","Tue","Wed","Thu", "Fri","Sat"};
@@ -210,7 +212,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.2J (ST7796)"
+#define APVERSION "ST7796_RUV2.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

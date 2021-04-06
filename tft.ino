@@ -68,8 +68,8 @@ char *utf8torus(const char *source, char *target){
             default:
                 // fix for mistake in font
                 *t = *s;
-                if (  after208 && *t == 129 ) *t=192;
-                if ( !after208 && *t == 145 ) *t=193;
+                if (  after208 && *t == 129 ) *t=149;
+                if ( !after208 && *t == 145 ) *t=189;
                 ++t;
                 break;        
             }
@@ -79,6 +79,69 @@ char *utf8torus(const char *source, char *target){
     return( target );
 }
 
+//------------------------------------------------------------------
+// wordmap each bit represents a word, 0 = Latin, 1 is Cyrillic
+
+int txt2fontmap( unsigned char *txt, unsigned char **utf, uint64_t *wordmap ){
+unsigned char *l; 
+unsigned char *u;
+char replacement  = 0;
+int  charcount=0;
+int  wordshift = 0;
+
+if ( txt == NULL || *txt ==  0 ){
+  *utf = (unsigned char *)gr_calloc( 1, 1 );
+  return( charcount );  
+}
+
+*wordmap = 0;
+*utf = (unsigned char *)gr_calloc( strlen( (char *)txt ) * 4, 1 );
+
+u = *utf;
+l = txt;
+
+    while (*l){
+      ++charcount;
+      if ( *l == ' '){
+        ++wordshift;
+        *wordmap &= ~(1ULL << wordshift);//clear bit #wordshift;
+      }
+      if (*l<128){
+          *u = *l;
+      }else{                          
+          if ( *(l+1) < 128 || *l < 192 ){ // probably extended ASCII input, UTF-8 wants >128            
+            *u = 0xc0 | (*l >> 6);
+            ++u;
+            *u = 0x80 | (*l & 0x3f);
+          }else{ // apparently, this is UTF-8 input            
+            if ( *l == 0xd0 || *l == 0xd1 ){
+                *wordmap |= (1ULL << wordshift);//set bit #wordshift, cyrillic found;
+                //Serial.printf("Setting bit %d\n", wordshift );
+                // treat cyrillic font as exteded ascii
+                if (  *l == 0xd0 && *(l+1) == 129 ) replacement = 149;
+                if (  *l == 0xd1 && *(l+1) == 145 ) replacement = 181;
+                // Don't output the leading UTF byte for 0xd0 and 0xd1
+            }else{  
+              //Other UTF set, hopefully Latin c0...
+              // output it 
+              *u = *l;
+              ++u;
+            }
+            ++l;
+            *u = *l;
+            if ( replacement ){
+              *u = replacement;
+              replacement = 0;            
+            }
+          }
+      }
+      
+      ++l;
+      ++u;
+    }    
+    *u = 0;
+return( charcount );  
+}
 
 
 //---------------------------------------------------------------------
@@ -277,14 +340,18 @@ void tft_showstation( int stationIdx){
 
 
 //---------------------------------------------------------------------
-
+#if defined( METAPOPUP )
+int       meta_height           = tft.height();
+#else
+int       meta_height           = 36;
+#endif
 const int nonscroll_metawidth   = 215;
-const int meta_height           = 33;
 const int meta_xposition        = 248;
 const int meta_yposition        = 207;
 int       metatextx             = 0; // will be calculated in tft_fillmeta
 char      *metatxt[10]           ={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-
+const int meta_fontheight        = 17;
+int       meta_bottom;
 // unwanted strings. Last element MUST be ""
 const char  *unwanted_strings[] = { "Chromanova.fm presents - ", " - 0:00", "MegaNight RADIO | ", ""};
 
@@ -339,10 +406,10 @@ void tft_create_meta( int spritew){
 #ifndef SHOWMETA
   return;
 #endif
-    
-  if ( meta_sprite.created() )return;
 
-  meta_sprite.createSprite(spritew?spritew:nonscroll_metawidth, meta_height );
+  if ( !meta_sprite.created() ){
+    meta_sprite.createSprite(spritew?spritew:nonscroll_metawidth, meta_height );
+  }  
   meta_sprite.fillSprite(TFT_MY_DARKGRAY);
   meta_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
 
@@ -350,164 +417,166 @@ void tft_create_meta( int spritew){
 
 #ifdef METAPOPUP
 
-int popup_linecount = 0;
-
     void tft_fillmeta(){
-        char  *mymeta=NULL, *cleanmeta = NULL; ;
-        unsigned char  *utfmeta=NULL;
+        char            *mymeta=NULL;
+        char            *cleanmeta = NULL; ;
         
       #ifndef SHOWMETA
         return;
       #endif
         //log_d( "- fillmeta in transit : %d , metadata %s-", meta.intransit, meta.intransit?"": meta.metadata);
         
+        tft_create_meta();        
         
-        tft_create_meta();
-
-        popup_linecount = 0;    
-                              
-        for (int i =0; i < 10; ++i ){
-            if ( metatxt[i] != NULL ){
-              free( metatxt[i] ); 
-              metatxt[i] = NULL;
-            }
-        }
+        // meta_fontheight should match the META_FONT and META_FONTRUS height.
+        // first line.
+        meta_sprite.setCursor(0, meta_fontheight);  
         
-        if ( meta.metadata[0] == 0xd0 || meta.metadata[0] == 0xd1 ){
-          //Cyrillic characters  
-          metalang = CYRILLIC;
-          meta_sprite.setFreeFont( TRACK_FONT );
-          utfmeta = (unsigned char *)gr_calloc( strlen( meta.metadata) + 4,1);
-          mymeta = utf8torus( meta.metadata, (char *)utfmeta);            
-        }else{
-          //Latin characters
-          metalang = LATIN;
-          meta_sprite.setFreeFont( META_FONT );
-          latin2utf( (unsigned char *) meta.metadata, (unsigned char **)&utfmeta );              
-          mymeta = ( char *) utfmeta;
-        }
-
-         cleanmeta = (char *)gr_calloc( strlen( (char *)utfmeta ) + 4 , 1 );
-         mymeta = cleanup_meta( (const char *) utfmeta , &cleanmeta );
-
-         free( utfmeta );
-          
-        int textw   = meta_sprite.textWidth( mymeta, 1 ); 
-
-        //log_d("textw = %d", textw );
+        cleanmeta = (char *)gr_calloc( strlen( (char *)meta.metadata ) + 4 , 1 );
+        mymeta = cleanup_meta( (const char *)meta.metadata , &cleanmeta );
         
-        if ( textw < nonscroll_metawidth ){
-           popup_linecount = 1;
-           //log_d ("metadata fits on 1 line: %s", meta.metadata);
-           metatxt[0] = ps_strdup( mymeta );
-        }else{ // multiple lines
-                char *start = mymeta, *end = mymeta, *previous=start;
+        
+        int       slen=0;
+        uint64_t  wordmap=0;
+        char      *output;
+        
+        // search through words, decide for each word what font to use and remove Cyrillic UTF-8 0xd0 and 0xd1 codes.
 
-                bool endreached = false;
-                for ( end = mymeta; popup_linecount < 10; ++end ){
-                    
-                    if ( *end == ' ' || *end == 0 ){
-                       if ( *end == 0 ){
-                          endreached = true;
-                       }else{
-                          *end = 0;
-                       }
-                       textw   = meta_sprite.textWidth( start, 1 );
-                       if ( !endreached ) *end = ' ';
-                            
-                       if ( textw > nonscroll_metawidth || endreached ){
-                           
-                           if ( previous != (start -1 ) && textw > nonscroll_metawidth  ){ 
-                            end = previous;
-                            endreached = false;
-                           }
-                           *end = 0;
-                            
-                            metatxt[popup_linecount] = strdup( start );
-                            //log_d( "Added %s ", start) ;
-                            popup_linecount++;
-                            if ( !endreached ){ 
-                                start = end + 1;
-                                previous = end;
-                            }
-                       }else{
-                            if ( !endreached ) {
-                              previous = end;
-                            }                  
-                       }
-                   }
-                   if ( endreached ) break;
-                } 
-        }
+        slen = txt2fontmap( (unsigned char *)mymeta, (unsigned char **)&output, &wordmap );
+
+        //Serial.printf( "Mymeta: %s, Wordmap = %llx\n", mymeta, wordmap);        
 
         mymeta = NULL;
-        if ( cleanmeta != NULL)free( cleanmeta ); 
-        log_d ("%d lines of metatdata filled", popup_linecount);
+        free( cleanmeta );
+
+        char *tmptxt = (char *)gr_calloc( slen + 4,1); //tempstring to hold word. worst case is word length == input length
+        char *t = tmptxt, *s=output;
+        int  bitcount=0;
+        
+        meta_sprite.setFreeFont( META_FONT );
+        
+        // center one line meta text horizontally and vertically
+        
+        int textwidth = meta_sprite.textWidth( output ); // Approximation, as Cyrillic font may have other widths
+        
+        bool oneline  = false;
+        if ( textwidth < nonscroll_metawidth ){
+              meta_sprite.setCursor( ( nonscroll_metawidth - textwidth )/2 , meta_sprite.getCursorY() + meta_fontheight/2 );
+              oneline = true;
+        }
+        
+        // loop through all words and print in either Latin extended or Latin Cyrillic font
+        // for multiline metatext use a viewport in show_meta to print the metatext 2 lines at a time.
+        // the sprite is big (tft.height() * width) to accomodate long texts
+        
+        bool firstdash = false;
+           
+        for( ;; ++s ){
+           if( *s == ' ' || *s == 0){
+             *t = *s;
+             if (*s){++s;++t;*t = 0;}            
+             if ( (wordmap & (1UL << bitcount)) ){
+              meta_sprite.setFreeFont( META_FONTRUS );
+             }else{
+              meta_sprite.setFreeFont( META_FONT );
+             }
+
+             // many stations divide artist and song information by a dash. 
+             // to improve readability, start a new line.
+              
+             if ( !strncmp( tmptxt, "- ", 2 ) ){
+                
+             }
+
+             // go to next line, unless the word will never fit on one line               
+             if ( meta_sprite.getCursorX() + meta_sprite.textWidth( tmptxt ) > meta_sprite.width() && meta_sprite.getCursorX() != 0 ){             
+                meta_sprite.print("\n");
+                //Serial.printf("Y-cursor now at %d\n",meta_sprite.getCursorY() );               
+             }
+             
+             //Serial.printf( "Print in %s font: [%s]\n", (wordmap & (1UL << bitcount))?"LatinCyrillic":"Latin", tmptxt); 
+
+             //meta_sprite.print( tmptxt ); // If you like dashes uncomment
+
+             // many stations divide artist and song information by a dash ( - ). 
+             // to improve readability, start a new line before text following 
+             // the dash, unless both fit on one line.
+              
+             if ( !strncmp( tmptxt, "- ", 2 ) && !oneline && !firstdash){
+                meta_sprite.print( "\n");  
+                firstdash = true;            // comment out to remove all dashes, not only the first one.
+             } else{
+                meta_sprite.print( tmptxt ); // if you like dashes comment out
+             }
+
+             if ( *s == 0 ) {
+                meta_sprite.print( "\n");
+                if ( oneline ){
+                  // the text was vertically centered between 2 lines, move down half a line
+                  // to be on line height boundaries again, so later tests give uniform results.  
+                  meta_sprite.setCursor( 0, meta_sprite.getCursorY() + meta_fontheight/2 );                  
+                }
+                meta_bottom  = meta_sprite.getCursorY();
+                //Serial.printf("End of input, next line will start at Y-cursor %d\n", meta_bottom );               
+                break;
+             }
+             ++bitcount; 
+             t = tmptxt;
+           }
+           *t = *s;
+           ++t;
+        }
+      
+      free(output);
                              
-        tft_showmeta( true );
+      tft_showmeta( true );
      }
 
      //---------------------------------------------------------------------
       void tft_showmeta(bool resetx){
       static int currentx=0;
-      static int lastline=0;
+      static int showpos=0;
+      static int onscreen=0; 
       
         if ( resetx ){
           currentx = 0;
-          lastline = 0;
+          showpos  = 0;
+          onscreen = 0;
           return;
         }
 
         if ( screenUpdateInProgress ) return;
         if ( currDisplayScreen != RADIO ) return;
         if ( meta.intransit ) return;
-        
+
+        if ( onscreen && meta_bottom <=  (meta_fontheight * 3) )return;
+            
         if ( currentx > 0 ){
             currentx--;
             return;
         }else{
-            if ( lastline >= popup_linecount ) lastline = 0;            
-            currentx = 20;
-            if ( popup_linecount < 3 ) currentx += 100;
+            if ( showpos >= (meta_bottom - meta_fontheight) ) showpos = 0;            
+            currentx = 40;
+            if ( meta_bottom <=  (meta_fontheight * 3) ) currentx += 100;
+            
+            //log_d( "currentx was 0, now %d\n meta_bottom %d display sprite at offset  -%d", currentx, meta_bottom, showpos ); 
+             
+            grabTft();
+              tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, (meta_fontheight * 2), false );
+              //log_d("ypos %d", meta_yposition - showpos );  
+              meta_sprite.pushSprite( meta_xposition, meta_yposition - showpos );
+              tft.resetViewport();         
+            releaseTft();
+            onscreen = true;
+            showpos += (meta_fontheight * 2);
         }
-          
-
-        meta_sprite.fillSprite(TFT_MY_DARKGRAY);
-        meta_sprite.setTextColor( TFT_MY_GRAY, TFT_MY_DARKGRAY ); 
-
-        if ( metatxt[lastline] != NULL ) {
-
-          //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
-          int xpos = 0;
-          int ypos = 0;
-          if ( popup_linecount == 1){
-            xpos = ( meta_sprite.width() - meta_sprite.textWidth( metatxt[ lastline ], 1 ) )/2; 
-            ypos = meta_sprite.height() / 4;
-          }
-          meta_sprite.drawString( metatxt[ lastline ], xpos, ypos, 1);
-          currentx += strlen( metatxt[ lastline ] ) / 2;
-          ++lastline;
-        }
-
-
-        if ( lastline < popup_linecount && metatxt[lastline] != NULL ){
-
-          //log_d( "show meta # %d/%d  %s ", lastline,popup_linecount, metatxt[ lastline ] );
-
-          meta_sprite.drawString( metatxt[ lastline ], 0,14, 1);
-          currentx += strlen( metatxt[ lastline ] ) / 2 ;
-          ++lastline;                                 
-        }
-        
-        grabTft();
-          tft.setViewport( meta_xposition, meta_yposition, nonscroll_metawidth, meta_height, false );
-          //tft.frameViewport(TFT_DARKGREY,  -1);     
-          meta_sprite.pushSprite( meta_xposition, meta_yposition );
-          tft.resetViewport();         
-        releaseTft();
       }      
-      
+
+
+
 #endif
+
+
 
 #ifdef METASPRITE
 
@@ -1172,7 +1241,6 @@ void tft_init(){
   //PSRAM_ENABLE == 3 psramFound test is already done by tft_espi,
   //no need to duplicate.
   tft.setAttribute( 3,1);//enable PSRAM
-//  tft.setAttribute( 2,0);// disable UTF8, use extended ASCII( will NOT enable extended ascii)
   tft.init();
   
   tft.setRotation( tftrotation );
