@@ -24,7 +24,7 @@ char * ps_strdup (const char *s)
 }
 //-----------------------------------------------------
 
-int change_station( char *name, int protocol, char *host, char* path, int port, int idx ){
+int change_station( char *name, int protocol, char *host, char* path, int port, int idx, int position ){
 
 
 if ( stations[idx].status == 1 ){
@@ -40,7 +40,7 @@ if ( stations[idx].status == 1 ){
      stations[idx].path =  ps_strdup( path);
      stations[idx].protocol = protocol;
      stations[idx].port = port;
-     stations[idx].position = 0;
+     stations[idx].position = position;
      
      
 }else{
@@ -53,7 +53,7 @@ return(0);
 
 //-----------------------------------------------------
 
-int add_station( char *name, int protocol, char *host, char* path, int port ){
+int add_station( char *name, int protocol, char *host, char* path, int port, int position ){
 int i;
 
 for ( i = 0; i< STATIONSSIZE; ++i ){
@@ -63,7 +63,7 @@ for ( i = 0; i< STATIONSSIZE; ++i ){
                 stations[i].path =  ps_strdup( path);
                 stations[i].port = port;
                 stations[i].protocol = protocol;
-                stations[i].position = 0;
+                stations[i].position = position;
                 stations[i].status = 1;
                 break;
         }
@@ -270,7 +270,9 @@ int justConnect( int stationIdx ){
       Serial.print( "No memory to access station!") ;
       return( 666 );
     }
-
+    
+    if ( (stations[stationIdx].position&1) )noMeta = true;  
+      
     sprintf( getstring,"GET %s HTTP/1.1\r\nHost: %s\r\nAgent: %s %s\r\n%sAccept: */*\r\nConnection: close\r\n\r\n",
                stations[stationIdx].path,
                stations[stationIdx].host,
@@ -322,9 +324,10 @@ int i,j,rc;
             }
 
             if ( contentsize != 0 && rc == 200 ){
-              if ( stations[stationIdx].position >= contentsize -1 )stations[stationIdx].position = 0; 
+              //if ( stations[stationIdx].position >= contentsize -1 )stations[stationIdx].position = 0; 
               break; 
             }
+            
             
             if ( rc >= 400 && rc < 409 ){
                

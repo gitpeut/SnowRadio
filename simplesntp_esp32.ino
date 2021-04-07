@@ -41,15 +41,44 @@ int time_to_jurassic(void )
 
 }
 
+//----------------------------------------------------------------
+// workaround for Arduino and maybe IDF only using 1 ntpserver 
+
+void restart_sntp(){
+  static int first_server = 0;
+  int              server = first_server;
+
+  log_d("sntp server[0] = %s", ntpServers[ server] );
+  
+  sntp_stop(); 
+  sntp_setoperatingmode(SNTP_OPMODE_POLL); 
+
+  for( int i = 0; i < 3; ++i ){
+    sntp_setservername( i , (char *)ntpServers[ server]); 
+    ++server;
+    if ( server > 2 ) server = 0;
+  }
+  first_server++;
+  if ( first_server > 2 ) first_server = 0;
+  
+  sntp_init(); 
+}  
+
 /*--------------------------------------------------------------*/
 
 void ntp_waitforsync(){
 time_t  rawt;
 struct tm *tinfo;
 struct tm  linfo, ginfo;
-int y;
-    
-   for(;;){
+int y, count;
+
+   // workaround for Arduino and maybe IDF only using 1 ntpserver 
+   for(count = 0;; ++count){
+     if ( count > 2 ){
+        restart_sntp();
+        delay(10); 
+        count = 0;
+     }
      time( &rawt );
      tinfo = localtime( &rawt );
      
@@ -85,7 +114,6 @@ Serial.printf("Timezone offset is %d hour%s, %s, current offset is %d hour%s\n\n
           ( (offsetHours+1)>1 || (offsetHours+1) < -1)?"s":""); 
     
 }
-
 /*--------------------------------------------------------------*/
 
 void ntp_setup(bool waitforsync){ 
@@ -100,14 +128,7 @@ void ntp_setup(bool waitforsync){
 
   // configTime on the ESP32 does not honor the TZ env, unlike the ESP8266
   
-  sntp_stop(); 
-  sntp_setoperatingmode(SNTP_OPMODE_POLL); 
-
-  sntp_setservername(0, (char *)ntpServers[0]); 
-  sntp_setservername(1, (char *)ntpServers[1]); 
-  sntp_setservername(2, (char *)ntpServers[2]); 
-
-  sntp_init(); 
+  restart_sntp();
   
   // A new NTP request will be done every hour (hopefully, to be verified 
   // with tcpdump one day.

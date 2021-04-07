@@ -325,9 +325,12 @@ void radio( void *param) {
         
         bytesread = radioclient->read( &radioBuffer[0], 128 );  
         
-        if ( contentsize != 0 ){
-            stations[ playingStation].position += bytesread;
-        }
+        
+        // use position as bitmap option field 
+        // if ( contentsize != 0 ){
+        //    stations[ playingStation].position += bytesread;
+        //}
+        
          
          totalbytes += bytesread;
          
@@ -412,7 +415,7 @@ void radio( void *param) {
               }else{
                   failed_connects++;
                   delay(100);
-                  if ( failed_connects > 3 ) {
+                  if ( failed_connects > 1 ) {
                    
                     tellPixels( PIX_BLINKRED );
                     syslog( (char *)"to next station after 3 failed connects");

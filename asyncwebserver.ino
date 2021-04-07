@@ -381,7 +381,8 @@ void handleAdd( AsyncWebServerRequest *request ){
                 request->getParam("protocol")->value().toInt(),
                 (char *)request->getParam("host")->value().c_str(), 
                 (char *)request->getParam("path")->value().c_str(), 
-                request->getParam("port")->value().toInt() ); 
+                request->getParam("port")->value().toInt(),
+                request->hasParam("position")?request->getParam("position")->value().toInt():0  ); 
                  
   }else{
       int idx = request->getParam("idx")->value().toInt();
@@ -391,7 +392,9 @@ void handleAdd( AsyncWebServerRequest *request ){
                 (char *)request->getParam("host")->value().c_str(), 
                 (char *)request->getParam("path")->value().c_str(), 
                 request->getParam("port")->value().toInt(),
-                idx ); 
+                idx,
+                request->hasParam("position")?request->getParam("position")->value().toInt():0 ); 
+                
       Serial.printf( "- Changed station %d to : name %s, h %s p %d path %s\n", idx, stations[idx].name,  stations[idx].host, stations[idx].port, stations[idx].path);
   }
   if ( rc ){
@@ -913,6 +916,7 @@ void startWebServer( void *param ){
     ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
     ledcAttachPin(TFT_LED, PWM_CHANNEL);
 #endif
+
 #ifndef USEPWMLCD
   digitalWrite( TFT_LED , HIGH); 
 #endif
@@ -1052,25 +1056,24 @@ void startWebServer( void *param ){
      if ( photocount <= 0  ){
 
             photocount = ((5*1000) /delaytime); // every 5 sec
-            int val = analogRead( PhotoSensPin );
-//            Serial.print (">>>>>>>>>>>>> val: "); Serial.println (val);
             
-//                        Serial.print (">>>>>>>>>>>>> ledPower: "); Serial.println (ledPower);
-            //values may vary between photo resistors and setups, Test!
-            if ( val <= 100) { 
-             
-              ledcWrite(PWM_CHANNEL,0);
-                
+            //values may vary between photo resistors, setups and taste: Test!                        
+            int val = analogRead( PhotoSensPin );
+            int ledPower = map(val, 150, 4095, 140, 255); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
+                            
+            //log_d(">> val = %d, ledPower = %d", val, ledPower );
+            
+            
+             /*  to turn off completey: 
               ledcDetachPin(TFT_LED);
               pinMode( TFT_LED,OUTPUT);
               digitalWrite(TFT_LED,LOW); // or HIGH, whatever turns you screen off. 
+              */
+            
               
-            }else{
-              
-              ledcAttachPin(TFT_LED, PWM_CHANNEL);
-              int ledPower = map(val, 500, 3000, 50, 255); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
+              //ledcAttachPin(TFT_LED, PWM_CHANNEL);
               ledcWrite(PWM_CHANNEL, ledPower);  // Меняем яркость
-            }
+            
      }
     #endif     
 

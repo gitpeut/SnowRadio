@@ -82,14 +82,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     
     add2netp();
     tft_message( "Connected to WiFi, IP address: " , WiFi.localIP().toString().c_str() );
-    
-    // Make sure that SmartConfig is disabled when an IPaddress is obtained. When a connection fails
-    // Smartconfig is started but an IPAdress can be obtained shortly afterwards, maybe from anpther AP.
-    // Apart from making sense, SmartConfig seems to interfere with NTP.
-    // 
-    
-    WiFi.stopSmartConfig(); 
-    
+      
     tft_message( "Retrieving time from NTP server");
     ntp_setup( true );
     tellPixels( PIX_BLINKBLUE );
@@ -138,9 +131,13 @@ void runWiFi( void *param){
   
   for ( int i=0 ; i < 10; ++i){
     int mstatus;
-    if ( (mstatus = wifiMulti.run()) == WL_CONNECTED) break;  
+    if ( (mstatus = wifiMulti.run( 7000 )) == WL_CONNECTED) {
+      break;  
+    }
     Serial.printf( "%d mstatus = %d\n", i, mstatus);  
+#ifdef USESPTOUCH
     if ( mstatus == 6) break;
+#endif
     delay(2000);
   }
     
