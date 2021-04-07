@@ -30,7 +30,7 @@
 #define USEINPUTSELECT // input selection between AV(LINE IN), BLUETOOTH and RADIO
                        // if undefined, volume buttons are displayed on the touchscreen, otherwise 
                        // buttons to select BLUETOOTH and AV (LINE IN) 
-#undef  USEPWMLCD      // adapt brightness of LCD to surroundings using a an LDR attached to pin PhotoSensPin  
+#define USEPWMLCD      // adapt brightness of LCD to surroundings using a an LDR attached to pin PhotoSensPin  
 #define USESPECTRUM    // install and run the spectrum patch as supplied by VLSI
                        // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA       // show meta data ( artist/track info in variable meta.metadata ) in the default
@@ -212,7 +212,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "ST7796_RUV2.0"
+#define APVERSION "ST7796_RUV3.0"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;
