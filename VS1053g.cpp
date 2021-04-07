@@ -102,36 +102,6 @@ void VS1053g::toMp3() {
 }
 
 //----------------------------------------------------------------------------------
-#define BASE 0x1810
-void VS1053g::getBands()
-{
-  const uint16_t base = 0x1810;
-  const uint8_t  wramaddr=7,wram =6;  
-  //await_data_request(); should be verified in app jb
-
-  write_register( wramaddr, base + 2);
-  bands = read_register( wram);
-  
-  write_register(wramaddr, base + 4);
-
-  uint8_t current_volume = getVolume();
-  
-  for (uint8_t i = 0; i < 14; i++) {
-    uint8_t val = read_register( wram );
-    /* current value in bits 5..0, normally 0..31
-      peak value in bits 11..6, normally 0..31 */
-    uint8_t cur1 = val & 31;
-    int8_t cur = (cur1 * current_volume ) / 30; // big bars
-    if ( cur < 0 ) {
-      cur = 0;
-    } else if ( cur > ( spectrum_height - 4) ){
-      cur = spectrum_height - 4;
-    }
-    spectrum[i][0] = cur;
-  }
-
-}
-//----------------------------------------------------------------------------------
 
 uint16_t VS1053g::setSpectrumBarColor( uint16_t newbarcolor){
   uint16_t oldcolor = spectrum_barcolor;
@@ -169,6 +139,40 @@ FILE *binfile;
 return( buf.st_size );    
 
 }
+//----------------------------------------------------------------------------------
+
+void VS1053g::getBands()
+{
+  const uint16_t base = 0x1810;
+  const uint8_t  wramaddr=7,wram =6;  
+  //await_data_request(); should be verified in play() jb
+  
+  write_register( wramaddr, base + 2);
+  bands = read_register( wram);
+  
+  write_register(wramaddr, base + 4);
+
+  uint8_t current_volume = getVolume();
+  
+  for (uint8_t i = 0; i < 14; i++) {
+    uint8_t val = read_register( wram );
+    /* current value in bits 5..0, normally 0..31
+      peak value in bits 11..6, normally 0..31 
+     */
+    uint32_t fivebitvalue   = (val&31);
+    uint32_t barheightperc  = ( fivebitvalue * (uint32_t)current_volume ) / 31; // min = 0, max = 31*100 div by 100 = 0-100
+    
+      // by using a value lower than 100 to divide the value, 
+      // we "amplify" the difference in volume between calls to getBands().
+      // The lower this value, the more nerve-wrecking the display becomes. 
+      // As we are writing to a sprite, bars that are too long will be 
+      // cropped automatically. 
+      
+    int barheight =  (barheightperc * spectrum_height)/60;
+    spectrum[i][0] = barheight;
+  }
+
+}
 
 //----------------------------------------------------------------------------------
 
@@ -176,19 +180,19 @@ void VS1053g::displaySpectrum() {
  
   if (bands <= 0 || bands > 14)  return;
       
-  uint8_t   bar_width = tft.width() / bands - 2;
-  uint16_t  barx = 2; // start location of the first bar
-  boolean   visual = true; //paint to display
-  static int nextx = 0;
+  uint8_t    bar_width = tft.width() / bands - 2;
+  uint16_t   barx   = 2; // start location of the first bar
+  static int nextx  = 0;
   
   if ( ! spectrum_sprite.created() ){
+    log_d ( "create spectrum sprite %d %d", tft.width(), spectrum_height); 
     spectrum_sprite.createSprite( tft.width(), spectrum_height );     
     spectrum_sprite.setTextColor( TFT_GREEN, TFT_BLACK );    
   }
   
   if (bands != prevbands) {
     prevbands = bands;
-    if (visual) spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
+    spectrum_sprite.fillRect (0,0, tft.width(), spectrum_height, TFT_BLACK);
   }
   
   spectrum_width = tft.width();
@@ -248,23 +252,25 @@ void VS1053g::displaySpectrum() {
         nextx = 0;
         for (uint8_t i = 0; i < bands; i++) // Handle all sections
         {
-          if (visual) {
-            if (spectrum[i][0] > spectrum[i][1]) {
-              spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][0], bar_width, spectrum[i][0], spectrum_barcolor );
-              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-            } else {
-              spectrum_sprite.fillRect (barx, 0, bar_width, spectrum_height - spectrum[i][0], TFT_BLACK);
-            }  
-          }
+          
+          int bartop    = spectrum_height - spectrum[i][0];
+          int barheight = spectrum[i][0];
+
+          if (spectrum[i][0] > spectrum[i][1]) {
+            spectrum_sprite.fillRect (barx, bartop, bar_width, barheight, spectrum_barcolor );
+            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_BLACK);
+          } else {
+            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_BLACK);
+          }  
+        
           if (spectrum[i][2] > 0) { 
             spectrum[i][2]--;
           }
           if (spectrum[i][0] > spectrum[i][2]) {
             spectrum[i][2] = spectrum[i][0];
           }
-          if (visual) { 
-            spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
-          }
+       
+          spectrum_sprite.fillRect (barx, spectrum_height - spectrum[i][2] - 3, bar_width, 2, spectrum_peakcolor );
           
           spectrum[i][1] = spectrum[i][0];
           barx += bar_width + 2;
