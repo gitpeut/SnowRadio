@@ -280,9 +280,9 @@ void VS1053g::displaySpectrum() {
 
           if (spectrum[i][0] > spectrum[i][1]) {
             spectrum_sprite.fillRect (barx, bartop, bar_width, barheight, spectrum_barcolor );
-            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_BLACK);
+            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_MY_DARKGRAY);
           } else {
-            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_BLACK);
+            spectrum_sprite.fillRect (barx, 0, bar_width, bartop, TFT_MY_DARKGRAY);
           }  
    
           if (spectrum[i][2] > 0) {         
