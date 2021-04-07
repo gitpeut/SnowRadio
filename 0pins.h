@@ -20,6 +20,8 @@
 //battery
 #define BATPIN        36
 
+#define PhotoSensPin  39
+
 //tft on HSPI bus, in an attempt to reduce possible hardware and 
 // software crosstalk all pins defined in the tft_eSPI user setup.h
 //HSPI

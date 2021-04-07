@@ -130,9 +130,13 @@ void runWiFi( void *param){
   
   for ( int i=0 ; i < 10; ++i){
     int mstatus;
-    if ( (mstatus = wifiMulti.run()) == WL_CONNECTED) break;  
+    if ( (mstatus = wifiMulti.run( 7000 )) == WL_CONNECTED) {
+      break;  
+    }
     Serial.printf( "%d mstatus = %d\n", i, mstatus);  
+#ifdef USESPTOUCH
     if ( mstatus == 6) break;
+#endif
     delay(2000);
   }
     

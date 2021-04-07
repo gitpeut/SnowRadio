@@ -324,10 +324,11 @@ void radio( void *param) {
 
         
         bytesread = radioclient->read( &radioBuffer[0], 128 );  
-        
-        if ( contentsize != 0 ){
-            stations[ playingStation].position += bytesread;
-        }
+
+        // change position to option bitmask
+        //if ( contentsize != 0 ){
+        //    stations[ playingStation].position += bytesread;
+        //}
          
          totalbytes += bytesread;
          

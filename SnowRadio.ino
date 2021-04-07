@@ -24,6 +24,7 @@
 #undef  USEPIXELS       // use pixels as an indicator for the gestures
 #define USEGESTURES     // Use the PAJ7620 gesture sensor
 #undef  MULTILEVELGESTURES // gestures as used in Oranje radio. Not very well tested or maintained
+#define USEPWMLCD      // adapt brightness of LCD to surroundings using a an LDR attached to pin PhotoSensPin  
 #define USETOUCH        // use a touchscreen. Tested and developed with an ILI9341
 #define USEINPUTSELECT  // input selection between AV(LINE IN), BLUETOOTH and RADIO
                         // if undefined, volume buttons are displayed on the touchscreen, otherwise 
@@ -32,9 +33,9 @@
                         // and gracefully adapted from the Web Radio of Blotfi
 #define SHOWMETA        // show meta data ( artist/track info in variable meta.metadata ) in the default
                         // place under the station name.
-// define one of below 3 if metadata is desired                       
+// define one of below 4 if metadata is desired                       
 #undef  METASPRITE      // use a sprite to display metadata and scroll the sprite if text is too long
-#define METAPOPUP       // diplay long txt per 2 lines every ~10 seconds 
+#define METAPOPUP       //display long txt per 2 lines every ~10 seconds in both Cyrillic and Latin extended fonts
 #undef  METASTATIC      // display as much as possible, but overflow if too long
 #define USESPTOUCH 1    //use the ESP TOUCH phone app to connect when no known WiFi network is seen. 
                         //for some this is very user friendly, for others it is a source of frustration. 
@@ -202,7 +203,7 @@ int   topunavailable=0;
 
 //OTA password
 #define APNAME   "SnowRadio"
-#define APVERSION "V1.3"
+#define APVERSION "V1.5"
 #define APPAS     "oranjeboven"
 
 SemaphoreHandle_t wifiSemaphore;

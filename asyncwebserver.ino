@@ -8,6 +8,12 @@
 #include "tft.h"
 #include "owm.h"
 
+#ifdef USEPWMLCD
+int PWM_FREQUENCY = 23000; 
+int PWM_CHANNEL = 0; 
+int PWM_RESOLUTION = 8;
+#endif
+
 AsyncWebServer    fsxserver(80);
 AsyncEventSource  radioevents("/radioevents");
 
@@ -372,7 +378,8 @@ void handleAdd( AsyncWebServerRequest *request ){
                 request->getParam("protocol")->value().toInt(),
                 (char *)request->getParam("host")->value().c_str(), 
                 (char *)request->getParam("path")->value().c_str(), 
-                request->getParam("port")->value().toInt() ); 
+                request->getParam("port")->value().toInt(),
+                request->hasParam("position")?request->getParam("position")->value().toInt():0  ); 
                  
   }else{
       int idx = request->getParam("idx")->value().toInt();
@@ -382,9 +389,12 @@ void handleAdd( AsyncWebServerRequest *request ){
                 (char *)request->getParam("host")->value().c_str(), 
                 (char *)request->getParam("path")->value().c_str(), 
                 request->getParam("port")->value().toInt(),
-                idx ); 
+                idx,
+                request->hasParam("position")?request->getParam("position")->value().toInt():0 ); 
+                
       Serial.printf( "- Changed station %d to : name %s, h %s p %d path %s\n", idx, stations[idx].name,  stations[idx].host, stations[idx].port, stations[idx].path);
   }
+
   if ( rc ){
         sprintf( message, "Error: No more stations can be added" );
   }else{
@@ -886,7 +896,17 @@ void broadcast_status(){
 void startWebServer( void *param ){
  
   Serial.printf("Async WebServer started from core %d\n", xPortGetCoreID()); 
- 
+
+  #ifdef USEPWMLCD     
+    ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
+    ledcAttachPin(TFT_LED, PWM_CHANNEL);
+  #endif
+  
+  #ifndef USEPWMLCD
+    digitalWrite( TFT_LED , HIGH); 
+  #endif
+
+  
   MDNS.begin( APNAME);
 
   radioevents.onConnect([](AsyncEventSourceClient *eventclient){
@@ -948,7 +968,9 @@ void startWebServer( void *param ){
   int     weathercount  = 0;  // open weather, every hour, but also at start
   int     forecastcount = 0;
   int     broadcast_metacount = 0;
-  
+ #ifdef USEPWMLCD 
+  int     photocount=0;
+ #endif   
  #ifdef SHOWMETA
     int     metacount    = 0;
  #endif 
@@ -998,6 +1020,35 @@ void startWebServer( void *param ){
      }
     
      #endif  
+
+    #ifdef USEPWMLCD
+    --photocount;
+
+     if ( photocount <= 0  ){
+
+            photocount = ((5*1000) /delaytime); // every 5 sec
+            
+            //map values may vary between photo resistors, setups and taste: Test!                        
+            int val = analogRead( PhotoSensPin );
+            int ledPower = map(val, 0, 4095, 160, 255); // Преобразуем полученное значение в уровень PWM-сигнала. Резистор 10К на землю, фоторезистор к плюсу.
+                            
+            log_d(">> val = %d, ledPower = %d", val, ledPower );
+            
+            
+             /*  to turn off completey: 
+              ledcDetachPin(TFT_LED);
+              pinMode( TFT_LED,OUTPUT);
+              digitalWrite(TFT_LED,LOW); // or HIGH, whatever turns you screen off. 
+              */
+            
+              
+              //ledcAttachPin(TFT_LED, PWM_CHANNEL);
+              ledcWrite(PWM_CHANNEL, ledPower);  // Меняем яркость
+            
+     }
+    #endif     
+
+
 
     #ifdef SHOWMETA
      --metacount;
