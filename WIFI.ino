@@ -126,7 +126,8 @@ void runWiFi( void *param){
   WiFi.onEvent(WiFiLostIP, WiFiEvent_t::SYSTEM_EVENT_STA_LOST_IP); 
  
   WiFi.mode(WIFI_STA);
-
+  
+  
   log_i("Waiting for WiFi");
   
   for ( int i=0 ; i < 10; ++i){

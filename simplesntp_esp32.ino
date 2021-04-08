@@ -49,17 +49,24 @@ void restart_sntp(){
   int              server = first_server;
 
   log_d("sntp server[0] = %s", ntpServers[ server] );
-  
   sntp_stop(); 
   sntp_setoperatingmode(SNTP_OPMODE_POLL); 
 
   for( int i = 0; i < 3; ++i ){
     sntp_setservername( i , (char *)ntpServers[ server]); 
     ++server;
-    if ( server > 2 ) server = 0;
+    if ( server > 2 ) {
+        server = 0; 
+    }
   }
+  
   first_server++;
-  if ( first_server > 2 ) first_server = 0;
+  if ( first_server > 2 ){
+      tft_message( "No NTP time server could be reached.","Will restart in 10 seconds");
+      log_e("Restart. No server could be found");    
+      delay(10000);  
+      ESP.restart();  
+  }
   
   sntp_init(); 
 }  

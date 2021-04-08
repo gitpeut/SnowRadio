@@ -23,6 +23,10 @@ int       setvolume = getVolume();
     if ( qfillcount > 800 ){
       unavailablecount =  MAXUNAVAILABLE + 1;
       log_d( "Queue does not fill up, reconnect" );
+      if ( qfillcount > 40000 ){
+        log_d( "Queue still empty, trying a restart." );        
+        ESP.restart();
+      }
     }
     
     delay(40);
