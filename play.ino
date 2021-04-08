@@ -18,6 +18,10 @@ int       setvolume = getVolume();
     
     if ( qfillcount%10 == 0 ){
       log_i ( "Waiting for Queue to fill up, %d messages in playQueue", uxQueueMessagesWaiting( playQueue ) );
+      if ( qfillcount > 40000 ){
+        log_d( "Queue still empty, trying a restart." );        
+        ESP.restart();
+      }
     }
     
     if ( qfillcount > 800 ){
